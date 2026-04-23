@@ -33,7 +33,11 @@ client.on("interactionCreate", async (interaction) => {
     console.error(error);
 
     try {
-      if (interaction.replied || interaction.deferred) {
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: "❌ Something went wrong running that command.",
+        });
+      } else if (interaction.replied) {
         await interaction.followUp({
           content: "❌ Something went wrong running that command.",
           ephemeral: true,

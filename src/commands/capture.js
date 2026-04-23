@@ -28,36 +28,54 @@ module.exports = {
     }),
 
   async execute(interaction) {
-    const sphere = interaction.options.getString("sphere") || "basic";
-    const result = attemptCapture(interaction.user.id, sphere);
+    console.log(
+      `[capture] Start user=${interaction.user.id} command=/capture`
+    );
 
-    const embed = new EmbedBuilder()
-      .setTitle("Wild Pal Encounter")
-      .setColor(result.success ? 0x57f287 : 0xed4245)
-      .addFields(
-        {
-          name: "Wild Pal",
-          value: `${result.pal.name} (Lv. ${result.pal.level}, ${result.pal.rarity})`,
-        },
-        {
-          name: "Sphere Used",
-          value: result.sphere,
-          inline: true,
-        },
-        {
-          name: "Capture Chance",
-          value: `${result.captureChance}%`,
-          inline: true,
-        },
-        {
-          name: "Result",
-          value: result.success
-            ? "Success! The Pal was captured."
-            : "Failure! The Pal broke free.",
-        }
-      )
-      .setTimestamp();
+    await interaction.deferReply();
 
-    await interaction.reply({ embeds: [embed] });
+    try {
+      const sphere = interaction.options.getString("sphere") || "basic";
+      const result = attemptCapture(interaction.user.id, sphere);
+
+      const embed = new EmbedBuilder()
+        .setTitle("Wild Pal Encounter")
+        .setColor(result.success ? 0x57f287 : 0xed4245)
+        .addFields(
+          {
+            name: "Wild Pal",
+            value: `${result.pal.name} (Lv. ${result.pal.level}, ${result.pal.rarity})`,
+          },
+          {
+            name: "Sphere Used",
+            value: result.sphere,
+            inline: true,
+          },
+          {
+            name: "Capture Chance",
+            value: `${result.captureChance}%`,
+            inline: true,
+          },
+          {
+            name: "Result",
+            value: result.success
+              ? "Success! The Pal was captured."
+              : "Failure! The Pal broke free.",
+          }
+        )
+        .setTimestamp();
+
+      await interaction.editReply({ embeds: [embed] });
+
+      console.log(
+        `[capture] End user=${interaction.user.id} success=${result.success} pal=${result.pal.name} level=${result.pal.level} sphere=${result.sphere}`
+      );
+    } catch (error) {
+      console.error("[capture] Error executing /capture:", error);
+
+      await interaction.editReply(
+        "❌ Something went wrong while processing /capture."
+      );
+    }
   },
 };

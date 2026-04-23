@@ -62,6 +62,7 @@ function readUserPals() {
 }
 
 function writeUserPals(data) {
+  ensureDataFile();
   fs.writeFileSync(DATA_PATH, `${JSON.stringify(data, null, 2)}\n`, "utf8");
 }
 
