@@ -1,6 +1,13 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { claimDailyReward } = require("../systems/captureSystem");
 
+function formatSphereRewards(rewards) {
+  return Object.entries(rewards)
+    .filter(([, amount]) => amount > 0)
+    .map(([sphere, amount]) => `+${amount} ${sphere}`)
+    .join("\n");
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("daily")
@@ -42,6 +49,10 @@ module.exports = {
           value: result.progression.leveledUp
             ? "Level Up!"
             : "No level change.",
+        },
+        {
+          name: "Sphere Rewards",
+          value: formatSphereRewards(result.sphereRewards),
         }
       )
       .setTimestamp();

@@ -1,6 +1,15 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { readUsers, readUserPals } = require("../systems/captureSystem");
 
+const defaultSpheres = {
+  basic: 10,
+  mega: 3,
+  giga: 1,
+  hyper: 0,
+  ultra: 0,
+  legendary: 0,
+};
+
 const rarityRank = {
   common: 1,
   uncommon: 2,
@@ -27,6 +36,34 @@ function formatCapture(pal) {
   }
 
   return `${pal.name} (Lv. ${pal.level}, ${pal.rarity})`;
+}
+
+function getSphereInventory(user) {
+  const spheres = user && user.spheres && typeof user.spheres === "object"
+    ? user.spheres
+    : {};
+
+  return {
+    basic: Number.isInteger(spheres.basic) && spheres.basic >= 0
+      ? spheres.basic
+      : defaultSpheres.basic,
+    mega: Number.isInteger(spheres.mega) && spheres.mega >= 0
+      ? spheres.mega
+      : defaultSpheres.mega,
+    giga: Number.isInteger(spheres.giga) && spheres.giga >= 0
+      ? spheres.giga
+      : defaultSpheres.giga,
+    hyper: Number.isInteger(spheres.hyper) && spheres.hyper >= 0
+      ? spheres.hyper
+      : defaultSpheres.hyper,
+    ultra: Number.isInteger(spheres.ultra) && spheres.ultra >= 0
+      ? spheres.ultra
+      : defaultSpheres.ultra,
+    legendary:
+      Number.isInteger(spheres.legendary) && spheres.legendary >= 0
+        ? spheres.legendary
+        : defaultSpheres.legendary,
+  };
 }
 
 function getRarestPal(pals) {
@@ -95,6 +132,7 @@ module.exports = {
     const nextLevelXp = user.level * 100;
     const rarestPal = getRarestPal(userPals);
     const recentCapture = getMostRecentCapture(userPals);
+    const sphereInventory = getSphereInventory(user);
 
     const embed = new EmbedBuilder()
       .setTitle(`${interaction.user.username}'s Profile`)
@@ -126,6 +164,15 @@ module.exports = {
         {
           name: "Recent Capture",
           value: formatCapture(recentCapture),
+        },
+        {
+          name: "🎒 Spheres",
+          value: `Basic: ${sphereInventory.basic}
+Mega: ${sphereInventory.mega}
+Giga: ${sphereInventory.giga}
+Hyper: ${sphereInventory.hyper}
+Ultra: ${sphereInventory.ultra}
+Legendary: ${sphereInventory.legendary}`,
         }
       )
       .setFooter({

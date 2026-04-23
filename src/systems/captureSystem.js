@@ -40,6 +40,15 @@ const sphereBonus = {
   legendary: 38,
 };
 
+const defaultSphereInventory = {
+  basic: 10,
+  mega: 3,
+  giga: 1,
+  hyper: 0,
+  ultra: 0,
+  legendary: 0,
+};
+
 function ensureJsonFile(filePath) {
   const dirPath = path.dirname(filePath);
 
@@ -92,6 +101,11 @@ function writeUsers(data) {
 }
 
 function getDefaultUserRecord(existingUser) {
+  const existingSpheres =
+    existingUser && existingUser.spheres && typeof existingUser.spheres === "object"
+      ? existingUser.spheres
+      : {};
+
   return {
     xp:
       existingUser && Number.isInteger(existingUser.xp) && existingUser.xp >= 0
@@ -121,6 +135,27 @@ function getDefaultUserRecord(existingUser) {
       existingUser && typeof existingUser.lastDailyAt === "string"
         ? existingUser.lastDailyAt
         : null,
+    spheres: {
+      basic: Number.isInteger(existingSpheres.basic) && existingSpheres.basic >= 0
+        ? existingSpheres.basic
+        : defaultSphereInventory.basic,
+      mega: Number.isInteger(existingSpheres.mega) && existingSpheres.mega >= 0
+        ? existingSpheres.mega
+        : defaultSphereInventory.mega,
+      giga: Number.isInteger(existingSpheres.giga) && existingSpheres.giga >= 0
+        ? existingSpheres.giga
+        : defaultSphereInventory.giga,
+      hyper: Number.isInteger(existingSpheres.hyper) && existingSpheres.hyper >= 0
+        ? existingSpheres.hyper
+        : defaultSphereInventory.hyper,
+      ultra: Number.isInteger(existingSpheres.ultra) && existingSpheres.ultra >= 0
+        ? existingSpheres.ultra
+        : defaultSphereInventory.ultra,
+      legendary:
+        Number.isInteger(existingSpheres.legendary) && existingSpheres.legendary >= 0
+          ? existingSpheres.legendary
+          : defaultSphereInventory.legendary,
+    },
   };
 }
 
@@ -195,8 +230,91 @@ function applyXpToUserRecord(userRecord, xpGained) {
     failedCaptures: userRecord.failedCaptures,
     updatedAt: userRecord.updatedAt,
     lastDailyAt: userRecord.lastDailyAt,
+    spheres: { ...userRecord.spheres },
     leveledUp: userRecord.level > previousLevel,
   };
+}
+
+function getUserInventory(userId) {
+  const users = readUsers();
+  const userRecord = getDefaultUserRecord(users[userId]);
+
+  users[userId] = userRecord;
+  writeUsers(users);
+
+  return {
+    ...userRecord.spheres,
+  };
+}
+
+function consumeSphere(userId, sphere) {
+  const users = readUsers();
+  const userRecord = getDefaultUserRecord(users[userId]);
+  const normalizedSphere = Object.prototype.hasOwnProperty.call(sphereBonus, sphere)
+    ? sphere
+    : "basic";
+  const currentCount = userRecord.spheres[normalizedSphere] ?? 0;
+
+  if (currentCount <= 0) {
+    users[userId] = userRecord;
+    writeUsers(users);
+
+    return {
+      consumed: false,
+      sphere: normalizedSphere,
+      remaining: 0,
+    };
+  }
+
+  userRecord.spheres[normalizedSphere] = currentCount - 1;
+  userRecord.updatedAt = new Date().toISOString();
+  users[userId] = userRecord;
+  writeUsers(users);
+
+  return {
+    consumed: true,
+    sphere: normalizedSphere,
+    remaining: userRecord.spheres[normalizedSphere],
+  };
+}
+
+function generateDailySphereRewards() {
+  const rewards = {
+    basic: 3,
+    mega: 1,
+    giga: 0,
+    hyper: 0,
+    ultra: 0,
+    legendary: 0,
+  };
+
+  if (Math.random() < 0.4) {
+    rewards.giga += 1;
+  }
+
+  if (Math.random() < 0.2) {
+    rewards.hyper += 1;
+  }
+
+  if (Math.random() < 0.08) {
+    rewards.ultra += 1;
+  }
+
+  if (Math.random() < 0.02) {
+    rewards.legendary += 1;
+  }
+
+  return rewards;
+}
+
+function addSphereRewards(userRecord, rewards) {
+  for (const [sphere, amount] of Object.entries(rewards)) {
+    if (!Object.prototype.hasOwnProperty.call(userRecord.spheres, sphere)) {
+      userRecord.spheres[sphere] = 0;
+    }
+
+    userRecord.spheres[sphere] += amount;
+  }
 }
 
 function updateUserProgress(userId, success) {
@@ -239,6 +357,8 @@ function claimDailyReward(userId) {
   }
 
   userRecord.lastDailyAt = now.toISOString();
+  const sphereRewards = generateDailySphereRewards();
+  addSphereRewards(userRecord, sphereRewards);
   const progression = applyXpToUserRecord(userRecord, 50);
 
   users[userId] = userRecord;
@@ -247,6 +367,7 @@ function claimDailyReward(userId) {
   return {
     claimed: true,
     progression,
+    sphereRewards,
   };
 }
 
@@ -296,6 +417,8 @@ function attemptCapture(userId, sphere = "basic") {
 module.exports = {
   attemptCapture,
   claimDailyReward,
+  consumeSphere,
+  getUserInventory,
   readUserPals,
   readUsers,
 };

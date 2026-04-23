@@ -1,5 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { attemptCapture } = require("../systems/captureSystem");
+const {
+  attemptCapture,
+  consumeSphere,
+} = require("../systems/captureSystem");
 
 const CAPTURE_COOLDOWN_MS = 10_000;
 const captureCooldowns = new Map();
@@ -49,7 +52,7 @@ module.exports = {
       option
         .setName("sphere")
         .setDescription("Choose which sphere to use.")
-        .setRequired(false);
+        .setRequired(true);
 
       for (const [name, value] of sphereChoices) {
         option.addChoices({ name, value });
@@ -98,10 +101,20 @@ module.exports = {
     }
 
     try {
-      const sphere = interaction.options.getString("sphere") || "basic";
+      const sphere = interaction.options.getString("sphere");
       console.log(
         `[capture] before capture system call user=${interaction.user.id} sphere=${sphere}`
       );
+      const sphereUse = consumeSphere(interaction.user.id, sphere);
+
+      if (!sphereUse.consumed) {
+        await safeEditReply(
+          interaction,
+          `❌ You don't have any ${sphereUse.sphere} spheres.`
+        );
+        return;
+      }
+
       const result = attemptCapture(interaction.user.id, sphere);
       console.log(
         `[capture] after capture system result user=${interaction.user.id} success=${result.success} pal=${result.pal.name} level=${result.pal.level} sphere=${result.sphere} chance=${result.captureChance}`
@@ -125,6 +138,11 @@ module.exports = {
           {
             name: "Sphere Used",
             value: result.sphere,
+            inline: true,
+          },
+          {
+            name: "Remaining",
+            value: `${sphereUse.remaining}`,
             inline: true,
           },
           {
