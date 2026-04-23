@@ -15,6 +15,14 @@ const palPool = [
   { name: "Jetragon", rarity: "legendary", weight: 1 },
 ];
 
+const rarityWeights = {
+  common: 60,
+  uncommon: 25,
+  rare: 10,
+  epic: 4,
+  legendary: 1,
+};
+
 const rarityBaseChance = {
   common: 70,
   uncommon: 55,
@@ -87,19 +95,31 @@ function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function chooseRandomPal() {
-  const totalWeight = palPool.reduce((sum, pal) => sum + pal.weight, 0);
+function chooseWeightedRarity() {
+  const entries = Object.entries(rarityWeights);
+  const totalWeight = entries.reduce((sum, [, weight]) => sum + weight, 0);
   let roll = Math.random() * totalWeight;
 
-  for (const pal of palPool) {
-    roll -= pal.weight;
+  for (const [rarity, weight] of entries) {
+    roll -= weight;
 
     if (roll <= 0) {
-      return pal;
+      return rarity;
     }
   }
 
-  return palPool[0];
+  return "common";
+}
+
+function chooseRandomPal() {
+  const rarity = chooseWeightedRarity();
+  const rarityPool = palPool.filter((pal) => pal.rarity === rarity);
+
+  if (rarityPool.length === 0) {
+    return palPool[0];
+  }
+
+  return rarityPool[randomInt(0, rarityPool.length - 1)];
 }
 
 function calculateCaptureChance(rarity, level, sphere) {
