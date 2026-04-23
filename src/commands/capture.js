@@ -114,6 +114,27 @@ module.exports = {
             value: result.success
               ? "Success! The Pal was captured."
               : "Failure! The Pal broke free.",
+          },
+          {
+            name: "XP Gained",
+            value: `${result.progression.xpGained} XP`,
+            inline: true,
+          },
+          {
+            name: "Current Level",
+            value: `${result.progression.level}`,
+            inline: true,
+          },
+          {
+            name: "Total XP",
+            value: `${result.progression.xp}`,
+            inline: true,
+          },
+          {
+            name: "Progress",
+            value: result.progression.leveledUp
+              ? "Level Up!"
+              : "No level change.",
           }
         )
         .setTimestamp();
