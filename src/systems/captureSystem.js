@@ -387,10 +387,19 @@ function claimDailyReward(userId) {
   };
 }
 
-function attemptCapture(userId, sphere = "basic") {
+function createEncounter() {
+  const encounteredPal = chooseRandomPal();
+  const level = randomInt(1, 50);
+
+  return {
+    name: encounteredPal.name,
+    level,
+    rarity: encounteredPal.rarity,
+  };
+}
+
+function resolveCaptureEncounter(userId, encounterPal, sphere = "basic") {
   try {
-    const encounteredPal = chooseRandomPal();
-    const level = randomInt(1, 50);
     const normalizedSphere = Object.prototype.hasOwnProperty.call(
       sphereBonus,
       sphere
@@ -398,16 +407,16 @@ function attemptCapture(userId, sphere = "basic") {
       ? sphere
       : "basic";
     const captureChance = calculateCaptureChance(
-      encounteredPal.rarity,
-      level,
+      encounterPal.rarity,
+      encounterPal.level,
       normalizedSphere
     );
     const success = Math.random() * 100 < captureChance;
 
     const pal = {
-      name: encounteredPal.name,
-      level,
-      rarity: encounteredPal.rarity,
+      name: encounterPal.name,
+      level: encounterPal.level,
+      rarity: encounterPal.rarity,
       caughtAt: new Date().toISOString(),
     };
 
@@ -425,16 +434,23 @@ function attemptCapture(userId, sphere = "basic") {
       progression,
     };
   } catch (error) {
-    console.error("[captureSystem] attemptCapture failed:", error);
+    console.error("[captureSystem] resolveCaptureEncounter failed:", error);
     throw error;
   }
+}
+
+function attemptCapture(userId, sphere = "basic") {
+  const encounter = createEncounter();
+  return resolveCaptureEncounter(userId, encounter, sphere);
 }
 
 module.exports = {
   attemptCapture,
   claimDailyReward,
   consumeSphere,
+  createEncounter,
   getUserInventory,
   readUserPals,
   readUsers,
+  resolveCaptureEncounter,
 };

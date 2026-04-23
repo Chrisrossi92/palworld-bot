@@ -1,7 +1,16 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const {
-  attemptCapture,
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ComponentType,
+} = require("discord.js");
+const {
+  createEncounter,
   consumeSphere,
+  getUserInventory,
+  resolveCaptureEncounter,
 } = require("../systems/captureSystem");
 
 const CAPTURE_COOLDOWN_MS = 10_000;
@@ -32,6 +41,123 @@ const sphereChoices = [
   ["Legendary", "legendary"],
 ];
 
+function formatSphereInventory(inventory) {
+  return sphereChoices
+    .map(([name, value]) => `${name}: ${inventory[value] ?? 0}`)
+    .join("\n");
+}
+
+function buildSphereButtons(inventory, disabled = false) {
+  const buttons = sphereChoices.map(([name, value]) =>
+    new ButtonBuilder()
+      .setCustomId(`capture:${value}`)
+      .setLabel(name)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(disabled || (inventory[value] ?? 0) <= 0)
+  );
+
+  return [
+    new ActionRowBuilder().addComponents(buttons.slice(0, 5)),
+    new ActionRowBuilder().addComponents(buttons.slice(5)),
+  ];
+}
+
+function buildEncounterEmbed(encounter, inventory) {
+  const rarityEmoji = rarityEmojis[encounter.rarity] || "";
+
+  return new EmbedBuilder()
+    .setTitle("Wild Pal Encounter")
+    .setColor(rarityColors[encounter.rarity] || 0x95a5a6)
+    .addFields(
+      {
+        name: "Wild Pal",
+        value: `${rarityEmoji} ${encounter.name} (Lv. ${encounter.level}, ${encounter.rarity})`,
+      },
+      {
+        name: "🎒 Spheres",
+        value: formatSphereInventory(inventory),
+      }
+    )
+    .setTimestamp();
+}
+
+function buildResolvedEmbed(result, remaining) {
+  const rarityEmoji = rarityEmojis[result.pal.rarity] || "";
+  const embedColor = result.success
+    ? rarityColors[result.pal.rarity] || 0x57f287
+    : 0xed4245;
+  const flavorText = result.success
+    ? "Nice throw — added to your collection."
+    : "It broke free. Better luck next time.";
+
+  return new EmbedBuilder()
+    .setTitle("Wild Pal Encounter")
+    .setColor(embedColor)
+    .addFields(
+      {
+        name: "Wild Pal",
+        value: `${rarityEmoji} ${result.pal.name} (Lv. ${result.pal.level}, ${result.pal.rarity})`,
+      },
+      {
+        name: "Sphere Used",
+        value: result.sphere,
+        inline: true,
+      },
+      {
+        name: "Remaining",
+        value: `${remaining}`,
+        inline: true,
+      },
+      {
+        name: "Capture Chance",
+        value: `${result.captureChance}%`,
+        inline: true,
+      },
+      {
+        name: "Result",
+        value: result.success
+          ? "Success! The Pal was captured."
+          : "Failure! The Pal broke free.",
+      },
+      {
+        name: "Flavor",
+        value: flavorText,
+      },
+      {
+        name: "XP Gained",
+        value: `${result.progression.xpGained} XP`,
+        inline: true,
+      },
+      {
+        name: "Coins Gained",
+        value: `${result.progression.coinsGained} coins`,
+        inline: true,
+      },
+      {
+        name: "Current Level",
+        value: `${result.progression.level}`,
+        inline: true,
+      },
+      {
+        name: "Total XP",
+        value: `${result.progression.xp}`,
+        inline: true,
+      },
+      {
+        name: "Total Coins",
+        value: `${result.progression.coins}`,
+        inline: true,
+      },
+      {
+        name: "Progress",
+        value: result.progression.leveledUp
+          ? "Level Up!"
+          : "No level change.",
+      }
+    )
+    .setTimestamp();
+}
+
 async function safeEditReply(interaction, payload) {
   try {
     console.log("[capture] before editReply");
@@ -47,19 +173,7 @@ async function safeEditReply(interaction, payload) {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("capture")
-    .setDescription("Encounter and attempt to capture a wild Pal.")
-    .addStringOption((option) => {
-      option
-        .setName("sphere")
-        .setDescription("Choose which sphere to use.")
-        .setRequired(true);
-
-      for (const [name, value] of sphereChoices) {
-        option.addChoices({ name, value });
-      }
-
-      return option;
-    }),
+    .setDescription("Encounter a wild Pal and choose a sphere to throw."),
 
   async execute(interaction) {
     const now = Date.now();
@@ -101,104 +215,103 @@ module.exports = {
     }
 
     try {
-      const sphere = interaction.options.getString("sphere");
-      console.log(
-        `[capture] before capture system call user=${interaction.user.id} sphere=${sphere}`
-      );
-      const sphereUse = consumeSphere(interaction.user.id, sphere);
+      const encounter = createEncounter();
+      const inventory = getUserInventory(interaction.user.id);
+      const message = await interaction.editReply({
+        embeds: [buildEncounterEmbed(encounter, inventory)],
+        components: buildSphereButtons(inventory),
+      });
 
-      if (!sphereUse.consumed) {
-        await safeEditReply(
-          interaction,
-          `❌ You don't have any ${sphereUse.sphere} spheres.`
+      const collector = message.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+        time: 60_000,
+      });
+
+      collector.on("collect", async (buttonInteraction) => {
+        if (buttonInteraction.user.id !== interaction.user.id) {
+          await buttonInteraction.reply({
+            content: "❌ Only the user who started this encounter can use these buttons.",
+            ephemeral: true,
+          });
+          return;
+        }
+
+        const [, sphere] = buttonInteraction.customId.split(":");
+        console.log(
+          `[capture] resolving encounter user=${interaction.user.id} sphere=${sphere}`
         );
-        return;
-      }
 
-      const result = attemptCapture(interaction.user.id, sphere);
-      console.log(
-        `[capture] after capture system result user=${interaction.user.id} success=${result.success} pal=${result.pal.name} level=${result.pal.level} sphere=${result.sphere} chance=${result.captureChance}`
-      );
-      const rarityEmoji = rarityEmojis[result.pal.rarity] || "";
-      const embedColor = result.success
-        ? rarityColors[result.pal.rarity] || 0x57f287
-        : 0xed4245;
-      const flavorText = result.success
-        ? "Nice throw — added to your collection."
-        : "It broke free. Better luck next time.";
+        try {
+          await buttonInteraction.deferUpdate();
 
-      const embed = new EmbedBuilder()
-        .setTitle("Wild Pal Encounter")
-        .setColor(embedColor)
-        .addFields(
-          {
-            name: "Wild Pal",
-            value: `${rarityEmoji} ${result.pal.name} (Lv. ${result.pal.level}, ${result.pal.rarity})`,
-          },
-          {
-            name: "Sphere Used",
-            value: result.sphere,
-            inline: true,
-          },
-          {
-            name: "Remaining",
-            value: `${sphereUse.remaining}`,
-            inline: true,
-          },
-          {
-            name: "Capture Chance",
-            value: `${result.captureChance}%`,
-            inline: true,
-          },
-          {
-            name: "Result",
-            value: result.success
-              ? "Success! The Pal was captured."
-              : "Failure! The Pal broke free.",
-          },
-          {
-            name: "Flavor",
-            value: flavorText,
-          },
-          {
-            name: "XP Gained",
-            value: `${result.progression.xpGained} XP`,
-            inline: true,
-          },
-          {
-            name: "Coins Gained",
-            value: `${result.progression.coinsGained} coins`,
-            inline: true,
-          },
-          {
-            name: "Current Level",
-            value: `${result.progression.level}`,
-            inline: true,
-          },
-          {
-            name: "Total XP",
-            value: `${result.progression.xp}`,
-            inline: true,
-          },
-          {
-            name: "Total Coins",
-            value: `${result.progression.coins}`,
-            inline: true,
-          },
-          {
-            name: "Progress",
-            value: result.progression.leveledUp
-              ? "Level Up!"
-              : "No level change.",
+          const sphereUse = consumeSphere(interaction.user.id, sphere);
+
+          if (!sphereUse.consumed) {
+            await interaction.editReply({
+              content: `❌ You don't have any ${sphereUse.sphere} spheres.`,
+              embeds: [],
+              components: buildSphereButtons(
+                getUserInventory(interaction.user.id),
+                true
+              ),
+            });
+            collector.stop("resolved");
+            return;
           }
-        )
-        .setTimestamp();
 
-      const replied = await safeEditReply(interaction, { embeds: [embed] });
+          const result = resolveCaptureEncounter(
+            interaction.user.id,
+            encounter,
+            sphere
+          );
 
-      if (!replied) {
-        throw new Error("editReply failed after capture result was built");
-      }
+          console.log(
+            `[capture] after capture system result user=${interaction.user.id} success=${result.success} pal=${result.pal.name} level=${result.pal.level} sphere=${result.sphere} chance=${result.captureChance}`
+          );
+
+          await interaction.editReply({
+            content: "",
+            embeds: [buildResolvedEmbed(result, sphereUse.remaining)],
+            components: buildSphereButtons(
+              getUserInventory(interaction.user.id),
+              true
+            ),
+          });
+
+          collector.stop("resolved");
+        } catch (error) {
+          console.error("[capture] Error resolving encounter button:", error);
+
+          await interaction.editReply({
+            content: "❌ Something went wrong while processing /capture.",
+            embeds: [],
+            components: buildSphereButtons(
+              getUserInventory(interaction.user.id),
+              true
+            ),
+          });
+
+          collector.stop("error");
+        }
+      });
+
+      collector.on("end", async (collected, reason) => {
+        if (reason === "resolved" || reason === "error") {
+          return;
+        }
+
+        try {
+          await interaction.editReply({
+            embeds: [buildEncounterEmbed(encounter, getUserInventory(interaction.user.id))],
+            components: buildSphereButtons(
+              getUserInventory(interaction.user.id),
+              true
+            ),
+          });
+        } catch (error) {
+          console.error("[capture] Failed to disable encounter buttons:", error);
+        }
+      });
     } catch (error) {
       console.error("[capture] Error executing /capture:", error);
 
