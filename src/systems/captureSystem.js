@@ -95,46 +95,62 @@ function calculateCaptureChance(rarity, level, sphere) {
 }
 
 function saveCapturedPal(userId, pal) {
-  const userPals = readUserPals();
+  try {
+    const userPals = readUserPals();
 
-  if (!Array.isArray(userPals[userId])) {
-    userPals[userId] = [];
+    if (!Array.isArray(userPals[userId])) {
+      userPals[userId] = [];
+    }
+
+    userPals[userId].push(pal);
+    writeUserPals(userPals);
+  } catch (error) {
+    console.error("[captureSystem] Failed to save captured pal:", error);
+    throw error;
   }
-
-  userPals[userId].push(pal);
-  writeUserPals(userPals);
 }
 
 function attemptCapture(userId, sphere = "basic") {
-  const encounteredPal = chooseRandomPal();
-  const level = randomInt(1, 50);
-  const normalizedSphere = sphereBonus[sphere] ? sphere : "basic";
-  const captureChance = calculateCaptureChance(
-    encounteredPal.rarity,
-    level,
-    normalizedSphere
-  );
-  const success = Math.random() * 100 < captureChance;
+  try {
+    const encounteredPal = chooseRandomPal();
+    const level = randomInt(1, 50);
+    const normalizedSphere = Object.prototype.hasOwnProperty.call(
+      sphereBonus,
+      sphere
+    )
+      ? sphere
+      : "basic";
+    const captureChance = calculateCaptureChance(
+      encounteredPal.rarity,
+      level,
+      normalizedSphere
+    );
+    const success = Math.random() * 100 < captureChance;
 
-  const pal = {
-    name: encounteredPal.name,
-    level,
-    rarity: encounteredPal.rarity,
-    caughtAt: new Date().toISOString(),
-  };
+    const pal = {
+      name: encounteredPal.name,
+      level,
+      rarity: encounteredPal.rarity,
+      caughtAt: new Date().toISOString(),
+    };
 
-  if (success) {
-    saveCapturedPal(userId, pal);
+    if (success) {
+      saveCapturedPal(userId, pal);
+    }
+
+    return {
+      pal,
+      sphere: normalizedSphere,
+      captureChance,
+      success,
+    };
+  } catch (error) {
+    console.error("[captureSystem] attemptCapture failed:", error);
+    throw error;
   }
-
-  return {
-    pal,
-    sphere: normalizedSphere,
-    captureChance,
-    success,
-  };
 }
 
 module.exports = {
   attemptCapture,
+  readUserPals,
 };

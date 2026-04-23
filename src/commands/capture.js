@@ -1,6 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { attemptCapture } = require("../systems/captureSystem");
 
+const CAPTURE_COOLDOWN_MS = 10_000;
+const captureCooldowns = new Map();
+
 const sphereChoices = [
   ["Basic", "basic"],
   ["Mega", "mega"],
@@ -9,6 +12,18 @@ const sphereChoices = [
   ["Ultra", "ultra"],
   ["Legendary", "legendary"],
 ];
+
+async function safeEditReply(interaction, payload) {
+  try {
+    console.log("[capture] before editReply");
+    await interaction.editReply(payload);
+    console.log("[capture] after editReply");
+    return true;
+  } catch (error) {
+    console.error("[capture] Failed to edit reply:", error);
+    return false;
+  }
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -28,15 +43,53 @@ module.exports = {
     }),
 
   async execute(interaction) {
-    console.log(
-      `[capture] Start user=${interaction.user.id} command=/capture`
-    );
+    const now = Date.now();
+    const lastCaptureAt = captureCooldowns.get(interaction.user.id);
 
-    await interaction.deferReply();
+    if (lastCaptureAt && now - lastCaptureAt < CAPTURE_COOLDOWN_MS) {
+      const secondsLeft = Math.ceil(
+        (CAPTURE_COOLDOWN_MS - (now - lastCaptureAt)) / 1000
+      );
+      const secondLabel = secondsLeft === 1 ? "second" : "seconds";
+
+      console.log(
+        `[capture] cooldown blocked user=${interaction.user.id} secondsLeft=${secondsLeft}`
+      );
+
+      await interaction.reply({
+        content: `⏳ You must wait ${secondsLeft} ${secondLabel} before capturing again.`,
+        ephemeral: true,
+      });
+      return;
+    }
+
+    captureCooldowns.set(interaction.user.id, now);
+
+    try {
+      console.log(
+        `[capture] command received user=${interaction.user.id} command=/capture`
+      );
+    } catch (error) {
+      console.error("[capture] Failed to log command receipt:", error);
+    }
+
+    try {
+      await interaction.deferReply();
+      console.log(`[capture] after deferReply user=${interaction.user.id}`);
+    } catch (error) {
+      console.error("[capture] Failed during deferReply:", error);
+      throw error;
+    }
 
     try {
       const sphere = interaction.options.getString("sphere") || "basic";
+      console.log(
+        `[capture] before capture system call user=${interaction.user.id} sphere=${sphere}`
+      );
       const result = attemptCapture(interaction.user.id, sphere);
+      console.log(
+        `[capture] after capture system result user=${interaction.user.id} success=${result.success} pal=${result.pal.name} level=${result.pal.level} sphere=${result.sphere} chance=${result.captureChance}`
+      );
 
       const embed = new EmbedBuilder()
         .setTitle("Wild Pal Encounter")
@@ -65,15 +118,16 @@ module.exports = {
         )
         .setTimestamp();
 
-      await interaction.editReply({ embeds: [embed] });
+      const replied = await safeEditReply(interaction, { embeds: [embed] });
 
-      console.log(
-        `[capture] End user=${interaction.user.id} success=${result.success} pal=${result.pal.name} level=${result.pal.level} sphere=${result.sphere}`
-      );
+      if (!replied) {
+        throw new Error("editReply failed after capture result was built");
+      }
     } catch (error) {
       console.error("[capture] Error executing /capture:", error);
 
-      await interaction.editReply(
+      await safeEditReply(
+        interaction,
         "❌ Something went wrong while processing /capture."
       );
     }
