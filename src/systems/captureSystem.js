@@ -91,6 +91,39 @@ function writeUsers(data) {
   writeJsonFile(USERS_DATA_PATH, data);
 }
 
+function getDefaultUserRecord(existingUser) {
+  return {
+    xp:
+      existingUser && Number.isInteger(existingUser.xp) && existingUser.xp >= 0
+        ? existingUser.xp
+        : 0,
+    level:
+      existingUser && Number.isInteger(existingUser.level) && existingUser.level > 0
+        ? existingUser.level
+        : 1,
+    captures:
+      existingUser &&
+      Number.isInteger(existingUser.captures) &&
+      existingUser.captures >= 0
+        ? existingUser.captures
+        : 0,
+    failedCaptures:
+      existingUser &&
+      Number.isInteger(existingUser.failedCaptures) &&
+      existingUser.failedCaptures >= 0
+        ? existingUser.failedCaptures
+        : 0,
+    updatedAt:
+      existingUser && typeof existingUser.updatedAt === "string"
+        ? existingUser.updatedAt
+        : new Date(0).toISOString(),
+    lastDailyAt:
+      existingUser && typeof existingUser.lastDailyAt === "string"
+        ? existingUser.lastDailyAt
+        : null,
+  };
+}
+
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -147,50 +180,12 @@ function saveCapturedPal(userId, pal) {
   }
 }
 
-function updateUserProgress(userId, success) {
-  const users = readUsers();
-  const existingUser = users[userId];
-  const previousLevel =
-    existingUser && Number.isInteger(existingUser.level) && existingUser.level > 0
-      ? existingUser.level
-      : 1;
-  const userRecord = {
-    xp:
-      existingUser && Number.isInteger(existingUser.xp) && existingUser.xp >= 0
-        ? existingUser.xp
-        : 0,
-    level: previousLevel,
-    captures:
-      existingUser &&
-      Number.isInteger(existingUser.captures) &&
-      existingUser.captures >= 0
-        ? existingUser.captures
-        : 0,
-    failedCaptures:
-      existingUser &&
-      Number.isInteger(existingUser.failedCaptures) &&
-      existingUser.failedCaptures >= 0
-        ? existingUser.failedCaptures
-        : 0,
-    updatedAt:
-      existingUser && typeof existingUser.updatedAt === "string"
-        ? existingUser.updatedAt
-        : new Date(0).toISOString(),
-  };
-  const xpGained = success ? 25 : 10;
+function applyXpToUserRecord(userRecord, xpGained) {
+  const previousLevel = userRecord.level;
 
   userRecord.xp += xpGained;
   userRecord.level = Math.floor(userRecord.xp / 100) + 1;
   userRecord.updatedAt = new Date().toISOString();
-
-  if (success) {
-    userRecord.captures += 1;
-  } else {
-    userRecord.failedCaptures += 1;
-  }
-
-  users[userId] = userRecord;
-  writeUsers(users);
 
   return {
     xpGained,
@@ -199,7 +194,59 @@ function updateUserProgress(userId, success) {
     captures: userRecord.captures,
     failedCaptures: userRecord.failedCaptures,
     updatedAt: userRecord.updatedAt,
+    lastDailyAt: userRecord.lastDailyAt,
     leveledUp: userRecord.level > previousLevel,
+  };
+}
+
+function updateUserProgress(userId, success) {
+  const users = readUsers();
+  const userRecord = getDefaultUserRecord(users[userId]);
+  const xpGained = success ? 25 : 10;
+
+  if (success) {
+    userRecord.captures += 1;
+  } else {
+    userRecord.failedCaptures += 1;
+  }
+
+  const progression = applyXpToUserRecord(userRecord, xpGained);
+  users[userId] = userRecord;
+  writeUsers(users);
+
+  return progression;
+}
+
+function isSameCalendarDay(dateA, dateB) {
+  return (
+    dateA.getFullYear() === dateB.getFullYear() &&
+    dateA.getMonth() === dateB.getMonth() &&
+    dateA.getDate() === dateB.getDate()
+  );
+}
+
+function claimDailyReward(userId) {
+  const users = readUsers();
+  const userRecord = getDefaultUserRecord(users[userId]);
+  const now = new Date();
+  const lastDailyAt = userRecord.lastDailyAt ? new Date(userRecord.lastDailyAt) : null;
+
+  if (lastDailyAt && !Number.isNaN(lastDailyAt.getTime()) && isSameCalendarDay(lastDailyAt, now)) {
+    return {
+      claimed: false,
+      progression: null,
+    };
+  }
+
+  userRecord.lastDailyAt = now.toISOString();
+  const progression = applyXpToUserRecord(userRecord, 50);
+
+  users[userId] = userRecord;
+  writeUsers(users);
+
+  return {
+    claimed: true,
+    progression,
   };
 }
 
@@ -248,6 +295,7 @@ function attemptCapture(userId, sphere = "basic") {
 
 module.exports = {
   attemptCapture,
+  claimDailyReward,
   readUserPals,
   readUsers,
 };

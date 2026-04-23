@@ -6,6 +6,7 @@ const captureCommand = require("./commands/capture");
 const myPalsCommand = require("./commands/mypals");
 const leaderboardCommand = require("./commands/leaderboard");
 const profileCommand = require("./commands/profile");
+const dailyCommand = require("./commands/daily");
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
@@ -17,6 +18,7 @@ client.commands.set(captureCommand.data.name, captureCommand);
 client.commands.set(myPalsCommand.data.name, myPalsCommand);
 client.commands.set(leaderboardCommand.data.name, leaderboardCommand);
 client.commands.set(profileCommand.data.name, profileCommand);
+client.commands.set(dailyCommand.data.name, dailyCommand);
 
 client.once("ready", () => {
   console.log(`✅ Palworld Bot online as ${client.user.tag}`);
