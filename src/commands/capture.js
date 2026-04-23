@@ -4,6 +4,22 @@ const { attemptCapture } = require("../systems/captureSystem");
 const CAPTURE_COOLDOWN_MS = 10_000;
 const captureCooldowns = new Map();
 
+const rarityColors = {
+  common: 0x95a5a6,
+  uncommon: 0x2ecc71,
+  rare: 0x3498db,
+  epic: 0x9b59b6,
+  legendary: 0xf1c40f,
+};
+
+const rarityEmojis = {
+  common: "⚪",
+  uncommon: "🟢",
+  rare: "🔵",
+  epic: "🟣",
+  legendary: "🟡",
+};
+
 const sphereChoices = [
   ["Basic", "basic"],
   ["Mega", "mega"],
@@ -90,14 +106,21 @@ module.exports = {
       console.log(
         `[capture] after capture system result user=${interaction.user.id} success=${result.success} pal=${result.pal.name} level=${result.pal.level} sphere=${result.sphere} chance=${result.captureChance}`
       );
+      const rarityEmoji = rarityEmojis[result.pal.rarity] || "";
+      const embedColor = result.success
+        ? rarityColors[result.pal.rarity] || 0x57f287
+        : 0xed4245;
+      const flavorText = result.success
+        ? "Nice throw — added to your collection."
+        : "It broke free. Better luck next time.";
 
       const embed = new EmbedBuilder()
         .setTitle("Wild Pal Encounter")
-        .setColor(result.success ? 0x57f287 : 0xed4245)
+        .setColor(embedColor)
         .addFields(
           {
             name: "Wild Pal",
-            value: `${result.pal.name} (Lv. ${result.pal.level}, ${result.pal.rarity})`,
+            value: `${rarityEmoji} ${result.pal.name} (Lv. ${result.pal.level}, ${result.pal.rarity})`,
           },
           {
             name: "Sphere Used",
@@ -114,6 +137,10 @@ module.exports = {
             value: result.success
               ? "Success! The Pal was captured."
               : "Failure! The Pal broke free.",
+          },
+          {
+            name: "Flavor",
+            value: flavorText,
           },
           {
             name: "XP Gained",
