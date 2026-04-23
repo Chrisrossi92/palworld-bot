@@ -2,9 +2,11 @@ require("dotenv").config();
 
 const { REST, Routes } = require("discord.js");
 const pingCommand = require("./commands/ping");
+const captureCommand = require("./commands/capture");
 
 const commands = [
   pingCommand.data.toJSON(),
+  captureCommand.data.toJSON(),
 ];
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);

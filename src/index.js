@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const { Client, GatewayIntentBits, Collection } = require("discord.js");
 const pingCommand = require("./commands/ping");
+const captureCommand = require("./commands/capture");
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
@@ -9,6 +10,7 @@ const client = new Client({
 
 client.commands = new Collection();
 client.commands.set(pingCommand.data.name, pingCommand);
+client.commands.set(captureCommand.data.name, captureCommand);
 
 client.once("ready", () => {
   console.log(`✅ Palworld Bot online as ${client.user.tag}`);
