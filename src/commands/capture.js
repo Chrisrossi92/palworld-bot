@@ -166,6 +166,11 @@ module.exports = {
             inline: true,
           },
           {
+            name: "Coins Gained",
+            value: `${result.progression.coinsGained} coins`,
+            inline: true,
+          },
+          {
             name: "Current Level",
             value: `${result.progression.level}`,
             inline: true,
@@ -173,6 +178,11 @@ module.exports = {
           {
             name: "Total XP",
             value: `${result.progression.xp}`,
+            inline: true,
+          },
+          {
+            name: "Total Coins",
+            value: `${result.progression.coins}`,
             inline: true,
           },
           {

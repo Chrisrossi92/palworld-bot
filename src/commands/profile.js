@@ -143,6 +143,11 @@ module.exports = {
           value: `Level ${user.level} | ${user.xp} XP | Next: ${nextLevelXp} XP`,
         },
         {
+          name: "Coins",
+          value: `${user.coins ?? 100}`,
+          inline: true,
+        },
+        {
           name: "Total Captures",
           value: `${actualCapturedPalsCount}`,
           inline: true,

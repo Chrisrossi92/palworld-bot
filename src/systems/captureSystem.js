@@ -49,6 +49,8 @@ const defaultSphereInventory = {
   legendary: 0,
 };
 
+const defaultStartingCoins = 100;
+
 function ensureJsonFile(filePath) {
   const dirPath = path.dirname(filePath);
 
@@ -111,6 +113,10 @@ function getDefaultUserRecord(existingUser) {
       existingUser && Number.isInteger(existingUser.xp) && existingUser.xp >= 0
         ? existingUser.xp
         : 0,
+    coins:
+      existingUser && Number.isInteger(existingUser.coins) && existingUser.coins >= 0
+        ? existingUser.coins
+        : defaultStartingCoins,
     level:
       existingUser && Number.isInteger(existingUser.level) && existingUser.level > 0
         ? existingUser.level
@@ -225,6 +231,7 @@ function applyXpToUserRecord(userRecord, xpGained) {
   return {
     xpGained,
     xp: userRecord.xp,
+    coins: userRecord.coins,
     level: userRecord.level,
     captures: userRecord.captures,
     failedCaptures: userRecord.failedCaptures,
@@ -321,6 +328,7 @@ function updateUserProgress(userId, success) {
   const users = readUsers();
   const userRecord = getDefaultUserRecord(users[userId]);
   const xpGained = success ? 25 : 10;
+  const coinsGained = success ? 20 : 5;
 
   if (success) {
     userRecord.captures += 1;
@@ -328,11 +336,15 @@ function updateUserProgress(userId, success) {
     userRecord.failedCaptures += 1;
   }
 
+  userRecord.coins += coinsGained;
   const progression = applyXpToUserRecord(userRecord, xpGained);
   users[userId] = userRecord;
   writeUsers(users);
 
-  return progression;
+  return {
+    ...progression,
+    coinsGained,
+  };
 }
 
 function isSameCalendarDay(dateA, dateB) {
@@ -359,6 +371,7 @@ function claimDailyReward(userId) {
   userRecord.lastDailyAt = now.toISOString();
   const sphereRewards = generateDailySphereRewards();
   addSphereRewards(userRecord, sphereRewards);
+  userRecord.coins += 100;
   const progression = applyXpToUserRecord(userRecord, 50);
 
   users[userId] = userRecord;
@@ -366,7 +379,10 @@ function claimDailyReward(userId) {
 
   return {
     claimed: true,
-    progression,
+    progression: {
+      ...progression,
+      coinsGained: 100,
+    },
     sphereRewards,
   };
 }
