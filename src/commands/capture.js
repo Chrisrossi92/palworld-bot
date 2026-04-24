@@ -32,6 +32,23 @@ const rarityEmojis = {
   legendary: "🟡",
 };
 
+const palImageUrls = {
+  cattiva:
+    "https://static.wikia.nocookie.net/palworld/images/5/59/Cattiva.png/revision/latest?cb=20240630132255",
+  foxparks:
+    "https://static.wikia.nocookie.net/palworld/images/d/dd/Foxparks.png/revision/latest?cb=20240630115853",
+  lamball:
+    "https://static.wikia.nocookie.net/palworld/images/4/47/Lamball.png/revision/latest?cb=20240630125836",
+  pengullet:
+    "https://static.wikia.nocookie.net/palworld/images/b/b3/Pengullet.png/revision/latest?cb=20240630021748",
+  direhowl:
+    "https://static.wikia.nocookie.net/palworld/images/1/14/Direhowl.png/revision/latest?cb=20240123181301",
+  anubis:
+    "https://static.wikia.nocookie.net/palworld/images/2/26/Anubis.png/revision/latest?cb=20250120160026",
+  jetragon:
+    "https://static.wikia.nocookie.net/palworld/images/f/fd/Jetragon.png/revision/latest?cb=20240123200132",
+};
+
 const sphereChoices = [
   ["Basic", "basic"],
   ["Mega", "mega"],
@@ -64,8 +81,9 @@ function buildSphereButtons(inventory, disabled = false) {
 
 function buildEncounterEmbed(encounter, inventory) {
   const rarityEmoji = rarityEmojis[encounter.rarity] || "";
+  const imageUrl = palImageUrls[encounter.name.toLowerCase()];
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setTitle("Wild Pal Encounter")
     .setColor(rarityColors[encounter.rarity] || 0x95a5a6)
     .addFields(
@@ -79,6 +97,12 @@ function buildEncounterEmbed(encounter, inventory) {
       }
     )
     .setTimestamp();
+
+  if (imageUrl) {
+    embed.setImage(imageUrl);
+  }
+
+  return embed;
 }
 
 function buildResolvedEmbed(result, remaining) {
@@ -89,8 +113,9 @@ function buildResolvedEmbed(result, remaining) {
   const flavorText = result.success
     ? "Nice throw — added to your collection."
     : "It broke free. Better luck next time.";
+  const imageUrl = palImageUrls[result.pal.name.toLowerCase()];
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setTitle("Wild Pal Encounter")
     .setColor(embedColor)
     .addFields(
@@ -156,6 +181,12 @@ function buildResolvedEmbed(result, remaining) {
       }
     )
     .setTimestamp();
+
+  if (imageUrl) {
+    embed.setImage(imageUrl);
+  }
+
+  return embed;
 }
 
 async function safeEditReply(interaction, payload) {
