@@ -23,6 +23,21 @@ const publicSpawnButtonsInventory = {
 
 let activeSpawn = null;
 
+function clearActiveSpawn(messageId) {
+  if (activeSpawn && activeSpawn.message.id === messageId) {
+    activeSpawn = null;
+    console.log(`[spawn] activeSpawn cleared message=${messageId}`);
+  }
+}
+
+function buildExpiredSpawnEmbed(encounter) {
+  return captureCommand.buildEncounterEmbed(encounter, publicSpawnButtonsInventory, {
+    title: "💨 The wild Pal wandered off.",
+    description: "No trainer acted in time.",
+    showInventory: false,
+  });
+}
+
 async function startPublicSpawn(channel) {
   if (!channel) {
     throw new Error("A valid channel is required to start a public spawn.");
@@ -62,6 +77,7 @@ async function startPublicSpawn(channel) {
     isResolving: false,
     message,
   };
+  console.log(`[spawn] public spawn started message=${message.id} channel=${channel.id}`);
 
   const collector = message.createMessageComponentCollector({
     componentType: ComponentType.Button,
@@ -69,14 +85,30 @@ async function startPublicSpawn(channel) {
   });
 
   collector.on("collect", async (buttonInteraction) => {
+    console.log(
+      `[spawn] public spawn button received message=${message.id} user=${buttonInteraction.user.id} customId=${buttonInteraction.customId}`
+    );
+
     try {
       await buttonInteraction.deferUpdate();
+      console.log(
+        `[spawn] deferUpdate succeeded message=${message.id} user=${buttonInteraction.user.id}`
+      );
+    } catch (error) {
+      console.error(
+        `[spawn] deferUpdate failed message=${message.id} user=${buttonInteraction.user.id}`,
+        error
+      );
+      return;
+    }
 
+    try {
       if (!activeSpawn || activeSpawn.message.id !== message.id) {
         return;
       }
 
       if (activeSpawn.isResolved || activeSpawn.isResolving) {
+        console.log(`[spawn] spawn already resolved message=${message.id}`);
         return;
       }
 
@@ -84,6 +116,9 @@ async function startPublicSpawn(channel) {
       const sphereUse = consumeSphere(buttonInteraction.user.id, sphere);
 
       if (!sphereUse.consumed) {
+        console.log(
+          `[spawn] no sphere available message=${message.id} user=${buttonInteraction.user.id} sphere=${sphereUse.sphere}`
+        );
         await buttonInteraction.followUp({
           content: `❌ You don't have any ${sphereUse.sphere} spheres.`,
           ephemeral: true,
@@ -136,6 +171,9 @@ async function startPublicSpawn(channel) {
       });
 
       activeSpawn.isResolved = true;
+      console.log(
+        `[spawn] public spawn resolved message=${message.id} user=${buttonInteraction.user.id}`
+      );
       collector.stop("resolved");
     } catch (error) {
       console.error("[spawn] Error resolving public encounter:", error);
@@ -161,14 +199,9 @@ async function startPublicSpawn(channel) {
   collector.on("end", async (collected, reason) => {
     try {
       if (reason !== "resolved" && reason !== "error") {
+        console.log(`[spawn] public spawn expired message=${message.id}`);
         await message.edit({
-          embeds: [
-            captureCommand.buildEncounterEmbed(encounter, publicSpawnButtonsInventory, {
-              title: "🔥 A Wild Pal Appeared!",
-              description: "First trainer to throw a sphere gets the chance!",
-              showInventory: false,
-            }),
-          ],
+          embeds: [buildExpiredSpawnEmbed(encounter)],
           components: captureCommand.buildSphereButtons(
             publicSpawnButtonsInventory,
             true,
@@ -179,9 +212,7 @@ async function startPublicSpawn(channel) {
     } catch (error) {
       console.error("[spawn] Failed to disable spawn buttons:", error);
     } finally {
-      if (activeSpawn && activeSpawn.message.id === message.id) {
-        activeSpawn = null;
-      }
+      clearActiveSpawn(message.id);
     }
   });
 
