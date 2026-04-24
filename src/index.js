@@ -8,6 +8,7 @@ const leaderboardCommand = require("./commands/leaderboard");
 const profileCommand = require("./commands/profile");
 const dailyCommand = require("./commands/daily");
 const spawnCommand = require("./commands/spawn");
+const inspectCommand = require("./commands/inspect");
 const { startSpawnSystem } = require("./systems/spawnSystem");
 
 const client = new Client({
@@ -22,6 +23,7 @@ client.commands.set(leaderboardCommand.data.name, leaderboardCommand);
 client.commands.set(profileCommand.data.name, profileCommand);
 client.commands.set(dailyCommand.data.name, dailyCommand);
 client.commands.set(spawnCommand.data.name, spawnCommand);
+client.commands.set(inspectCommand.data.name, inspectCommand);
 
 client.once("ready", () => {
   console.log(`✅ Palworld Bot online as ${client.user.tag}`);
