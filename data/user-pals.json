@@ -53,6 +53,24 @@
       "level": 16,
       "rarity": "common",
       "caughtAt": "2026-04-23T22:01:29.799Z"
+    },
+    {
+      "name": "Direhowl",
+      "level": 13,
+      "rarity": "rare",
+      "caughtAt": "2026-04-24T01:48:07.300Z"
+    },
+    {
+      "name": "Cattiva",
+      "level": 4,
+      "rarity": "common",
+      "caughtAt": "2026-04-24T01:51:36.647Z"
+    },
+    {
+      "name": "Foxparks",
+      "level": 40,
+      "rarity": "uncommon",
+      "caughtAt": "2026-04-24T01:53:26.858Z"
     }
   ]
 }

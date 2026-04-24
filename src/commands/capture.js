@@ -108,7 +108,9 @@ function buildEncounterEmbed(encounter, inventory) {
 function buildResolvedEmbed(result, remaining) {
   const rarityEmoji = rarityEmojis[result.pal.rarity] || "";
   const embedColor = result.success
-    ? rarityColors[result.pal.rarity] || 0x57f287
+    ? ["epic", "legendary"].includes(result.pal.rarity)
+      ? rarityColors[result.pal.rarity] || 0x57f287
+      : 0x57f287
     : 0xed4245;
   const flavorText = result.success
     ? "Nice throw — added to your collection."
@@ -116,7 +118,7 @@ function buildResolvedEmbed(result, remaining) {
   const imageUrl = palImageUrls[result.pal.name.toLowerCase()];
 
   const embed = new EmbedBuilder()
-    .setTitle("Wild Pal Encounter")
+    .setTitle(result.success ? "✅ Pal Captured!" : "❌ Pal Escaped!")
     .setColor(embedColor)
     .addFields(
       {
@@ -143,6 +145,12 @@ function buildResolvedEmbed(result, remaining) {
         value: result.success
           ? "Success! The Pal was captured."
           : "Failure! The Pal broke free.",
+      },
+      {
+        name: result.success ? "Added To Collection" : "Escaped",
+        value: result.success
+          ? `${result.pal.name} Lv. ${result.pal.level} has joined your Palbox.`
+          : `${result.pal.name} broke free and ran off.`,
       },
       {
         name: "Flavor",
@@ -180,6 +188,38 @@ function buildResolvedEmbed(result, remaining) {
           : "No level change.",
       }
     )
+    .setTimestamp();
+
+  if (imageUrl) {
+    embed.setImage(imageUrl);
+  }
+
+  return embed;
+}
+
+function buildThrowEmbed(encounter, sphere) {
+  const imageUrl = palImageUrls[encounter.name.toLowerCase()];
+  const embed = new EmbedBuilder()
+    .setTitle(`🎯 Throwing ${sphere} Sphere...`)
+    .setColor(0xf1c40f)
+    .setDescription(
+      `${encounter.name} is in sight. The sphere is flying toward its target...`
+    )
+    .setTimestamp();
+
+  if (imageUrl) {
+    embed.setImage(imageUrl);
+  }
+
+  return embed;
+}
+
+function buildShakeEmbed(encounter) {
+  const imageUrl = palImageUrls[encounter.name.toLowerCase()];
+  const embed = new EmbedBuilder()
+    .setTitle("...shake...shake...")
+    .setColor(0xf39c12)
+    .setDescription("The sphere rocks on the ground...")
     .setTimestamp();
 
   if (imageUrl) {
@@ -259,21 +299,19 @@ module.exports = {
       });
 
       collector.on("collect", async (buttonInteraction) => {
-        if (buttonInteraction.user.id !== interaction.user.id) {
-          await buttonInteraction.reply({
-            content: "❌ Only the user who started this encounter can use these buttons.",
-            ephemeral: true,
-          });
-          return;
-        }
-
-        const [, sphere] = buttonInteraction.customId.split(":");
-        console.log(
-          `[capture] resolving encounter user=${interaction.user.id} sphere=${sphere}`
-        );
-
         try {
           await buttonInteraction.deferUpdate();
+          if (buttonInteraction.user.id !== interaction.user.id) {
+            console.log(
+              `[capture] blocked button click from non-owner user=${buttonInteraction.user.id} owner=${interaction.user.id}`
+            );
+            return;
+          }
+
+          const [, sphere] = buttonInteraction.customId.split(":");
+          console.log(
+            `[capture] resolving encounter user=${interaction.user.id} sphere=${sphere}`
+          );
 
           const sphereUse = consumeSphere(interaction.user.id, sphere);
 
@@ -289,6 +327,28 @@ module.exports = {
             collector.stop("resolved");
             return;
           }
+
+          await interaction.editReply({
+            content: "",
+            embeds: [buildThrowEmbed(encounter, sphere)],
+            components: buildSphereButtons(
+              getUserInventory(interaction.user.id),
+              true
+            ),
+          });
+
+          await new Promise((res) => setTimeout(res, 1000));
+
+          await interaction.editReply({
+            content: "",
+            embeds: [buildShakeEmbed(encounter)],
+            components: buildSphereButtons(
+              getUserInventory(interaction.user.id),
+              true
+            ),
+          });
+
+          await new Promise((res) => setTimeout(res, 500));
 
           const result = resolveCaptureEncounter(
             interaction.user.id,
