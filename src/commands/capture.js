@@ -64,10 +64,14 @@ function formatSphereInventory(inventory) {
     .join("\n");
 }
 
-function buildSphereButtons(inventory, disabled = false) {
+function buildSphereButtons(
+  inventory,
+  disabled = false,
+  customIdPrefix = "capture"
+) {
   const buttons = sphereChoices.map(([name, value]) =>
     new ButtonBuilder()
-      .setCustomId(`capture:${value}`)
+      .setCustomId(`${customIdPrefix}:${value}`)
       .setLabel(name)
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(disabled || (inventory[value] ?? 0) <= 0)
@@ -79,24 +83,32 @@ function buildSphereButtons(inventory, disabled = false) {
   ];
 }
 
-function buildEncounterEmbed(encounter, inventory) {
+function buildEncounterEmbed(encounter, inventory, options = {}) {
   const rarityEmoji = rarityEmojis[encounter.rarity] || "";
   const imageUrl = palImageUrls[encounter.name.toLowerCase()];
+  const fields = [
+    {
+      name: "Wild Pal",
+      value: `${rarityEmoji} ${encounter.name} (Lv. ${encounter.level}, ${encounter.rarity})`,
+    },
+  ];
+
+  if (options.showInventory !== false) {
+    fields.push({
+      name: "🎒 Spheres",
+      value: formatSphereInventory(inventory),
+    });
+  }
 
   const embed = new EmbedBuilder()
-    .setTitle("Wild Pal Encounter")
+    .setTitle(options.title || "Wild Pal Encounter")
     .setColor(rarityColors[encounter.rarity] || 0x95a5a6)
-    .addFields(
-      {
-        name: "Wild Pal",
-        value: `${rarityEmoji} ${encounter.name} (Lv. ${encounter.level}, ${encounter.rarity})`,
-      },
-      {
-        name: "🎒 Spheres",
-        value: formatSphereInventory(inventory),
-      }
-    )
+    .addFields(fields)
     .setTimestamp();
+
+  if (options.description) {
+    embed.setDescription(options.description);
+  }
 
   if (imageUrl) {
     embed.setImage(imageUrl);
@@ -412,4 +424,9 @@ module.exports = {
       );
     }
   },
+  buildEncounterEmbed,
+  buildResolvedEmbed,
+  buildShakeEmbed,
+  buildSphereButtons,
+  buildThrowEmbed,
 };
