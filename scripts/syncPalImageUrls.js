@@ -7,6 +7,7 @@ const SOURCE_PALS_URL =
   "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/src/pals.json";
 const SOURCE_IMAGE_BASE_URL =
   "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck";
+const WIKI_PAGE_BASE_URL = "https://palworld.wiki.gg/wiki";
 
 function normalizePalName(name) {
   return String(name || "")
@@ -82,6 +83,80 @@ function buildSourceIndex(sourcePals) {
   return index;
 }
 
+function buildWikiPageUrl(name) {
+  return `${WIKI_PAGE_BASE_URL}/${encodeURIComponent(String(name || "").replace(/\s+/g, "_"))}`;
+}
+
+function extractMetaContent(html, propertyName) {
+  const escapedName = propertyName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const patterns = [
+    new RegExp(
+      `<meta[^>]+property=["']${escapedName}["'][^>]+content=["']([^"']+)["'][^>]*>`,
+      "i"
+    ),
+    new RegExp(
+      `<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${escapedName}["'][^>]*>`,
+      "i"
+    ),
+    new RegExp(
+      `<meta[^>]+name=["']${escapedName}["'][^>]+content=["']([^"']+)["'][^>]*>`,
+      "i"
+    ),
+    new RegExp(
+      `<meta[^>]+content=["']([^"']+)["'][^>]+name=["']${escapedName}["'][^>]*>`,
+      "i"
+    ),
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+
+  return "";
+}
+
+function isHighConfidenceWikiImage(palName, ogTitle, imageUrl) {
+  if (!ogTitle || !imageUrl) {
+    return false;
+  }
+
+  const normalizedPalName = normalizePalName(palName);
+  const normalizedTitle = normalizePalName(ogTitle.replace(/-.*$/, "").trim());
+  const isTitleMatch = normalizedPalName === normalizedTitle;
+  const normalizedImageUrl = normalizePalName(imageUrl);
+  const hasPalNameInImageUrl = normalizedImageUrl.includes(normalizedPalName);
+  const isLikelyImage =
+    /^https?:\/\//i.test(imageUrl) &&
+    !/logo|favicon|wordmark/i.test(imageUrl) &&
+    /wiki|static|images/i.test(imageUrl);
+
+  return isTitleMatch && isLikelyImage && hasPalNameInImageUrl;
+}
+
+async function fetchWikiImageUrl(palName) {
+  const response = await fetch(buildWikiPageUrl(palName));
+
+  if (!response.ok) {
+    return "";
+  }
+
+  const html = await response.text();
+  const ogTitle = extractMetaContent(html, "og:title");
+  const ogImage =
+    extractMetaContent(html, "og:image") ||
+    extractMetaContent(html, "twitter:image");
+
+  if (!isHighConfidenceWikiImage(palName, ogTitle, ogImage)) {
+    return "";
+  }
+
+  return ogImage;
+}
+
 function findSourcePal(pal, sourceIndex, aliases) {
   const normalizedName = normalizePalName(pal.name);
   const directMatch = sourceIndex.get(normalizedName);
@@ -99,33 +174,52 @@ function findSourcePal(pal, sourceIndex, aliases) {
   return sourceIndex.get(normalizePalName(aliasValue)) || null;
 }
 
-function syncImageUrls(localPals, sourceIndex, aliases) {
-  let matchedCount = 0;
+async function syncImageUrls(localPals, sourceIndex, aliases) {
+  let sourceMatchedCount = 0;
+  let wikiMatchedCount = 0;
   let missingCount = 0;
 
-  const updatedPals = localPals.map((pal) => {
-    const sourcePal = findSourcePal(pal, sourceIndex, aliases);
+  const updatedPals = [];
 
-    if (!sourcePal || !sourcePal.key) {
-      missingCount += 1;
-
-      return {
-        ...pal,
-        imageUrl: "",
-      };
+  for (const pal of localPals) {
+    if (typeof pal.imageUrl === "string" && pal.imageUrl.trim()) {
+      updatedPals.push(pal);
+      continue;
     }
 
-    matchedCount += 1;
+    const sourcePal = findSourcePal(pal, sourceIndex, aliases);
 
-    return {
+    if (sourcePal && sourcePal.key) {
+      sourceMatchedCount += 1;
+      updatedPals.push({
+        ...pal,
+        imageUrl: `${SOURCE_IMAGE_BASE_URL}/${sourcePal.key}.png`,
+      });
+      continue;
+    }
+
+    const wikiImageUrl = await fetchWikiImageUrl(pal.name);
+
+    if (wikiImageUrl) {
+      wikiMatchedCount += 1;
+      updatedPals.push({
+        ...pal,
+        imageUrl: wikiImageUrl,
+      });
+      continue;
+    }
+
+    missingCount += 1;
+    updatedPals.push({
       ...pal,
-      imageUrl: `${SOURCE_IMAGE_BASE_URL}/${sourcePal.key}.png`,
-    };
-  });
+      imageUrl: "",
+    });
+  }
 
   return {
     updatedPals,
-    matchedCount,
+    sourceMatchedCount,
+    wikiMatchedCount,
     missingCount,
   };
 }
@@ -142,7 +236,12 @@ async function main() {
   const aliases = readAliases();
   const sourcePals = await fetchSourcePals();
   const sourceIndex = buildSourceIndex(sourcePals);
-  const { updatedPals, matchedCount, missingCount } = syncImageUrls(
+  const {
+    updatedPals,
+    sourceMatchedCount,
+    wikiMatchedCount,
+    missingCount,
+  } = await syncImageUrls(
     localPals,
     sourceIndex,
     aliases
@@ -150,8 +249,9 @@ async function main() {
 
   writeLocalPals(updatedPals);
 
-  console.log(`Matched: ${matchedCount}`);
-  console.log(`Missing: ${missingCount}`);
+  console.log(`Source1 matched: ${sourceMatchedCount}`);
+  console.log(`Wiki matched: ${wikiMatchedCount}`);
+  console.log(`Still missing: ${missingCount}`);
 }
 
 main().catch((error) => {

@@ -21,7 +21,7 @@
     "name": "Azurmane",
     "rarity": "rare",
     "unlockLevel": 34,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Azurmane_icon.png?10337a"
   },
   {
     "name": "Azurobe",
@@ -33,13 +33,13 @@
     "name": "Azurobe Cryst",
     "rarity": "epic",
     "unlockLevel": 40,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Azurobe_Cryst_icon.png?469df6"
   },
   {
     "name": "Bastigor",
     "rarity": "epic",
     "unlockLevel": 60,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Bastigor_icon.png?bbde30"
   },
   {
     "name": "Beakon",
@@ -99,7 +99,7 @@
     "name": "Bushi Noct",
     "rarity": "epic",
     "unlockLevel": 46,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Bushi_Noct_icon.png?ba4bbe"
   },
   {
     "name": "Caprity",
@@ -111,7 +111,7 @@
     "name": "Caprity Noct",
     "rarity": "uncommon",
     "unlockLevel": 22,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Caprity_Noct_icon.png?36cb8a"
   },
   {
     "name": "Cattiva",
@@ -135,13 +135,13 @@
     "name": "Celaray Lux",
     "rarity": "uncommon",
     "unlockLevel": 20,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Celaray_Lux_icon.png?9aa9e1"
   },
   {
     "name": "Celesdir",
     "rarity": "epic",
     "unlockLevel": 52,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Celesdir_icon.png?6e656c"
   },
   {
     "name": "Chikipi",
@@ -159,7 +159,7 @@
     "name": "Chillet Ignis",
     "rarity": "rare",
     "unlockLevel": 28,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Chillet_Ignis_icon.png?760e1e"
   },
   {
     "name": "Cinnamoth",
@@ -177,13 +177,13 @@
     "name": "Croajiro",
     "rarity": "uncommon",
     "unlockLevel": 18,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Croajiro_icon.png?8ec44e"
   },
   {
     "name": "Croajiro Noct",
     "rarity": "rare",
     "unlockLevel": 28,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Croajiro_Noct_icon.png?7dcfd6"
   },
   {
     "name": "Cryolinx",
@@ -195,7 +195,7 @@
     "name": "Cryolinx Terra",
     "rarity": "epic",
     "unlockLevel": 50,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Cryolinx_Terra_icon.png?ae5706"
   },
   {
     "name": "Daedream",
@@ -213,7 +213,7 @@
     "name": "Dazzi Noct",
     "rarity": "rare",
     "unlockLevel": 32,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Dazzi_Noct_icon.png?9474d3"
   },
   {
     "name": "Depresso",
@@ -249,7 +249,7 @@
     "name": "Dogen",
     "rarity": "rare",
     "unlockLevel": 40,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Dogen_icon.png?ce139f"
   },
   {
     "name": "Dumud",
@@ -261,7 +261,7 @@
     "name": "Dumud Gild",
     "rarity": "rare",
     "unlockLevel": 30,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Dumud_Gild_icon.png?e1d485"
   },
   {
     "name": "Eikthyrdeer",
@@ -303,19 +303,19 @@
     "name": "Faleris Aqua",
     "rarity": "epic",
     "unlockLevel": 56,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Faleris_Aqua_icon.png?6990b8"
   },
   {
     "name": "Finsider",
     "rarity": "common",
     "unlockLevel": 10,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Finsider_icon.png?d2faf3"
   },
   {
     "name": "Finsider Ignis",
     "rarity": "uncommon",
     "unlockLevel": 20,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Finsider_Ignis_icon.png?fa979e"
   },
   {
     "name": "Flambelle",
@@ -345,7 +345,7 @@
     "name": "Foxparks Cryst",
     "rarity": "uncommon",
     "unlockLevel": 18,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Foxparks_Cryst_icon.png?ab9cc4"
   },
   {
     "name": "Frostallion",
@@ -369,7 +369,7 @@
     "name": "Fuack Ignis",
     "rarity": "uncommon",
     "unlockLevel": 18,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Fuack_Ignis_icon.png?926edf"
   },
   {
     "name": "Fuddler",
@@ -381,13 +381,13 @@
     "name": "Ghangler",
     "rarity": "uncommon",
     "unlockLevel": 20,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Ghangler_icon.png?8a16ae"
   },
   {
     "name": "Ghangler Ignis",
     "rarity": "rare",
     "unlockLevel": 32,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Ghangler_Ignis_icon.png?3a2a68"
   },
   {
     "name": "Gobfin",
@@ -411,7 +411,7 @@
     "name": "Gorirat Terra",
     "rarity": "rare",
     "unlockLevel": 30,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Gorirat_Terra_icon.png?a46b18"
   },
   {
     "name": "Grintale",
@@ -453,7 +453,7 @@
     "name": "Helzephyr Lux",
     "rarity": "epic",
     "unlockLevel": 46,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Helzephyr_Lux_icon.png?2c8216"
   },
   {
     "name": "Herbil",
