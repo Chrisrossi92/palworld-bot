@@ -1,10 +1,12 @@
 const spawnCommand = require("../commands/spawn");
 
-const MIN_SPAWN_INTERVAL_MS = 60_000;
-const MAX_SPAWN_INTERVAL_MS = 120_000;
-const SPAWN_CHANCE = 0.2;
+const MIN_SPAWN_INTERVAL_MS = 10 * 60_000;
+const MAX_SPAWN_INTERVAL_MS = 20 * 60_000;
+const SPAWN_CHANCE = 0.15;
+const ACTIVE_SPAWN_LOG_COOLDOWN_MS = 10 * 60_000;
 
 let spawnTimer = null;
+let lastActiveSpawnLogAt = 0;
 
 function getRandomIntervalMs() {
   return (
@@ -21,13 +23,11 @@ function scheduleNextSpawn(client) {
       const channelId = process.env.SPAWN_CHANNEL_ID;
 
       if (!channelId) {
-        console.log("[spawnSystem] SPAWN_CHANNEL_ID not set. Skipping auto spawn.");
         scheduleNextSpawn(client);
         return;
       }
 
       if (Math.random() >= SPAWN_CHANCE) {
-        console.log("[spawnSystem] Auto spawn roll missed.");
         scheduleNextSpawn(client);
         return;
       }
@@ -35,7 +35,6 @@ function scheduleNextSpawn(client) {
       const channel = await client.channels.fetch(channelId);
 
       if (!channel || typeof channel.send !== "function") {
-        console.log("[spawnSystem] Spawn channel is unavailable or not sendable.");
         scheduleNextSpawn(client);
         return;
       }
@@ -43,12 +42,18 @@ function scheduleNextSpawn(client) {
       const result = await spawnCommand.startPublicSpawn(channel);
 
       if (!result.started) {
-        console.log("[spawnSystem] Auto spawn skipped because a spawn is already active.");
+        const now = Date.now();
+
+        if (now - lastActiveSpawnLogAt >= ACTIVE_SPAWN_LOG_COOLDOWN_MS) {
+          console.log("[spawnSystem] Auto spawn skipped because a spawn is already active.");
+          lastActiveSpawnLogAt = now;
+        }
       } else {
+        lastActiveSpawnLogAt = 0;
         console.log(`[spawnSystem] Auto spawn created in channel ${channelId}.`);
       }
     } catch (error) {
-      console.error("[spawnSystem] Failed to process auto spawn:", error);
+      console.error("[spawnSystem] Failed to process auto spawn:", error?.stack || error);
     } finally {
       scheduleNextSpawn(client);
     }
@@ -60,6 +65,9 @@ function startSpawnSystem(client) {
     clearTimeout(spawnTimer);
   }
 
+  console.log(
+    `[spawnSystem] Auto spawn system started. Next rolls every 10-20 minutes at 15% chance.`
+  );
   scheduleNextSpawn(client);
 }
 

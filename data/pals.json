@@ -1,199 +1,1184 @@
 [
-  { "name": "Anubis", "rarity": "epic", "unlockLevel": 45, "imageUrl": "" },
-  { "name": "Arsox", "rarity": "uncommon", "unlockLevel": 18, "imageUrl": "" },
-  { "name": "Astegon", "rarity": "epic", "unlockLevel": 55, "imageUrl": "" },
-  { "name": "Azurmane", "rarity": "rare", "unlockLevel": 34, "imageUrl": "" },
-  { "name": "Azurobe", "rarity": "rare", "unlockLevel": 32, "imageUrl": "" },
-  { "name": "Azurobe Cryst", "rarity": "epic", "unlockLevel": 40, "imageUrl": "" },
-  { "name": "Bastigor", "rarity": "epic", "unlockLevel": 60, "imageUrl": "" },
-  { "name": "Beakon", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Beegarde", "rarity": "uncommon", "unlockLevel": 20, "imageUrl": "" },
-  { "name": "Blazamut", "rarity": "epic", "unlockLevel": 55, "imageUrl": "" },
-  { "name": "Blazehowl", "rarity": "rare", "unlockLevel": 36, "imageUrl": "" },
-  { "name": "Blazehowl Noct", "rarity": "epic", "unlockLevel": 44, "imageUrl": "" },
-  { "name": "Bristla", "rarity": "common", "unlockLevel": 12, "imageUrl": "" },
-  { "name": "Broncherry", "rarity": "uncommon", "unlockLevel": 24, "imageUrl": "" },
-  { "name": "Broncherry Aqua", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Bushi", "rarity": "rare", "unlockLevel": 38, "imageUrl": "" },
-  { "name": "Bushi Noct", "rarity": "epic", "unlockLevel": 46, "imageUrl": "" },
-  { "name": "Caprity", "rarity": "common", "unlockLevel": 12, "imageUrl": "" },
-  { "name": "Caprity Noct", "rarity": "uncommon", "unlockLevel": 22, "imageUrl": "" },
-  { "name": "Cattiva", "rarity": "common", "unlockLevel": 1, "imageUrl": "" },
-  { "name": "Cawgnito", "rarity": "uncommon", "unlockLevel": 18, "imageUrl": "" },
-  { "name": "Celaray", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Celaray Lux", "rarity": "uncommon", "unlockLevel": 20, "imageUrl": "" },
-  { "name": "Celesdir", "rarity": "epic", "unlockLevel": 52, "imageUrl": "" },
-  { "name": "Chikipi", "rarity": "common", "unlockLevel": 1, "imageUrl": "" },
-  { "name": "Chillet", "rarity": "uncommon", "unlockLevel": 16, "imageUrl": "" },
-  { "name": "Chillet Ignis", "rarity": "rare", "unlockLevel": 28, "imageUrl": "" },
-  { "name": "Cinnamoth", "rarity": "uncommon", "unlockLevel": 18, "imageUrl": "" },
-  { "name": "Cremis", "rarity": "common", "unlockLevel": 8, "imageUrl": "" },
-  { "name": "Croajiro", "rarity": "uncommon", "unlockLevel": 18, "imageUrl": "" },
-  { "name": "Croajiro Noct", "rarity": "rare", "unlockLevel": 28, "imageUrl": "" },
-  { "name": "Cryolinx", "rarity": "rare", "unlockLevel": 42, "imageUrl": "" },
-  { "name": "Cryolinx Terra", "rarity": "epic", "unlockLevel": 50, "imageUrl": "" },
-  { "name": "Daedream", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Dazzi", "rarity": "uncommon", "unlockLevel": 24, "imageUrl": "" },
-  { "name": "Dazzi Noct", "rarity": "rare", "unlockLevel": 32, "imageUrl": "" },
-  { "name": "Depresso", "rarity": "common", "unlockLevel": 8, "imageUrl": "" },
-  { "name": "Digtoise", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Dinossom", "rarity": "uncommon", "unlockLevel": 24, "imageUrl": "" },
-  { "name": "Dinossom Lux", "rarity": "rare", "unlockLevel": 32, "imageUrl": "" },
-  { "name": "Direhowl", "rarity": "uncommon", "unlockLevel": 14, "imageUrl": "" },
-  { "name": "Dogen", "rarity": "rare", "unlockLevel": 40, "imageUrl": "" },
-  { "name": "Dumud", "rarity": "uncommon", "unlockLevel": 22, "imageUrl": "" },
-  { "name": "Dumud Gild", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Eikthyrdeer", "rarity": "common", "unlockLevel": 14, "imageUrl": "" },
-  { "name": "Eikthyrdeer Terra", "rarity": "uncommon", "unlockLevel": 24, "imageUrl": "" },
-  { "name": "Elizabee", "rarity": "rare", "unlockLevel": 34, "imageUrl": "" },
-  { "name": "Elphidran", "rarity": "rare", "unlockLevel": 34, "imageUrl": "" },
-  { "name": "Elphidran Aqua", "rarity": "epic", "unlockLevel": 42, "imageUrl": "" },
-  { "name": "Faleris", "rarity": "epic", "unlockLevel": 52, "imageUrl": "" },
-  { "name": "Faleris Aqua", "rarity": "epic", "unlockLevel": 56, "imageUrl": "" },
-  { "name": "Finsider", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Finsider Ignis", "rarity": "uncommon", "unlockLevel": 20, "imageUrl": "" },
-  { "name": "Flambelle", "rarity": "common", "unlockLevel": 12, "imageUrl": "" },
-  { "name": "Flopie", "rarity": "uncommon", "unlockLevel": 18, "imageUrl": "" },
-  { "name": "Foxcicle", "rarity": "uncommon", "unlockLevel": 24, "imageUrl": "" },
-  { "name": "Foxparks", "rarity": "common", "unlockLevel": 5, "imageUrl": "" },
-  { "name": "Foxparks Cryst", "rarity": "uncommon", "unlockLevel": 18, "imageUrl": "" },
-  { "name": "Frostallion", "rarity": "legendary", "unlockLevel": 65, "imageUrl": "" },
-  { "name": "Frostallion Noct", "rarity": "legendary", "unlockLevel": 68, "imageUrl": "" },
-  { "name": "Fuack", "rarity": "common", "unlockLevel": 5, "imageUrl": "" },
-  { "name": "Fuack Ignis", "rarity": "uncommon", "unlockLevel": 18, "imageUrl": "" },
-  { "name": "Fuddler", "rarity": "common", "unlockLevel": 8, "imageUrl": "" },
-  { "name": "Ghangler", "rarity": "uncommon", "unlockLevel": 20, "imageUrl": "" },
-  { "name": "Ghangler Ignis", "rarity": "rare", "unlockLevel": 32, "imageUrl": "" },
-  { "name": "Gobfin", "rarity": "uncommon", "unlockLevel": 20, "imageUrl": "" },
-  { "name": "Gobfin Ignis", "rarity": "rare", "unlockLevel": 28, "imageUrl": "" },
-  { "name": "Gorirat", "rarity": "uncommon", "unlockLevel": 22, "imageUrl": "" },
-  { "name": "Gorirat Terra", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Grintale", "rarity": "rare", "unlockLevel": 28, "imageUrl": "" },
-  { "name": "Grizzbolt", "rarity": "epic", "unlockLevel": 50, "imageUrl": "" },
-  { "name": "Gumoss", "rarity": "common", "unlockLevel": 1, "imageUrl": "" },
-  { "name": "Hangyu", "rarity": "uncommon", "unlockLevel": 16, "imageUrl": "" },
-  { "name": "Hangyu Cryst", "rarity": "uncommon", "unlockLevel": 24, "imageUrl": "" },
-  { "name": "Helzephyr", "rarity": "rare", "unlockLevel": 38, "imageUrl": "" },
-  { "name": "Helzephyr Lux", "rarity": "epic", "unlockLevel": 46, "imageUrl": "" },
-  { "name": "Herbil", "rarity": "common", "unlockLevel": 12, "imageUrl": "" },
-  { "name": "Hoocrates", "rarity": "common", "unlockLevel": 8, "imageUrl": "" },
-  { "name": "Icelyn", "rarity": "common", "unlockLevel": 14, "imageUrl": "" },
-  { "name": "Incineram", "rarity": "uncommon", "unlockLevel": 20, "imageUrl": "" },
-  { "name": "Incineram Noct", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Jetragon", "rarity": "legendary", "unlockLevel": 70, "imageUrl": "" },
-  { "name": "Jolthog", "rarity": "common", "unlockLevel": 8, "imageUrl": "" },
-  { "name": "Jolthog Cryst", "rarity": "uncommon", "unlockLevel": 18, "imageUrl": "" },
-  { "name": "Jormuntide", "rarity": "epic", "unlockLevel": 56, "imageUrl": "" },
-  { "name": "Jormuntide Ignis", "rarity": "epic", "unlockLevel": 60, "imageUrl": "" },
-  { "name": "Katress", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Katress Ignis", "rarity": "epic", "unlockLevel": 42, "imageUrl": "" },
-  { "name": "Kelpsea", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Kelpsea Ignis", "rarity": "uncommon", "unlockLevel": 18, "imageUrl": "" },
-  { "name": "Kikit", "rarity": "common", "unlockLevel": 12, "imageUrl": "" },
-  { "name": "Killamari", "rarity": "common", "unlockLevel": 8, "imageUrl": "" },
-  { "name": "Killamari Primo", "rarity": "uncommon", "unlockLevel": 22, "imageUrl": "" },
-  { "name": "Kingpaca", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Kingpaca Cryst", "rarity": "epic", "unlockLevel": 40, "imageUrl": "" },
-  { "name": "Knocklem", "rarity": "epic", "unlockLevel": 54, "imageUrl": "" },
-  { "name": "Kitsun", "rarity": "rare", "unlockLevel": 34, "imageUrl": "" },
-  { "name": "Kitsun Noct", "rarity": "epic", "unlockLevel": 44, "imageUrl": "" },
-  { "name": "Lamball", "rarity": "common", "unlockLevel": 1, "imageUrl": "" },
-  { "name": "Leezpunk", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Leezpunk Ignis", "rarity": "uncommon", "unlockLevel": 20, "imageUrl": "" },
-  { "name": "Lifmunk", "rarity": "common", "unlockLevel": 1, "imageUrl": "" },
-  { "name": "Lovander", "rarity": "uncommon", "unlockLevel": 24, "imageUrl": "" },
-  { "name": "Loupmoon", "rarity": "uncommon", "unlockLevel": 18, "imageUrl": "" },
-  { "name": "Loupmoon Cryst", "rarity": "rare", "unlockLevel": 28, "imageUrl": "" },
-  { "name": "Lunaris", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Lyleen", "rarity": "epic", "unlockLevel": 52, "imageUrl": "" },
-  { "name": "Lyleen Noct", "rarity": "epic", "unlockLevel": 58, "imageUrl": "" },
-  { "name": "Mammorest", "rarity": "epic", "unlockLevel": 48, "imageUrl": "" },
-  { "name": "Mammorest Cryst", "rarity": "epic", "unlockLevel": 54, "imageUrl": "" },
-  { "name": "Maraith", "rarity": "rare", "unlockLevel": 28, "imageUrl": "" },
-  { "name": "Mau", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Mau Cryst", "rarity": "uncommon", "unlockLevel": 20, "imageUrl": "" },
-  { "name": "Melpaca", "rarity": "common", "unlockLevel": 12, "imageUrl": "" },
-  { "name": "Menasting", "rarity": "epic", "unlockLevel": 54, "imageUrl": "" },
-  { "name": "Menasting Terra", "rarity": "epic", "unlockLevel": 58, "imageUrl": "" },
-  { "name": "Mimog", "rarity": "rare", "unlockLevel": 34, "imageUrl": "" },
-  { "name": "Mossanda", "rarity": "rare", "unlockLevel": 28, "imageUrl": "" },
-  { "name": "Mossanda Lux", "rarity": "rare", "unlockLevel": 34, "imageUrl": "" },
-  { "name": "Mozzarina", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Munchill", "rarity": "common", "unlockLevel": 12, "imageUrl": "" },
-  { "name": "Necromus", "rarity": "legendary", "unlockLevel": 68, "imageUrl": "" },
-  { "name": "Neptilius", "rarity": "legendary", "unlockLevel": 66, "imageUrl": "" },
-  { "name": "Nitemary", "rarity": "rare", "unlockLevel": 36, "imageUrl": "" },
-  { "name": "Nitewing", "rarity": "common", "unlockLevel": 12, "imageUrl": "" },
-  { "name": "Nox", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Nyafia", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Omascul", "rarity": "rare", "unlockLevel": 36, "imageUrl": "" },
-  { "name": "Orserk", "rarity": "epic", "unlockLevel": 54, "imageUrl": "" },
-  { "name": "Paladius", "rarity": "legendary", "unlockLevel": 68, "imageUrl": "" },
-  { "name": "Palumba", "rarity": "uncommon", "unlockLevel": 18, "imageUrl": "" },
-  { "name": "Pengullet", "rarity": "common", "unlockLevel": 8, "imageUrl": "" },
-  { "name": "Pengullet Lux", "rarity": "uncommon", "unlockLevel": 20, "imageUrl": "" },
-  { "name": "Penking", "rarity": "uncommon", "unlockLevel": 20, "imageUrl": "" },
-  { "name": "Penking Lux", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Petallia", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Prixter", "rarity": "rare", "unlockLevel": 34, "imageUrl": "" },
-  { "name": "Prunelia", "rarity": "rare", "unlockLevel": 36, "imageUrl": "" },
-  { "name": "Pyrin", "rarity": "rare", "unlockLevel": 32, "imageUrl": "" },
-  { "name": "Pyrin Noct", "rarity": "epic", "unlockLevel": 40, "imageUrl": "" },
-  { "name": "Quivern", "rarity": "epic", "unlockLevel": 46, "imageUrl": "" },
-  { "name": "Quivern Botan", "rarity": "epic", "unlockLevel": 50, "imageUrl": "" },
-  { "name": "Ragnahawk", "rarity": "rare", "unlockLevel": 32, "imageUrl": "" },
-  { "name": "Rayhound", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Reindrix", "rarity": "uncommon", "unlockLevel": 24, "imageUrl": "" },
-  { "name": "Relaxaurus", "rarity": "rare", "unlockLevel": 34, "imageUrl": "" },
-  { "name": "Relaxaurus Lux", "rarity": "epic", "unlockLevel": 44, "imageUrl": "" },
-  { "name": "Reptyro", "rarity": "rare", "unlockLevel": 34, "imageUrl": "" },
-  { "name": "Reptyro Cryst", "rarity": "epic", "unlockLevel": 44, "imageUrl": "" },
-  { "name": "Ribbuny", "rarity": "common", "unlockLevel": 6, "imageUrl": "" },
-  { "name": "Ribbuny Botan", "rarity": "uncommon", "unlockLevel": 16, "imageUrl": "" },
-  { "name": "Robinquill", "rarity": "uncommon", "unlockLevel": 22, "imageUrl": "" },
-  { "name": "Robinquill Terra", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Rooby", "rarity": "common", "unlockLevel": 6, "imageUrl": "" },
-  { "name": "Rushoar", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Selyne", "rarity": "epic", "unlockLevel": 58, "imageUrl": "" },
-  { "name": "Shadowbeak", "rarity": "legendary", "unlockLevel": 64, "imageUrl": "" },
-  { "name": "Shroomer", "rarity": "uncommon", "unlockLevel": 22, "imageUrl": "" },
-  { "name": "Shroomer Noct", "rarity": "rare", "unlockLevel": 32, "imageUrl": "" },
-  { "name": "Sibelyx", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Silvegis", "rarity": "epic", "unlockLevel": 50, "imageUrl": "" },
-  { "name": "Smokie", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Sparkit", "rarity": "common", "unlockLevel": 6, "imageUrl": "" },
-  { "name": "Splatterina", "rarity": "rare", "unlockLevel": 36, "imageUrl": "" },
-  { "name": "Sootseer", "rarity": "uncommon", "unlockLevel": 20, "imageUrl": "" },
-  { "name": "Starryon", "rarity": "rare", "unlockLevel": 34, "imageUrl": "" },
-  { "name": "Surfent", "rarity": "uncommon", "unlockLevel": 24, "imageUrl": "" },
-  { "name": "Surfent Terra", "rarity": "rare", "unlockLevel": 32, "imageUrl": "" },
-  { "name": "Suzaku", "rarity": "epic", "unlockLevel": 56, "imageUrl": "" },
-  { "name": "Suzaku Aqua", "rarity": "epic", "unlockLevel": 58, "imageUrl": "" },
-  { "name": "Swee", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Sweepa", "rarity": "rare", "unlockLevel": 26, "imageUrl": "" },
-  { "name": "Tanzee", "rarity": "common", "unlockLevel": 6, "imageUrl": "" },
-  { "name": "Tarantriss", "rarity": "rare", "unlockLevel": 38, "imageUrl": "" },
-  { "name": "Teafant", "rarity": "common", "unlockLevel": 6, "imageUrl": "" },
-  { "name": "Tocotoco", "rarity": "uncommon", "unlockLevel": 20, "imageUrl": "" },
-  { "name": "Tombat", "rarity": "uncommon", "unlockLevel": 22, "imageUrl": "" },
-  { "name": "Turtacle", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Turtacle Terra", "rarity": "uncommon", "unlockLevel": 20, "imageUrl": "" },
-  { "name": "Univolt", "rarity": "uncommon", "unlockLevel": 24, "imageUrl": "" },
-  { "name": "Vaelet", "rarity": "rare", "unlockLevel": 32, "imageUrl": "" },
-  { "name": "Vanwyrm", "rarity": "rare", "unlockLevel": 28, "imageUrl": "" },
-  { "name": "Vanwyrm Cryst", "rarity": "rare", "unlockLevel": 34, "imageUrl": "" },
-  { "name": "Verdash", "rarity": "rare", "unlockLevel": 30, "imageUrl": "" },
-  { "name": "Vixy", "rarity": "common", "unlockLevel": 8, "imageUrl": "" },
-  { "name": "Warsect", "rarity": "epic", "unlockLevel": 48, "imageUrl": "" },
-  { "name": "Warsect Terra", "rarity": "epic", "unlockLevel": 52, "imageUrl": "" },
-  { "name": "Whalaska", "rarity": "epic", "unlockLevel": 54, "imageUrl": "" },
-  { "name": "Whalaska Ignis", "rarity": "epic", "unlockLevel": 58, "imageUrl": "" },
-  { "name": "Wixen", "rarity": "rare", "unlockLevel": 28, "imageUrl": "" },
-  { "name": "Wixen Noct", "rarity": "epic", "unlockLevel": 38, "imageUrl": "" },
-  { "name": "Woolipop", "rarity": "common", "unlockLevel": 10, "imageUrl": "" },
-  { "name": "Wumpo", "rarity": "epic", "unlockLevel": 46, "imageUrl": "" },
-  { "name": "Wumpo Botan", "rarity": "epic", "unlockLevel": 50, "imageUrl": "" },
-  { "name": "Xenogard", "rarity": "legendary", "unlockLevel": 64, "imageUrl": "" },
-  { "name": "Xenovader", "rarity": "epic", "unlockLevel": 48, "imageUrl": "" },
-  { "name": "Yakumo", "rarity": "rare", "unlockLevel": 34, "imageUrl": "" }
+  {
+    "name": "Anubis",
+    "rarity": "epic",
+    "unlockLevel": 45,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/100.png"
+  },
+  {
+    "name": "Arsox",
+    "rarity": "uncommon",
+    "unlockLevel": 18,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/042.png"
+  },
+  {
+    "name": "Astegon",
+    "rarity": "epic",
+    "unlockLevel": 55,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/098.png"
+  },
+  {
+    "name": "Azurmane",
+    "rarity": "rare",
+    "unlockLevel": 34,
+    "imageUrl": ""
+  },
+  {
+    "name": "Azurobe",
+    "rarity": "rare",
+    "unlockLevel": 32,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/082.png"
+  },
+  {
+    "name": "Azurobe Cryst",
+    "rarity": "epic",
+    "unlockLevel": 40,
+    "imageUrl": ""
+  },
+  {
+    "name": "Bastigor",
+    "rarity": "epic",
+    "unlockLevel": 60,
+    "imageUrl": ""
+  },
+  {
+    "name": "Beakon",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/073.png"
+  },
+  {
+    "name": "Beegarde",
+    "rarity": "uncommon",
+    "unlockLevel": 20,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/050.png"
+  },
+  {
+    "name": "Blazamut",
+    "rarity": "epic",
+    "unlockLevel": 55,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/096.png"
+  },
+  {
+    "name": "Blazehowl",
+    "rarity": "rare",
+    "unlockLevel": 36,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/084.png"
+  },
+  {
+    "name": "Blazehowl Noct",
+    "rarity": "epic",
+    "unlockLevel": 44,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/084B.png"
+  },
+  {
+    "name": "Bristla",
+    "rarity": "common",
+    "unlockLevel": 12,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/030.png"
+  },
+  {
+    "name": "Broncherry",
+    "rarity": "uncommon",
+    "unlockLevel": 24,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/086.png"
+  },
+  {
+    "name": "Broncherry Aqua",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/086B.png"
+  },
+  {
+    "name": "Bushi",
+    "rarity": "rare",
+    "unlockLevel": 38,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/072.png"
+  },
+  {
+    "name": "Bushi Noct",
+    "rarity": "epic",
+    "unlockLevel": 46,
+    "imageUrl": ""
+  },
+  {
+    "name": "Caprity",
+    "rarity": "common",
+    "unlockLevel": 12,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/035.png"
+  },
+  {
+    "name": "Caprity Noct",
+    "rarity": "uncommon",
+    "unlockLevel": 22,
+    "imageUrl": ""
+  },
+  {
+    "name": "Cattiva",
+    "rarity": "common",
+    "unlockLevel": 1,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/002.png"
+  },
+  {
+    "name": "Cawgnito",
+    "rarity": "uncommon",
+    "unlockLevel": 18,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/044.png"
+  },
+  {
+    "name": "Celaray",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/025.png"
+  },
+  {
+    "name": "Celaray Lux",
+    "rarity": "uncommon",
+    "unlockLevel": 20,
+    "imageUrl": ""
+  },
+  {
+    "name": "Celesdir",
+    "rarity": "epic",
+    "unlockLevel": 52,
+    "imageUrl": ""
+  },
+  {
+    "name": "Chikipi",
+    "rarity": "common",
+    "unlockLevel": 1,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/003.png"
+  },
+  {
+    "name": "Chillet",
+    "rarity": "uncommon",
+    "unlockLevel": 16,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/055.png"
+  },
+  {
+    "name": "Chillet Ignis",
+    "rarity": "rare",
+    "unlockLevel": 28,
+    "imageUrl": ""
+  },
+  {
+    "name": "Cinnamoth",
+    "rarity": "uncommon",
+    "unlockLevel": 18,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/041.png"
+  },
+  {
+    "name": "Cremis",
+    "rarity": "common",
+    "unlockLevel": 8,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/018.png"
+  },
+  {
+    "name": "Croajiro",
+    "rarity": "uncommon",
+    "unlockLevel": 18,
+    "imageUrl": ""
+  },
+  {
+    "name": "Croajiro Noct",
+    "rarity": "rare",
+    "unlockLevel": 28,
+    "imageUrl": ""
+  },
+  {
+    "name": "Cryolinx",
+    "rarity": "rare",
+    "unlockLevel": 42,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/083.png"
+  },
+  {
+    "name": "Cryolinx Terra",
+    "rarity": "epic",
+    "unlockLevel": 50,
+    "imageUrl": ""
+  },
+  {
+    "name": "Daedream",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/019.png"
+  },
+  {
+    "name": "Dazzi",
+    "rarity": "uncommon",
+    "unlockLevel": 24,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/062.png"
+  },
+  {
+    "name": "Dazzi Noct",
+    "rarity": "rare",
+    "unlockLevel": 32,
+    "imageUrl": ""
+  },
+  {
+    "name": "Depresso",
+    "rarity": "common",
+    "unlockLevel": 8,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/017.png"
+  },
+  {
+    "name": "Digtoise",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/067.png"
+  },
+  {
+    "name": "Dinossom",
+    "rarity": "uncommon",
+    "unlockLevel": 24,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/064.png"
+  },
+  {
+    "name": "Dinossom Lux",
+    "rarity": "rare",
+    "unlockLevel": 32,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/064B.png"
+  },
+  {
+    "name": "Direhowl",
+    "rarity": "uncommon",
+    "unlockLevel": 14,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/026.png"
+  },
+  {
+    "name": "Dogen",
+    "rarity": "rare",
+    "unlockLevel": 40,
+    "imageUrl": ""
+  },
+  {
+    "name": "Dumud",
+    "rarity": "uncommon",
+    "unlockLevel": 22,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/043.png"
+  },
+  {
+    "name": "Dumud Gild",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": ""
+  },
+  {
+    "name": "Eikthyrdeer",
+    "rarity": "common",
+    "unlockLevel": 14,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/037.png"
+  },
+  {
+    "name": "Eikthyrdeer Terra",
+    "rarity": "uncommon",
+    "unlockLevel": 24,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/037B.png"
+  },
+  {
+    "name": "Elizabee",
+    "rarity": "rare",
+    "unlockLevel": 34,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/051.png"
+  },
+  {
+    "name": "Elphidran",
+    "rarity": "rare",
+    "unlockLevel": 34,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/080.png"
+  },
+  {
+    "name": "Elphidran Aqua",
+    "rarity": "epic",
+    "unlockLevel": 42,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/080B.png"
+  },
+  {
+    "name": "Faleris",
+    "rarity": "epic",
+    "unlockLevel": 52,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/105.png"
+  },
+  {
+    "name": "Faleris Aqua",
+    "rarity": "epic",
+    "unlockLevel": 56,
+    "imageUrl": ""
+  },
+  {
+    "name": "Finsider",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": ""
+  },
+  {
+    "name": "Finsider Ignis",
+    "rarity": "uncommon",
+    "unlockLevel": 20,
+    "imageUrl": ""
+  },
+  {
+    "name": "Flambelle",
+    "rarity": "common",
+    "unlockLevel": 12,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/070.png"
+  },
+  {
+    "name": "Flopie",
+    "rarity": "uncommon",
+    "unlockLevel": 18,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/028.png"
+  },
+  {
+    "name": "Foxcicle",
+    "rarity": "uncommon",
+    "unlockLevel": 24,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/057.png"
+  },
+  {
+    "name": "Foxparks",
+    "rarity": "common",
+    "unlockLevel": 5,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/005.png"
+  },
+  {
+    "name": "Foxparks Cryst",
+    "rarity": "uncommon",
+    "unlockLevel": 18,
+    "imageUrl": ""
+  },
+  {
+    "name": "Frostallion",
+    "rarity": "legendary",
+    "unlockLevel": 65,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/110.png"
+  },
+  {
+    "name": "Frostallion Noct",
+    "rarity": "legendary",
+    "unlockLevel": 68,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/110B.png"
+  },
+  {
+    "name": "Fuack",
+    "rarity": "common",
+    "unlockLevel": 5,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/006.png"
+  },
+  {
+    "name": "Fuack Ignis",
+    "rarity": "uncommon",
+    "unlockLevel": 18,
+    "imageUrl": ""
+  },
+  {
+    "name": "Fuddler",
+    "rarity": "common",
+    "unlockLevel": 8,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/022.png"
+  },
+  {
+    "name": "Ghangler",
+    "rarity": "uncommon",
+    "unlockLevel": 20,
+    "imageUrl": ""
+  },
+  {
+    "name": "Ghangler Ignis",
+    "rarity": "rare",
+    "unlockLevel": 32,
+    "imageUrl": ""
+  },
+  {
+    "name": "Gobfin",
+    "rarity": "uncommon",
+    "unlockLevel": 20,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/031.png"
+  },
+  {
+    "name": "Gobfin Ignis",
+    "rarity": "rare",
+    "unlockLevel": 28,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/031B.png"
+  },
+  {
+    "name": "Gorirat",
+    "rarity": "uncommon",
+    "unlockLevel": 22,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/049.png"
+  },
+  {
+    "name": "Gorirat Terra",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": ""
+  },
+  {
+    "name": "Grintale",
+    "rarity": "rare",
+    "unlockLevel": 28,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/052.png"
+  },
+  {
+    "name": "Grizzbolt",
+    "rarity": "epic",
+    "unlockLevel": 50,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/103.png"
+  },
+  {
+    "name": "Gumoss",
+    "rarity": "common",
+    "unlockLevel": 1,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/013.png"
+  },
+  {
+    "name": "Hangyu",
+    "rarity": "uncommon",
+    "unlockLevel": 16,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/032.png"
+  },
+  {
+    "name": "Hangyu Cryst",
+    "rarity": "uncommon",
+    "unlockLevel": 24,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/032B.png"
+  },
+  {
+    "name": "Helzephyr",
+    "rarity": "rare",
+    "unlockLevel": 38,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/097.png"
+  },
+  {
+    "name": "Helzephyr Lux",
+    "rarity": "epic",
+    "unlockLevel": 46,
+    "imageUrl": ""
+  },
+  {
+    "name": "Herbil",
+    "rarity": "common",
+    "unlockLevel": 12,
+    "imageUrl": ""
+  },
+  {
+    "name": "Hoocrates",
+    "rarity": "common",
+    "unlockLevel": 8,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/015.png"
+  },
+  {
+    "name": "Icelyn",
+    "rarity": "common",
+    "unlockLevel": 14,
+    "imageUrl": ""
+  },
+  {
+    "name": "Incineram",
+    "rarity": "uncommon",
+    "unlockLevel": 20,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/040.png"
+  },
+  {
+    "name": "Incineram Noct",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/040B.png"
+  },
+  {
+    "name": "Jetragon",
+    "rarity": "legendary",
+    "unlockLevel": 70,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/111.png"
+  },
+  {
+    "name": "Jolthog",
+    "rarity": "common",
+    "unlockLevel": 8,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/012.png"
+  },
+  {
+    "name": "Jolthog Cryst",
+    "rarity": "uncommon",
+    "unlockLevel": 18,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/012B.png"
+  },
+  {
+    "name": "Jormuntide",
+    "rarity": "epic",
+    "unlockLevel": 56,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/101.png"
+  },
+  {
+    "name": "Jormuntide Ignis",
+    "rarity": "epic",
+    "unlockLevel": 60,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/101B.png"
+  },
+  {
+    "name": "Katress",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/075.png"
+  },
+  {
+    "name": "Katress Ignis",
+    "rarity": "epic",
+    "unlockLevel": 42,
+    "imageUrl": ""
+  },
+  {
+    "name": "Kelpsea",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/081.png"
+  },
+  {
+    "name": "Kelpsea Ignis",
+    "rarity": "uncommon",
+    "unlockLevel": 18,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/081B.png"
+  },
+  {
+    "name": "Kikit",
+    "rarity": "common",
+    "unlockLevel": 12,
+    "imageUrl": ""
+  },
+  {
+    "name": "Killamari",
+    "rarity": "common",
+    "unlockLevel": 8,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/023.png"
+  },
+  {
+    "name": "Killamari Primo",
+    "rarity": "uncommon",
+    "unlockLevel": 22,
+    "imageUrl": ""
+  },
+  {
+    "name": "Kingpaca",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/089.png"
+  },
+  {
+    "name": "Kingpaca Cryst",
+    "rarity": "epic",
+    "unlockLevel": 40,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/089B.png"
+  },
+  {
+    "name": "Knocklem",
+    "rarity": "epic",
+    "unlockLevel": 54,
+    "imageUrl": ""
+  },
+  {
+    "name": "Kitsun",
+    "rarity": "rare",
+    "unlockLevel": 34,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/061.png"
+  },
+  {
+    "name": "Kitsun Noct",
+    "rarity": "epic",
+    "unlockLevel": 44,
+    "imageUrl": ""
+  },
+  {
+    "name": "Lamball",
+    "rarity": "common",
+    "unlockLevel": 1,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/001.png"
+  },
+  {
+    "name": "Leezpunk",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/045.png"
+  },
+  {
+    "name": "Leezpunk Ignis",
+    "rarity": "uncommon",
+    "unlockLevel": 20,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/045B.png"
+  },
+  {
+    "name": "Lifmunk",
+    "rarity": "common",
+    "unlockLevel": 1,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/004.png"
+  },
+  {
+    "name": "Lovander",
+    "rarity": "uncommon",
+    "unlockLevel": 24,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/069.png"
+  },
+  {
+    "name": "Loupmoon",
+    "rarity": "uncommon",
+    "unlockLevel": 18,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/046.png"
+  },
+  {
+    "name": "Loupmoon Cryst",
+    "rarity": "rare",
+    "unlockLevel": 28,
+    "imageUrl": ""
+  },
+  {
+    "name": "Lunaris",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/063.png"
+  },
+  {
+    "name": "Lyleen",
+    "rarity": "epic",
+    "unlockLevel": 52,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/104.png"
+  },
+  {
+    "name": "Lyleen Noct",
+    "rarity": "epic",
+    "unlockLevel": 58,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/104B.png"
+  },
+  {
+    "name": "Mammorest",
+    "rarity": "epic",
+    "unlockLevel": 48,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/090.png"
+  },
+  {
+    "name": "Mammorest Cryst",
+    "rarity": "epic",
+    "unlockLevel": 54,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/090B.png"
+  },
+  {
+    "name": "Maraith",
+    "rarity": "rare",
+    "unlockLevel": 28,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/066.png"
+  },
+  {
+    "name": "Mau",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/024.png"
+  },
+  {
+    "name": "Mau Cryst",
+    "rarity": "uncommon",
+    "unlockLevel": 20,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/024B.png"
+  },
+  {
+    "name": "Melpaca",
+    "rarity": "common",
+    "unlockLevel": 12,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/036.png"
+  },
+  {
+    "name": "Menasting",
+    "rarity": "epic",
+    "unlockLevel": 54,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/099.png"
+  },
+  {
+    "name": "Menasting Terra",
+    "rarity": "epic",
+    "unlockLevel": 58,
+    "imageUrl": ""
+  },
+  {
+    "name": "Mimog",
+    "rarity": "rare",
+    "unlockLevel": 34,
+    "imageUrl": ""
+  },
+  {
+    "name": "Mossanda",
+    "rarity": "rare",
+    "unlockLevel": 28,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/033.png"
+  },
+  {
+    "name": "Mossanda Lux",
+    "rarity": "rare",
+    "unlockLevel": 34,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/033B.png"
+  },
+  {
+    "name": "Mozzarina",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/029.png"
+  },
+  {
+    "name": "Munchill",
+    "rarity": "common",
+    "unlockLevel": 12,
+    "imageUrl": ""
+  },
+  {
+    "name": "Necromus",
+    "rarity": "legendary",
+    "unlockLevel": 68,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/109.png"
+  },
+  {
+    "name": "Neptilius",
+    "rarity": "legendary",
+    "unlockLevel": 66,
+    "imageUrl": ""
+  },
+  {
+    "name": "Nitemary",
+    "rarity": "rare",
+    "unlockLevel": 36,
+    "imageUrl": ""
+  },
+  {
+    "name": "Nitewing",
+    "rarity": "common",
+    "unlockLevel": 12,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/038.png"
+  },
+  {
+    "name": "Nox",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/021.png"
+  },
+  {
+    "name": "Nyafia",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": ""
+  },
+  {
+    "name": "Omascul",
+    "rarity": "rare",
+    "unlockLevel": 36,
+    "imageUrl": ""
+  },
+  {
+    "name": "Orserk",
+    "rarity": "epic",
+    "unlockLevel": 54,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/106.png"
+  },
+  {
+    "name": "Paladius",
+    "rarity": "legendary",
+    "unlockLevel": 68,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/108.png"
+  },
+  {
+    "name": "Palumba",
+    "rarity": "uncommon",
+    "unlockLevel": 18,
+    "imageUrl": ""
+  },
+  {
+    "name": "Pengullet",
+    "rarity": "common",
+    "unlockLevel": 8,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/010.png"
+  },
+  {
+    "name": "Pengullet Lux",
+    "rarity": "uncommon",
+    "unlockLevel": 20,
+    "imageUrl": ""
+  },
+  {
+    "name": "Penking",
+    "rarity": "uncommon",
+    "unlockLevel": 20,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/011.png"
+  },
+  {
+    "name": "Penking Lux",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": ""
+  },
+  {
+    "name": "Petallia",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/087.png"
+  },
+  {
+    "name": "Prixter",
+    "rarity": "rare",
+    "unlockLevel": 34,
+    "imageUrl": ""
+  },
+  {
+    "name": "Prunelia",
+    "rarity": "rare",
+    "unlockLevel": 36,
+    "imageUrl": ""
+  },
+  {
+    "name": "Pyrin",
+    "rarity": "rare",
+    "unlockLevel": 32,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/058.png"
+  },
+  {
+    "name": "Pyrin Noct",
+    "rarity": "epic",
+    "unlockLevel": 40,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/058B.png"
+  },
+  {
+    "name": "Quivern",
+    "rarity": "epic",
+    "unlockLevel": 46,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/095.png"
+  },
+  {
+    "name": "Quivern Botan",
+    "rarity": "epic",
+    "unlockLevel": 50,
+    "imageUrl": ""
+  },
+  {
+    "name": "Ragnahawk",
+    "rarity": "rare",
+    "unlockLevel": 32,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/074.png"
+  },
+  {
+    "name": "Rayhound",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/060.png"
+  },
+  {
+    "name": "Reindrix",
+    "rarity": "uncommon",
+    "unlockLevel": 24,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/059.png"
+  },
+  {
+    "name": "Relaxaurus",
+    "rarity": "rare",
+    "unlockLevel": 34,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/085.png"
+  },
+  {
+    "name": "Relaxaurus Lux",
+    "rarity": "epic",
+    "unlockLevel": 44,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/085B.png"
+  },
+  {
+    "name": "Reptyro",
+    "rarity": "rare",
+    "unlockLevel": 34,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/088.png"
+  },
+  {
+    "name": "Reptyro Cryst",
+    "rarity": "epic",
+    "unlockLevel": 44,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/088B.png"
+  },
+  {
+    "name": "Ribbuny",
+    "rarity": "common",
+    "unlockLevel": 6,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/039.png"
+  },
+  {
+    "name": "Ribbuny Botan",
+    "rarity": "uncommon",
+    "unlockLevel": 16,
+    "imageUrl": ""
+  },
+  {
+    "name": "Robinquill",
+    "rarity": "uncommon",
+    "unlockLevel": 22,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/048.png"
+  },
+  {
+    "name": "Robinquill Terra",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/048B.png"
+  },
+  {
+    "name": "Rooby",
+    "rarity": "common",
+    "unlockLevel": 6,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/009.png"
+  },
+  {
+    "name": "Rushoar",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/020.png"
+  },
+  {
+    "name": "Selyne",
+    "rarity": "epic",
+    "unlockLevel": 58,
+    "imageUrl": ""
+  },
+  {
+    "name": "Shadowbeak",
+    "rarity": "legendary",
+    "unlockLevel": 64,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/107.png"
+  },
+  {
+    "name": "Shroomer",
+    "rarity": "uncommon",
+    "unlockLevel": 22,
+    "imageUrl": ""
+  },
+  {
+    "name": "Shroomer Noct",
+    "rarity": "rare",
+    "unlockLevel": 32,
+    "imageUrl": ""
+  },
+  {
+    "name": "Sibelyx",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/079.png"
+  },
+  {
+    "name": "Silvegis",
+    "rarity": "epic",
+    "unlockLevel": 50,
+    "imageUrl": ""
+  },
+  {
+    "name": "Smokie",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": ""
+  },
+  {
+    "name": "Sparkit",
+    "rarity": "common",
+    "unlockLevel": 6,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/007.png"
+  },
+  {
+    "name": "Splatterina",
+    "rarity": "rare",
+    "unlockLevel": 36,
+    "imageUrl": ""
+  },
+  {
+    "name": "Sootseer",
+    "rarity": "uncommon",
+    "unlockLevel": 20,
+    "imageUrl": ""
+  },
+  {
+    "name": "Starryon",
+    "rarity": "rare",
+    "unlockLevel": 34,
+    "imageUrl": ""
+  },
+  {
+    "name": "Surfent",
+    "rarity": "uncommon",
+    "unlockLevel": 24,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/065.png"
+  },
+  {
+    "name": "Surfent Terra",
+    "rarity": "rare",
+    "unlockLevel": 32,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/065B.png"
+  },
+  {
+    "name": "Suzaku",
+    "rarity": "epic",
+    "unlockLevel": 56,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/102.png"
+  },
+  {
+    "name": "Suzaku Aqua",
+    "rarity": "epic",
+    "unlockLevel": 58,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/102B.png"
+  },
+  {
+    "name": "Swee",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/053.png"
+  },
+  {
+    "name": "Sweepa",
+    "rarity": "rare",
+    "unlockLevel": 26,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/054.png"
+  },
+  {
+    "name": "Tanzee",
+    "rarity": "common",
+    "unlockLevel": 6,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/008.png"
+  },
+  {
+    "name": "Tarantriss",
+    "rarity": "rare",
+    "unlockLevel": 38,
+    "imageUrl": ""
+  },
+  {
+    "name": "Teafant",
+    "rarity": "common",
+    "unlockLevel": 6,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/016.png"
+  },
+  {
+    "name": "Tocotoco",
+    "rarity": "uncommon",
+    "unlockLevel": 20,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/027.png"
+  },
+  {
+    "name": "Tombat",
+    "rarity": "uncommon",
+    "unlockLevel": 22,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/068.png"
+  },
+  {
+    "name": "Turtacle",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": ""
+  },
+  {
+    "name": "Turtacle Terra",
+    "rarity": "uncommon",
+    "unlockLevel": 20,
+    "imageUrl": ""
+  },
+  {
+    "name": "Univolt",
+    "rarity": "uncommon",
+    "unlockLevel": 24,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/056.png"
+  },
+  {
+    "name": "Vaelet",
+    "rarity": "rare",
+    "unlockLevel": 32,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/078.png"
+  },
+  {
+    "name": "Vanwyrm",
+    "rarity": "rare",
+    "unlockLevel": 28,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/071.png"
+  },
+  {
+    "name": "Vanwyrm Cryst",
+    "rarity": "rare",
+    "unlockLevel": 34,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/071B.png"
+  },
+  {
+    "name": "Verdash",
+    "rarity": "rare",
+    "unlockLevel": 30,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/077.png"
+  },
+  {
+    "name": "Vixy",
+    "rarity": "common",
+    "unlockLevel": 8,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/014.png"
+  },
+  {
+    "name": "Warsect",
+    "rarity": "epic",
+    "unlockLevel": 48,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/092.png"
+  },
+  {
+    "name": "Warsect Terra",
+    "rarity": "epic",
+    "unlockLevel": 52,
+    "imageUrl": ""
+  },
+  {
+    "name": "Whalaska",
+    "rarity": "epic",
+    "unlockLevel": 54,
+    "imageUrl": ""
+  },
+  {
+    "name": "Whalaska Ignis",
+    "rarity": "epic",
+    "unlockLevel": 58,
+    "imageUrl": ""
+  },
+  {
+    "name": "Wixen",
+    "rarity": "rare",
+    "unlockLevel": 28,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/076.png"
+  },
+  {
+    "name": "Wixen Noct",
+    "rarity": "epic",
+    "unlockLevel": 38,
+    "imageUrl": ""
+  },
+  {
+    "name": "Woolipop",
+    "rarity": "common",
+    "unlockLevel": 10,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/034.png"
+  },
+  {
+    "name": "Wumpo",
+    "rarity": "epic",
+    "unlockLevel": 46,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/091.png"
+  },
+  {
+    "name": "Wumpo Botan",
+    "rarity": "epic",
+    "unlockLevel": 50,
+    "imageUrl": "https://raw.githubusercontent.com/mlg404/palworld-paldex-api/main/public/images/paldeck/091B.png"
+  },
+  {
+    "name": "Xenogard",
+    "rarity": "legendary",
+    "unlockLevel": 64,
+    "imageUrl": ""
+  },
+  {
+    "name": "Xenovader",
+    "rarity": "epic",
+    "unlockLevel": 48,
+    "imageUrl": ""
+  },
+  {
+    "name": "Yakumo",
+    "rarity": "rare",
+    "unlockLevel": 34,
+    "imageUrl": ""
+  }
 ]

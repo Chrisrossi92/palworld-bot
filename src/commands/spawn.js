@@ -24,6 +24,45 @@ const publicSpawnButtonsInventory = {
 
 let activeSpawn = null;
 
+function getSpawnRarityLabel(rarity) {
+  const labels = {
+    common: "Wild",
+    uncommon: "Uncommon",
+    rare: "Rare",
+    epic: "EPIC",
+    legendary: "LEGENDARY",
+  };
+
+  return labels[rarity] || "Wild";
+}
+
+function getSpawnTitle(encounter) {
+  const rarity = encounter?.pal?.rarity || "common";
+  const isShiny = Boolean(encounter?.isShiny);
+  const titles = {
+    common: "🔥 A Wild Pal Appeared!",
+    uncommon: "🟢 Uncommon Pal Appeared!",
+    rare: "🔵 Rare Pal Appeared!",
+    epic: "🟣 EPIC Pal Appeared!",
+    legendary: "🟡 LEGENDARY Pal Appeared!",
+  };
+
+  if (isShiny) {
+    return `✨ SHINY ${getSpawnRarityLabel(rarity)} Pal Appeared!`;
+  }
+
+  return titles[rarity] || titles.common;
+}
+
+function getSpawnDescription(baseDescription) {
+  const description =
+    typeof baseDescription === "string" && baseDescription.trim()
+      ? baseDescription
+      : "A strange presence fills the area.";
+
+  return `${description}\n⚡ This one looks stronger than usual.`;
+}
+
 function clearActiveSpawn(messageId) {
   if (activeSpawn && activeSpawn.message.id === messageId) {
     activeSpawn = null;
@@ -34,7 +73,7 @@ function clearActiveSpawn(messageId) {
 function buildExpiredSpawnEmbed(encounter) {
   return captureCommand.buildEncounterEmbed(encounter, publicSpawnButtonsInventory, {
     title: "💨 The wild Pal wandered off.",
-    description: "No trainer acted in time.",
+    description: getSpawnDescription("No trainer acted in time."),
     showInventory: false,
   });
 }
@@ -84,8 +123,10 @@ async function startPublicSpawn(channel, options = {}) {
   const message = await channel.send({
     embeds: [
       captureCommand.buildEncounterEmbed(encounter, publicSpawnButtonsInventory, {
-        title: encounter.isShiny ? "✨ A SHINY Pal Appeared!" : "🔥 A Wild Pal Appeared!",
-        description: "First trainer to throw a sphere gets the chance!",
+        title: getSpawnTitle(encounter),
+        description: getSpawnDescription(
+          "First trainer to throw a sphere gets the chance!"
+        ),
         showInventory: false,
       }),
     ],
@@ -308,7 +349,14 @@ module.exports = {
       const palQuery = interaction.options.getString("pal");
       const forcedPal = palQuery ? findPalByName(palQuery) : null;
 
+      if (palQuery) {
+        console.log(
+          `[spawn] pal lookup requested="${palQuery}" found=${forcedPal ? "yes" : "no"}`
+        );
+      }
+
       if (palQuery && !forcedPal) {
+        console.warn(`[spawn] Could not find Pal for query="${palQuery}"`);
         await interaction.editReply("Could not find that Pal.");
         return;
       }
@@ -328,7 +376,7 @@ module.exports = {
 
       await interaction.editReply("✅ A wild Pal has spawned in this channel.");
     } catch (error) {
-      console.error("[spawn] Error executing /spawn:", error);
+      console.error("[spawn] Error executing /spawn:", error?.stack || error);
       await interaction.editReply("❌ Something went wrong while starting /spawn.");
     }
   },

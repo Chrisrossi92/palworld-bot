@@ -5,7 +5,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "register": "node src/register-commands.js"
+    "register": "node src/register-commands.js",
+    "audit:pal-images": "node scripts/auditPalImages.js",
+    "sync:pal-image-urls": "node scripts/syncPalImageUrls.js"
   },
   "keywords": [],
   "author": "",
