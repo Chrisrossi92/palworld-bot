@@ -15,6 +15,23 @@ function formatCaughtDate(timestamp) {
   });
 }
 
+function formatStars(stars) {
+  return "⭐".repeat(stars || 0) || "No stars";
+}
+
+function formatEssenceProgress(pal) {
+  const thresholds = [2, 5, 10, 20];
+
+  if ((pal.stars ?? 0) >= 4) {
+    return pal.extraEssence > 0
+      ? `Maxed (+${pal.extraEssence} extra essence)`
+      : "Maxed";
+  }
+
+  const nextThreshold = thresholds[pal.stars ?? 0];
+  return `${pal.essence ?? 0}/${nextThreshold}`;
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("mypals")
@@ -38,9 +55,9 @@ module.exports = {
     const recentPals = userPals.slice(-10).reverse();
     const palsList = recentPals
       .map((pal) => {
-        return `• ${pal.name} | Lv. ${pal.level} | ${pal.rarity} | ${formatCaughtDate(
-          pal.caughtAt
-        )}`;
+        return `• ${pal.name} | Lv. ${pal.level} | ${pal.rarity} | ${formatStars(
+          pal.stars
+        )} | Essence ${formatEssenceProgress(pal)} | ${formatCaughtDate(pal.caughtAt)}`;
       })
       .join("\n");
 

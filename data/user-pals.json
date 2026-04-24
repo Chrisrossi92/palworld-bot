@@ -1,88 +1,74 @@
 {
   "412831842304000030": [
     {
+      "name": "Gumoss",
+      "level": 2,
+      "rarity": "common",
+      "imageUrl": "",
+      "caughtAt": "2026-04-24T12:46:44.289Z",
+      "stars": 0,
+      "essence": 0,
+      "extraEssence": 0
+    },
+    {
       "name": "Foxparks",
       "level": 46,
       "rarity": "uncommon",
-      "caughtAt": "2026-04-23T20:55:58.166Z"
-    },
-    {
-      "name": "Lamball",
-      "level": 34,
-      "rarity": "common",
-      "caughtAt": "2026-04-23T21:04:39.914Z"
-    },
-    {
-      "name": "Direhowl",
-      "level": 17,
-      "rarity": "rare",
-      "caughtAt": "2026-04-23T21:06:29.272Z"
-    },
-    {
-      "name": "Chikipi",
-      "level": 44,
-      "rarity": "common",
-      "caughtAt": "2026-04-23T21:08:59.409Z"
-    },
-    {
-      "name": "Pengullet",
-      "level": 9,
-      "rarity": "uncommon",
-      "caughtAt": "2026-04-23T21:09:29.735Z"
-    },
-    {
-      "name": "Chikipi",
-      "level": 49,
-      "rarity": "common",
-      "caughtAt": "2026-04-23T21:11:30.012Z"
+      "imageUrl": "",
+      "caughtAt": "2026-04-24T02:33:41.599Z",
+      "stars": 1,
+      "essence": 2,
+      "extraEssence": 0
     },
     {
       "name": "Lamball",
       "level": 45,
       "rarity": "common",
-      "caughtAt": "2026-04-23T21:15:47.582Z"
-    },
-    {
-      "name": "Cattiva",
-      "level": 14,
-      "rarity": "common",
-      "caughtAt": "2026-04-23T21:32:20.351Z"
+      "imageUrl": "",
+      "caughtAt": "2026-04-24T02:16:53.889Z",
+      "stars": 1,
+      "essence": 2,
+      "extraEssence": 0
     },
     {
       "name": "Cattiva",
       "level": 16,
       "rarity": "common",
-      "caughtAt": "2026-04-23T22:01:29.799Z"
+      "imageUrl": "",
+      "caughtAt": "2026-04-24T01:51:36.647Z",
+      "stars": 1,
+      "essence": 2,
+      "extraEssence": 0
     },
     {
       "name": "Direhowl",
-      "level": 13,
+      "level": 17,
       "rarity": "rare",
-      "caughtAt": "2026-04-24T01:48:07.300Z"
+      "imageUrl": "",
+      "caughtAt": "2026-04-24T01:48:07.300Z",
+      "stars": 0,
+      "essence": 1,
+      "extraEssence": 0
     },
     {
-      "name": "Cattiva",
-      "level": 4,
+      "name": "Chikipi",
+      "level": 49,
       "rarity": "common",
-      "caughtAt": "2026-04-24T01:51:36.647Z"
+      "imageUrl": "",
+      "caughtAt": "2026-04-23T21:11:30.012Z",
+      "stars": 0,
+      "essence": 1,
+      "extraEssence": 0
     },
     {
-      "name": "Foxparks",
-      "level": 40,
+      "name": "Pengullet",
+      "level": 9,
       "rarity": "uncommon",
-      "caughtAt": "2026-04-24T01:53:26.858Z"
-    },
-    {
-      "name": "Lamball",
-      "level": 3,
-      "rarity": "common",
-      "caughtAt": "2026-04-24T02:16:53.889Z"
-    },
-    {
-      "name": "Foxparks",
-      "level": 3,
-      "rarity": "uncommon",
-      "caughtAt": "2026-04-24T02:33:41.599Z"
+      "imageUrl": "",
+      "caughtAt": "2026-04-23T21:09:29.735Z",
+      "stars": 0,
+      "essence": 0,
+      "extraEssence": 0
     }
   ]
 }

@@ -52,6 +52,7 @@ const defaultSphereInventory = {
 };
 
 const defaultStartingCoins = 100;
+const starThresholds = [2, 5, 10, 20];
 
 function ensureJsonFile(filePath) {
   const dirPath = path.dirname(filePath);
@@ -110,12 +111,124 @@ function readPalCatalog() {
   return defaultPalCatalog;
 }
 
+function getStarCountFromEssence(essence) {
+  if (essence >= starThresholds[3]) {
+    return 4;
+  }
+
+  if (essence >= starThresholds[2]) {
+    return 3;
+  }
+
+  if (essence >= starThresholds[1]) {
+    return 2;
+  }
+
+  if (essence >= starThresholds[0]) {
+    return 1;
+  }
+
+  return 0;
+}
+
+function getExtraEssence(essence) {
+  return Math.max(0, essence - starThresholds[3]);
+}
+
+function getNextStarThreshold(stars) {
+  return stars >= 4 ? null : starThresholds[stars];
+}
+
+function normalizePalEntry(pal) {
+  const essence =
+    Number.isInteger(pal.essence) && pal.essence >= 0 ? pal.essence : 0;
+  const extraEssence =
+    Number.isInteger(pal.extraEssence) && pal.extraEssence >= 0
+      ? pal.extraEssence
+      : getExtraEssence(essence);
+  const normalizedEssence = Math.max(essence, extraEssence);
+
+  return {
+    name: pal.name,
+    level: Number.isInteger(pal.level) && pal.level > 0 ? pal.level : 1,
+    rarity: typeof pal.rarity === "string" ? pal.rarity : "common",
+    imageUrl: typeof pal.imageUrl === "string" ? pal.imageUrl : "",
+    caughtAt:
+      typeof pal.caughtAt === "string" ? pal.caughtAt : new Date(0).toISOString(),
+    stars: getStarCountFromEssence(normalizedEssence),
+    essence: normalizedEssence,
+    extraEssence: getExtraEssence(normalizedEssence),
+  };
+}
+
+function consolidateUserPals(userPals) {
+  const byName = new Map();
+
+  for (const pal of Array.isArray(userPals) ? userPals : []) {
+    if (!pal || typeof pal.name !== "string") {
+      continue;
+    }
+
+    const normalized = normalizePalEntry(pal);
+    const existing = byName.get(normalized.name);
+
+    if (!existing) {
+      byName.set(normalized.name, {
+        ...normalized,
+        _duplicateCount: 0,
+      });
+      continue;
+    }
+
+    existing._duplicateCount += 1;
+    existing.essence += 1 + normalized.essence;
+    existing.extraEssence = getExtraEssence(existing.essence);
+    existing.stars = getStarCountFromEssence(existing.essence);
+
+    if (normalized.level > existing.level) {
+      existing.level = normalized.level;
+      existing.rarity = normalized.rarity;
+      existing.imageUrl = normalized.imageUrl;
+    }
+
+    const existingCaughtAt = new Date(existing.caughtAt).getTime();
+    const normalizedCaughtAt = new Date(normalized.caughtAt).getTime();
+
+    if (!Number.isNaN(normalizedCaughtAt) && normalizedCaughtAt > existingCaughtAt) {
+      existing.caughtAt = normalized.caughtAt;
+    }
+  }
+
+  return Array.from(byName.values())
+    .map(({ _duplicateCount, ...pal }) => ({
+      ...pal,
+      stars: getStarCountFromEssence(pal.essence),
+      extraEssence: getExtraEssence(pal.essence),
+    }))
+    .sort((a, b) => new Date(b.caughtAt).getTime() - new Date(a.caughtAt).getTime());
+}
+
+function normalizeUserPalsData(data) {
+  const normalized = {};
+
+  for (const [userId, pals] of Object.entries(data)) {
+    normalized[userId] = consolidateUserPals(pals);
+  }
+
+  return normalized;
+}
+
 function readUserPals() {
-  return readJsonFile(USER_PALS_DATA_PATH, "user pals");
+  const raw = readJsonFile(USER_PALS_DATA_PATH, "user pals");
+  const normalized = normalizeUserPalsData(raw);
+
+  writeUserPals(normalized);
+
+  return normalized;
 }
 
 function writeUserPals(data) {
-  writeJsonFile(USER_PALS_DATA_PATH, data);
+  writeJsonFile(USER_PALS_DATA_PATH, normalizeUserPalsData(data));
 }
 
 function readUsers() {
@@ -150,6 +263,10 @@ function getDefaultUserRecord(existingUser) {
       Number.isInteger(existingUser.captures) &&
       existingUser.captures >= 0
         ? existingUser.captures
+        : 0,
+    streak:
+      existingUser && Number.isInteger(existingUser.streak) && existingUser.streak >= 0
+        ? existingUser.streak
         : 0,
     failedCaptures:
       existingUser &&
@@ -240,9 +357,51 @@ function saveCapturedPal(userId, pal) {
     if (!Array.isArray(userPals[userId])) {
       userPals[userId] = [];
     }
+    const existingPal = userPals[userId].find((entry) => entry.name === pal.name);
 
-    userPals[userId].push(pal);
+    if (!existingPal) {
+      const newPal = {
+        ...pal,
+        stars: 0,
+        essence: 0,
+        extraEssence: 0,
+      };
+
+      userPals[userId].push(newPal);
+      writeUserPals(userPals);
+
+      return {
+        outcome: "new",
+        pal: newPal,
+        stars: 0,
+        essence: 0,
+        extraEssence: 0,
+        nextStarThreshold: getNextStarThreshold(0),
+        starIncreased: false,
+      };
+    }
+
+    const previousStars = existingPal.stars ?? getStarCountFromEssence(existingPal.essence ?? 0);
+
+    existingPal.essence = (existingPal.essence ?? 0) + 1;
+    existingPal.stars = getStarCountFromEssence(existingPal.essence);
+    existingPal.extraEssence = getExtraEssence(existingPal.essence);
+    existingPal.caughtAt = pal.caughtAt;
+    existingPal.level = Math.max(existingPal.level, pal.level);
+    existingPal.rarity = pal.rarity;
+    existingPal.imageUrl = pal.imageUrl;
+
     writeUserPals(userPals);
+
+    return {
+      outcome: "duplicate",
+      pal: existingPal,
+      stars: existingPal.stars,
+      essence: existingPal.essence,
+      extraEssence: existingPal.extraEssence,
+      nextStarThreshold: getNextStarThreshold(existingPal.stars),
+      starIncreased: existingPal.stars > previousStars,
+    };
   } catch (error) {
     console.error("[captureSystem] Failed to save captured pal:", error);
     throw error;
@@ -262,6 +421,7 @@ function applyXpToUserRecord(userRecord, xpGained) {
     coins: userRecord.coins,
     level: userRecord.level,
     captures: userRecord.captures,
+    streak: userRecord.streak,
     failedCaptures: userRecord.failedCaptures,
     updatedAt: userRecord.updatedAt,
     lastDailyAt: userRecord.lastDailyAt,
@@ -366,12 +526,18 @@ function updateUserProgress(userId, success) {
   const users = readUsers();
   const userRecord = getDefaultUserRecord(users[userId]);
   const xpGained = success ? 25 : 10;
-  const coinsGained = success ? 20 : 5;
+  let coinsGained = success ? 20 : 5;
 
   if (success) {
     userRecord.captures += 1;
+    userRecord.streak += 1;
   } else {
     userRecord.failedCaptures += 1;
+    userRecord.streak = 0;
+  }
+
+  if (userRecord.streak >= 3) {
+    coinsGained += 10;
   }
 
   userRecord.coins += coinsGained;
@@ -446,6 +612,8 @@ function createEncounterForLevel(userLevel, options = {}) {
     name: encounteredPal.name,
     level,
     rarity: encounteredPal.rarity,
+    imageUrl:
+      typeof encounteredPal.imageUrl === "string" ? encounteredPal.imageUrl : "",
     unlockLevel: encounteredPal.unlockLevel,
   };
 }
@@ -476,21 +644,31 @@ function resolveCaptureEncounter(userId, encounterPal, sphere = "basic") {
       name: encounterPal.name,
       level: encounterPal.level,
       rarity: encounterPal.rarity,
+      imageUrl:
+        typeof encounterPal.imageUrl === "string" ? encounterPal.imageUrl : "",
       caughtAt: new Date().toISOString(),
     };
 
     if (success) {
-      saveCapturedPal(userId, pal);
-    }
+      const collectionUpdate = saveCapturedPal(userId, pal);
 
-    const progression = updateUserProgress(userId, success);
+      return {
+        pal,
+        sphere: normalizedSphere,
+        captureChance,
+        success,
+        progression: updateUserProgress(userId, success),
+        collectionUpdate,
+      };
+    }
 
     return {
       pal,
       sphere: normalizedSphere,
       captureChance,
       success,
-      progression,
+      progression: updateUserProgress(userId, success),
+      collectionUpdate: null,
     };
   } catch (error) {
     console.error("[captureSystem] resolveCaptureEncounter failed:", error);

@@ -38,6 +38,22 @@ function buildExpiredSpawnEmbed(encounter) {
   });
 }
 
+function buildSpawnResolvedEmbed(result, remaining, user) {
+  const embed = captureCommand.buildResolvedEmbed(result, remaining);
+
+  if (!result.success) {
+    return embed;
+  }
+
+  embed.setTitle(`✅ Pal Captured by ${user.username}!`);
+  embed.addFields({
+    name: "Captured By",
+    value: `<@${user.id}>`,
+  });
+
+  return embed;
+}
+
 async function startPublicSpawn(channel) {
   if (!channel) {
     throw new Error("A valid channel is required to start a public spawn.");
@@ -162,7 +178,13 @@ async function startPublicSpawn(channel) {
       );
 
       await message.edit({
-        embeds: [captureCommand.buildResolvedEmbed(result, sphereUse.remaining)],
+        embeds: [
+          buildSpawnResolvedEmbed(
+            result,
+            sphereUse.remaining,
+            buttonInteraction.user
+          ),
+        ],
         components: captureCommand.buildSphereButtons(
           publicSpawnButtonsInventory,
           true,

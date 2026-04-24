@@ -58,6 +58,18 @@ const sphereChoices = [
   ["Legendary", "legendary"],
 ];
 
+function getPalImageUrl(pal) {
+  if (pal && typeof pal.imageUrl === "string" && pal.imageUrl.trim() !== "") {
+    return pal.imageUrl.trim();
+  }
+
+  if (!pal || typeof pal.name !== "string") {
+    return "";
+  }
+
+  return palImageUrls[pal.name.toLowerCase()] || "";
+}
+
 function formatSphereInventory(inventory) {
   return sphereChoices
     .map(([name, value]) => `${name}: ${inventory[value] ?? 0}`)
@@ -85,7 +97,7 @@ function buildSphereButtons(
 
 function buildEncounterEmbed(encounter, inventory, options = {}) {
   const rarityEmoji = rarityEmojis[encounter.rarity] || "";
-  const imageUrl = palImageUrls[encounter.name.toLowerCase()];
+  const imageUrl = getPalImageUrl(encounter);
   const fields = [
     {
       name: "Wild Pal",
@@ -127,7 +139,25 @@ function buildResolvedEmbed(result, remaining) {
   const flavorText = result.success
     ? "Nice throw — added to your collection."
     : "It broke free. Better luck next time.";
-  const imageUrl = palImageUrls[result.pal.name.toLowerCase()];
+  const imageUrl = getPalImageUrl(result.pal);
+  const collectionProgress = result.collectionUpdate
+    ? result.collectionUpdate.nextStarThreshold
+      ? `${result.collectionUpdate.essence}/${result.collectionUpdate.nextStarThreshold}`
+      : `Maxed (+${result.collectionUpdate.extraEssence} extra essence)`
+    : "No change";
+  const progressNotes = [];
+
+  if (result.progression.leveledUp) {
+    progressNotes.push("Level Up!");
+  }
+
+  if (result.collectionUpdate && result.collectionUpdate.starIncreased) {
+    progressNotes.push("Star Up!");
+  }
+
+  if (progressNotes.length === 0) {
+    progressNotes.push("No level change.");
+  }
 
   const embed = new EmbedBuilder()
     .setTitle(result.success ? "✅ Pal Captured!" : "❌ Pal Escaped!")
@@ -161,8 +191,18 @@ function buildResolvedEmbed(result, remaining) {
       {
         name: result.success ? "Added To Collection" : "Escaped",
         value: result.success
-          ? `${result.pal.name} Lv. ${result.pal.level} has joined your Palbox.`
+          ? result.collectionUpdate && result.collectionUpdate.outcome === "duplicate"
+            ? `${result.pal.name} was condensed into your existing Pal.`
+            : `${result.pal.name} Lv. ${result.pal.level} has joined your Palbox.`
           : `${result.pal.name} broke free and ran off.`,
+      },
+      {
+        name: "Collection Result",
+        value: result.success
+          ? result.collectionUpdate && result.collectionUpdate.outcome === "duplicate"
+            ? "Duplicate Condensed"
+            : "New Pal Added"
+          : "No Pal Added",
       },
       {
         name: "Flavor",
@@ -194,10 +234,25 @@ function buildResolvedEmbed(result, remaining) {
         inline: true,
       },
       {
+        name: "🔥 Streak",
+        value: `${result.progression.streak}`,
+        inline: true,
+      },
+      {
+        name: "Current Stars",
+        value: result.collectionUpdate
+          ? `${"⭐".repeat(result.collectionUpdate.stars || 0) || "None"}`
+          : "None",
+        inline: true,
+      },
+      {
+        name: "Essence Progress",
+        value: result.success ? collectionProgress : "None",
+        inline: true,
+      },
+      {
         name: "Progress",
-        value: result.progression.leveledUp
-          ? "Level Up!"
-          : "No level change.",
+        value: progressNotes.join(" | "),
       }
     )
     .setTimestamp();
@@ -210,7 +265,7 @@ function buildResolvedEmbed(result, remaining) {
 }
 
 function buildThrowEmbed(encounter, sphere) {
-  const imageUrl = palImageUrls[encounter.name.toLowerCase()];
+  const imageUrl = getPalImageUrl(encounter);
   const embed = new EmbedBuilder()
     .setTitle(`🎯 Throwing ${sphere} Sphere...`)
     .setColor(0xf1c40f)
@@ -227,7 +282,7 @@ function buildThrowEmbed(encounter, sphere) {
 }
 
 function buildShakeEmbed(encounter) {
-  const imageUrl = palImageUrls[encounter.name.toLowerCase()];
+  const imageUrl = getPalImageUrl(encounter);
   const embed = new EmbedBuilder()
     .setTitle("...shake...shake...")
     .setColor(0xf39c12)
