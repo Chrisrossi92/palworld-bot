@@ -8,6 +8,7 @@ const leaderboardCommand = require("./commands/leaderboard");
 const profileCommand = require("./commands/profile");
 const dailyCommand = require("./commands/daily");
 const spawnCommand = require("./commands/spawn");
+const { startSpawnSystem } = require("./systems/spawnSystem");
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
@@ -24,6 +25,7 @@ client.commands.set(spawnCommand.data.name, spawnCommand);
 
 client.once("ready", () => {
   console.log(`✅ Palworld Bot online as ${client.user.tag}`);
+  startSpawnSystem(client);
 });
 
 client.on("interactionCreate", async (interaction) => {

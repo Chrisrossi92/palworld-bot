@@ -298,7 +298,7 @@ module.exports = {
     }
 
     try {
-      const encounter = createEncounter();
+      const encounter = createEncounter(interaction.user.id);
       const inventory = getUserInventory(interaction.user.id);
       const message = await interaction.editReply({
         embeds: [buildEncounterEmbed(encounter, inventory)],

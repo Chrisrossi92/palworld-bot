@@ -1,15 +1,15 @@
 {
   "412831842304000030": {
-    "xp": 205,
-    "coins": 180,
+    "xp": 250,
+    "coins": 210,
     "level": 3,
-    "captures": 5,
-    "failedCaptures": 3,
-    "updatedAt": "2026-04-24T01:53:26.860Z",
+    "captures": 6,
+    "failedCaptures": 5,
+    "updatedAt": "2026-04-24T02:28:08.699Z",
     "lastDailyAt": "2026-04-23T21:47:29.535Z",
     "spheres": {
-      "basic": 7,
-      "mega": 1,
+      "basic": 5,
+      "mega": 0,
       "giga": 1,
       "hyper": 0,
       "ultra": 0,

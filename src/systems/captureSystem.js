@@ -1,18 +1,20 @@
 const fs = require("fs");
 const path = require("path");
 
+const MAX_LEVEL = 70;
+const PALS_DATA_PATH = path.join(__dirname, "../../data/pals.json");
 const USER_PALS_DATA_PATH = path.join(__dirname, "../../data/user-pals.json");
 const USERS_DATA_PATH = path.join(__dirname, "../../data/users.json");
 
-const palPool = [
-  { name: "Lamball", rarity: "common", weight: 30 },
-  { name: "Cattiva", rarity: "common", weight: 30 },
-  { name: "Chikipi", rarity: "common", weight: 30 },
-  { name: "Foxparks", rarity: "uncommon", weight: 18 },
-  { name: "Pengullet", rarity: "uncommon", weight: 18 },
-  { name: "Direhowl", rarity: "rare", weight: 10 },
-  { name: "Anubis", rarity: "epic", weight: 4 },
-  { name: "Jetragon", rarity: "legendary", weight: 1 },
+const defaultPalCatalog = [
+  { name: "Lamball", rarity: "common", unlockLevel: 1 },
+  { name: "Cattiva", rarity: "common", unlockLevel: 1 },
+  { name: "Chikipi", rarity: "common", unlockLevel: 1 },
+  { name: "Foxparks", rarity: "uncommon", unlockLevel: 5 },
+  { name: "Pengullet", rarity: "uncommon", unlockLevel: 8 },
+  { name: "Direhowl", rarity: "rare", unlockLevel: 15 },
+  { name: "Anubis", rarity: "epic", unlockLevel: 35 },
+  { name: "Jetragon", rarity: "legendary", unlockLevel: 60 },
 ];
 
 const rarityWeights = {
@@ -84,6 +86,28 @@ function readJsonFile(filePath, label) {
 function writeJsonFile(filePath, data) {
   ensureJsonFile(filePath);
   fs.writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+}
+
+function readPalCatalog() {
+  ensureJsonFile(PALS_DATA_PATH);
+
+  try {
+    const raw = fs.readFileSync(PALS_DATA_PATH, "utf8").trim();
+    const parsed = raw ? JSON.parse(raw) : defaultPalCatalog;
+
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+  } catch (error) {
+    console.error("Failed to read pals data. Resetting file.", error);
+  }
+
+  fs.writeFileSync(
+    PALS_DATA_PATH,
+    `${JSON.stringify(defaultPalCatalog, null, 2)}\n`,
+    "utf8"
+  );
+  return defaultPalCatalog;
 }
 
 function readUserPals() {
@@ -169,6 +193,10 @@ function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function clampLevel(level) {
+  return Math.max(1, Math.min(MAX_LEVEL, level));
+}
+
 function chooseWeightedRarity() {
   const entries = Object.entries(rarityWeights);
   const totalWeight = entries.reduce((sum, [, weight]) => sum + weight, 0);
@@ -185,12 +213,12 @@ function chooseWeightedRarity() {
   return "common";
 }
 
-function chooseRandomPal() {
+function chooseRandomPal(eligiblePals) {
   const rarity = chooseWeightedRarity();
-  const rarityPool = palPool.filter((pal) => pal.rarity === rarity);
+  const rarityPool = eligiblePals.filter((pal) => pal.rarity === rarity);
 
   if (rarityPool.length === 0) {
-    return palPool[0];
+    return eligiblePals[randomInt(0, eligiblePals.length - 1)];
   }
 
   return rarityPool[randomInt(0, rarityPool.length - 1)];
@@ -252,6 +280,16 @@ function getUserInventory(userId) {
   return {
     ...userRecord.spheres,
   };
+}
+
+function getUserLevel(userId) {
+  const users = readUsers();
+  const userRecord = getDefaultUserRecord(users[userId]);
+
+  users[userId] = userRecord;
+  writeUsers(users);
+
+  return clampLevel(userRecord.level);
 }
 
 function consumeSphere(userId, sphere) {
@@ -387,15 +425,36 @@ function claimDailyReward(userId) {
   };
 }
 
-function createEncounter() {
-  const encounteredPal = chooseRandomPal();
-  const level = randomInt(1, 50);
+function createEncounterForLevel(userLevel, options = {}) {
+  const clampedUserLevel = clampLevel(userLevel);
+  const palCatalog = readPalCatalog();
+  const eligiblePals = palCatalog.filter(
+    (pal) => pal.unlockLevel <= clampedUserLevel
+  );
+
+  if (eligiblePals.length === 0) {
+    throw new Error("No eligible pals available for encounter generation.");
+  }
+
+  const encounteredPal = chooseRandomPal(eligiblePals);
+  const minLevel = Math.max(1, Math.round(clampedUserLevel * 0.6));
+  const level = options.includeLevel === false
+    ? options.levelLabel || "Scales to trainer"
+    : randomInt(minLevel, clampedUserLevel);
 
   return {
     name: encounteredPal.name,
     level,
     rarity: encounteredPal.rarity,
+    unlockLevel: encounteredPal.unlockLevel,
   };
+}
+
+function createEncounter(userId) {
+  const users = readUsers();
+  const userRecord = getDefaultUserRecord(users[userId]);
+
+  return createEncounterForLevel(userRecord.level);
 }
 
 function resolveCaptureEncounter(userId, encounterPal, sphere = "basic") {
@@ -449,7 +508,10 @@ module.exports = {
   claimDailyReward,
   consumeSphere,
   createEncounter,
+  createEncounterForLevel,
+  getUserLevel,
   getUserInventory,
+  MAX_LEVEL,
   readUserPals,
   readUsers,
   resolveCaptureEncounter,

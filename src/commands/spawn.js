@@ -4,12 +4,192 @@ const {
   ComponentType,
 } = require("discord.js");
 const {
-  createEncounter,
+  createEncounterForLevel,
   consumeSphere,
-  getUserInventory,
+  getUserLevel,
+  MAX_LEVEL,
   resolveCaptureEncounter,
 } = require("../systems/captureSystem");
 const captureCommand = require("./capture");
+
+const publicSpawnButtonsInventory = {
+  basic: 1,
+  mega: 1,
+  giga: 1,
+  hyper: 1,
+  ultra: 1,
+  legendary: 1,
+};
+
+let activeSpawn = null;
+
+async function startPublicSpawn(channel) {
+  if (!channel) {
+    throw new Error("A valid channel is required to start a public spawn.");
+  }
+
+  if (activeSpawn) {
+    return {
+      started: false,
+      reason: "active_spawn",
+      message: activeSpawn.message,
+    };
+  }
+
+  const encounter = createEncounterForLevel(MAX_LEVEL, {
+    includeLevel: false,
+    levelLabel: "Scales to trainer",
+  });
+
+  const message = await channel.send({
+    embeds: [
+      captureCommand.buildEncounterEmbed(encounter, publicSpawnButtonsInventory, {
+        title: "🔥 A Wild Pal Appeared!",
+        description: "First trainer to throw a sphere gets the chance!",
+        showInventory: false,
+      }),
+    ],
+    components: captureCommand.buildSphereButtons(
+      publicSpawnButtonsInventory,
+      false,
+      "spawn"
+    ),
+  });
+
+  activeSpawn = {
+    encounter,
+    isResolved: false,
+    isResolving: false,
+    message,
+  };
+
+  const collector = message.createMessageComponentCollector({
+    componentType: ComponentType.Button,
+    time: 60_000,
+  });
+
+  collector.on("collect", async (buttonInteraction) => {
+    try {
+      await buttonInteraction.deferUpdate();
+
+      if (!activeSpawn || activeSpawn.message.id !== message.id) {
+        return;
+      }
+
+      if (activeSpawn.isResolved || activeSpawn.isResolving) {
+        return;
+      }
+
+      const [, sphere] = buttonInteraction.customId.split(":");
+      const sphereUse = consumeSphere(buttonInteraction.user.id, sphere);
+
+      if (!sphereUse.consumed) {
+        await buttonInteraction.followUp({
+          content: `❌ You don't have any ${sphereUse.sphere} spheres.`,
+          ephemeral: true,
+        });
+        return;
+      }
+
+      activeSpawn.isResolving = true;
+
+      const resolvedEncounter = {
+        ...encounter,
+        level: getUserLevel(buttonInteraction.user.id),
+      };
+
+      await message.edit({
+        embeds: [captureCommand.buildThrowEmbed(resolvedEncounter, sphere)],
+        components: captureCommand.buildSphereButtons(
+          publicSpawnButtonsInventory,
+          true,
+          "spawn"
+        ),
+      });
+
+      await new Promise((res) => setTimeout(res, 1000));
+
+      await message.edit({
+        embeds: [captureCommand.buildShakeEmbed(resolvedEncounter)],
+        components: captureCommand.buildSphereButtons(
+          publicSpawnButtonsInventory,
+          true,
+          "spawn"
+        ),
+      });
+
+      await new Promise((res) => setTimeout(res, 500));
+
+      const result = resolveCaptureEncounter(
+        buttonInteraction.user.id,
+        resolvedEncounter,
+        sphere
+      );
+
+      await message.edit({
+        embeds: [captureCommand.buildResolvedEmbed(result, sphereUse.remaining)],
+        components: captureCommand.buildSphereButtons(
+          publicSpawnButtonsInventory,
+          true,
+          "spawn"
+        ),
+      });
+
+      activeSpawn.isResolved = true;
+      collector.stop("resolved");
+    } catch (error) {
+      console.error("[spawn] Error resolving public encounter:", error);
+
+      try {
+        await message.edit({
+          content: "❌ Something went wrong while processing /spawn.",
+          embeds: [],
+          components: captureCommand.buildSphereButtons(
+            publicSpawnButtonsInventory,
+            true,
+            "spawn"
+          ),
+        });
+      } catch (editError) {
+        console.error("[spawn] Failed to edit spawn message after error:", editError);
+      }
+
+      collector.stop("error");
+    }
+  });
+
+  collector.on("end", async (collected, reason) => {
+    try {
+      if (reason !== "resolved" && reason !== "error") {
+        await message.edit({
+          embeds: [
+            captureCommand.buildEncounterEmbed(encounter, publicSpawnButtonsInventory, {
+              title: "🔥 A Wild Pal Appeared!",
+              description: "First trainer to throw a sphere gets the chance!",
+              showInventory: false,
+            }),
+          ],
+          components: captureCommand.buildSphereButtons(
+            publicSpawnButtonsInventory,
+            true,
+            "spawn"
+          ),
+        });
+      }
+    } catch (error) {
+      console.error("[spawn] Failed to disable spawn buttons:", error);
+    } finally {
+      if (activeSpawn && activeSpawn.message.id === message.id) {
+        activeSpawn = null;
+      }
+    }
+  });
+
+  return {
+    started: true,
+    message,
+  };
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -31,193 +211,23 @@ module.exports = {
       return;
     }
 
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
 
     try {
-      const encounter = createEncounter();
-      const message = await interaction.editReply({
-        embeds: [
-          captureCommand.buildEncounterEmbed(encounter, getUserInventory(interaction.user.id), {
-            title: "🔥 A Wild Pal Appeared!",
-            description: "First trainer to throw a sphere gets the chance!",
-            showInventory: false,
-          }),
-        ],
-        components: captureCommand.buildSphereButtons(
-          {
-            basic: 1,
-            mega: 1,
-            giga: 1,
-            hyper: 1,
-            ultra: 1,
-            legendary: 1,
-          },
-          false,
-          "spawn"
-        ),
-      });
+      const result = await startPublicSpawn(interaction.channel);
 
-      let isResolving = false;
-      let isResolved = false;
+      if (!result.started) {
+        await interaction.editReply(
+          "⚠️ A public spawn is already active. Resolve it before creating another."
+        );
+        return;
+      }
 
-      const collector = message.createMessageComponentCollector({
-        componentType: ComponentType.Button,
-        time: 60_000,
-      });
-
-      collector.on("collect", async (buttonInteraction) => {
-        try {
-          await buttonInteraction.deferUpdate();
-
-          if (isResolved || isResolving) {
-            return;
-          }
-
-          const [, sphere] = buttonInteraction.customId.split(":");
-          const sphereUse = consumeSphere(buttonInteraction.user.id, sphere);
-
-          if (!sphereUse.consumed) {
-            await buttonInteraction.followUp({
-              content: `❌ You don't have any ${sphereUse.sphere} spheres.`,
-              ephemeral: true,
-            });
-            return;
-          }
-
-          isResolving = true;
-
-          await interaction.editReply({
-            content: "",
-            embeds: [captureCommand.buildThrowEmbed(encounter, sphere)],
-            components: captureCommand.buildSphereButtons(
-              {
-                basic: 1,
-                mega: 1,
-                giga: 1,
-                hyper: 1,
-                ultra: 1,
-                legendary: 1,
-              },
-              true,
-              "spawn"
-            ),
-          });
-
-          await new Promise((res) => setTimeout(res, 1000));
-
-          await interaction.editReply({
-            content: "",
-            embeds: [captureCommand.buildShakeEmbed(encounter)],
-            components: captureCommand.buildSphereButtons(
-              {
-                basic: 1,
-                mega: 1,
-                giga: 1,
-                hyper: 1,
-                ultra: 1,
-                legendary: 1,
-              },
-              true,
-              "spawn"
-            ),
-          });
-
-          await new Promise((res) => setTimeout(res, 500));
-
-          const result = resolveCaptureEncounter(
-            buttonInteraction.user.id,
-            encounter,
-            sphere
-          );
-
-          await interaction.editReply({
-            content: "",
-            embeds: [
-              captureCommand.buildResolvedEmbed(result, sphereUse.remaining),
-            ],
-            components: captureCommand.buildSphereButtons(
-              {
-                basic: 1,
-                mega: 1,
-                giga: 1,
-                hyper: 1,
-                ultra: 1,
-                legendary: 1,
-              },
-              true,
-              "spawn"
-            ),
-          });
-
-          isResolved = true;
-          collector.stop("resolved");
-        } catch (error) {
-          console.error("[spawn] Error resolving public encounter:", error);
-
-          try {
-            await interaction.editReply({
-              content: "❌ Something went wrong while processing /spawn.",
-              embeds: [],
-              components: captureCommand.buildSphereButtons(
-                {
-                  basic: 1,
-                  mega: 1,
-                  giga: 1,
-                  hyper: 1,
-                  ultra: 1,
-                  legendary: 1,
-                },
-                true,
-                "spawn"
-              ),
-            });
-          } catch (editError) {
-            console.error("[spawn] Failed to edit spawn reply after error:", editError);
-          }
-
-          collector.stop("error");
-        }
-      });
-
-      collector.on("end", async (collected, reason) => {
-        if (reason === "resolved" || reason === "error") {
-          return;
-        }
-
-        try {
-          await interaction.editReply({
-            embeds: [
-              captureCommand.buildEncounterEmbed(
-                encounter,
-                getUserInventory(interaction.user.id),
-                {
-                  title: "🔥 A Wild Pal Appeared!",
-                  description: "First trainer to throw a sphere gets the chance!",
-                  showInventory: false,
-                }
-              ),
-            ],
-            components: captureCommand.buildSphereButtons(
-              {
-                basic: 1,
-                mega: 1,
-                giga: 1,
-                hyper: 1,
-                ultra: 1,
-                legendary: 1,
-              },
-              true,
-              "spawn"
-            ),
-          });
-        } catch (error) {
-          console.error("[spawn] Failed to disable spawn buttons:", error);
-        }
-      });
+      await interaction.editReply("✅ A wild Pal has spawned in this channel.");
     } catch (error) {
       console.error("[spawn] Error executing /spawn:", error);
-
       await interaction.editReply("❌ Something went wrong while starting /spawn.");
     }
   },
+  startPublicSpawn,
 };

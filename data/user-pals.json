@@ -71,6 +71,12 @@
       "level": 40,
       "rarity": "uncommon",
       "caughtAt": "2026-04-24T01:53:26.858Z"
+    },
+    {
+      "name": "Lamball",
+      "level": 3,
+      "rarity": "common",
+      "caughtAt": "2026-04-24T02:16:53.889Z"
     }
   ]
 }

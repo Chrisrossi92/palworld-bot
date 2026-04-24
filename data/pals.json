@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Lamball",
+    "rarity": "common",
+    "unlockLevel": 1
+  },
+  {
+    "name": "Cattiva",
+    "rarity": "common",
+    "unlockLevel": 1
+  },
+  {
+    "name": "Chikipi",
+    "rarity": "common",
+    "unlockLevel": 1
+  },
+  {
+    "name": "Foxparks",
+    "rarity": "uncommon",
+    "unlockLevel": 5
+  },
+  {
+    "name": "Pengullet",
+    "rarity": "uncommon",
+    "unlockLevel": 8
+  },
+  {
+    "name": "Direhowl",
+    "rarity": "rare",
+    "unlockLevel": 15
+  },
+  {
+    "name": "Anubis",
+    "rarity": "epic",
+    "unlockLevel": 35
+  },
+  {
+    "name": "Jetragon",
+    "rarity": "legendary",
+    "unlockLevel": 60
+  }
+]
