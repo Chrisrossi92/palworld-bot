@@ -160,6 +160,7 @@ function normalizePalEntry(pal) {
     name: pal.name,
     level: Number.isInteger(pal.level) && pal.level > 0 ? pal.level : 1,
     rarity: typeof pal.rarity === "string" ? pal.rarity : "common",
+    isShiny: Boolean(pal.isShiny),
     imageUrl: typeof pal.imageUrl === "string" ? pal.imageUrl : "",
     caughtAt:
       typeof pal.caughtAt === "string" ? pal.caughtAt : new Date(0).toISOString(),
@@ -199,6 +200,8 @@ function consolidateUserPals(userPals) {
       existing.imageUrl = normalized.imageUrl;
     }
 
+    existing.isShiny = existing.isShiny || normalized.isShiny;
+
     const existingCaughtAt = new Date(existing.caughtAt).getTime();
     const normalizedCaughtAt = new Date(normalized.caughtAt).getTime();
 
@@ -210,6 +213,7 @@ function consolidateUserPals(userPals) {
   return Array.from(byName.values())
     .map(({ _duplicateCount, ...pal }) => ({
       ...pal,
+      isShiny: Boolean(pal.isShiny),
       stars: getStarCountFromEssence(pal.essence),
       extraEssence: getExtraEssence(pal.essence),
     }))
@@ -370,6 +374,7 @@ function saveCapturedPal(userId, pal) {
     if (!existingPal) {
       const newPal = {
         ...pal,
+        isShiny: Boolean(pal.isShiny),
         stars: 0,
         essence: 0,
         extraEssence: 0,
@@ -397,6 +402,7 @@ function saveCapturedPal(userId, pal) {
     existingPal.caughtAt = pal.caughtAt;
     existingPal.level = Math.max(existingPal.level, pal.level);
     existingPal.rarity = pal.rarity;
+    existingPal.isShiny = existingPal.isShiny || Boolean(pal.isShiny);
     existingPal.imageUrl = pal.imageUrl;
 
     writeUserPals(userPals);
@@ -589,11 +595,19 @@ function addSphereRewards(userRecord, rewards) {
   }
 }
 
-function updateUserProgress(userId, success) {
+function updateUserProgress(userId, success, isShiny = false) {
   const users = readUsers();
   const userRecord = getDefaultUserRecord(users[userId]);
-  const xpGained = success ? 25 : 10;
-  let coinsGained = success ? 20 : 5;
+  const xpGained = isShiny
+    ? Math.round((success ? 25 : 10) * 1.5)
+    : success
+      ? 25
+      : 10;
+  let coinsGained = isShiny
+    ? Math.round((success ? 20 : 5) * 1.5)
+    : success
+      ? 20
+      : 5;
 
   if (success) {
     userRecord.captures += 1;
@@ -679,6 +693,7 @@ function createEncounterForLevel(userLevel, options = {}) {
     name: encounteredPal.name,
     level,
     rarity: encounteredPal.rarity,
+    isShiny: Math.random() < 0.02,
     imageUrl:
       typeof encounteredPal.imageUrl === "string" ? encounteredPal.imageUrl : "",
     unlockLevel: encounteredPal.unlockLevel,
@@ -711,6 +726,7 @@ function resolveCaptureEncounter(userId, encounterPal, sphere = "basic") {
       name: encounterPal.name,
       level: encounterPal.level,
       rarity: encounterPal.rarity,
+      isShiny: Boolean(encounterPal.isShiny),
       imageUrl:
         typeof encounterPal.imageUrl === "string" ? encounterPal.imageUrl : "",
       caughtAt: new Date().toISOString(),
@@ -724,7 +740,7 @@ function resolveCaptureEncounter(userId, encounterPal, sphere = "basic") {
         sphere: normalizedSphere,
         captureChance,
         success,
-        progression: updateUserProgress(userId, success),
+        progression: updateUserProgress(userId, success, Boolean(encounterPal.isShiny)),
         collectionUpdate,
       };
     }
@@ -734,7 +750,7 @@ function resolveCaptureEncounter(userId, encounterPal, sphere = "basic") {
       sphere: normalizedSphere,
       captureChance,
       success,
-      progression: updateUserProgress(userId, success),
+      progression: updateUserProgress(userId, success, Boolean(encounterPal.isShiny)),
       collectionUpdate: null,
     };
   } catch (error) {

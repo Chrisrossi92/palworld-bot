@@ -45,7 +45,11 @@ function buildSpawnResolvedEmbed(result, remaining, user) {
     return embed;
   }
 
-  embed.setTitle(`✅ Pal Captured by ${user.username}!`);
+  embed.setTitle(
+    result.pal.isShiny
+      ? `✨ SHINY Pal Captured by ${user.username}!`
+      : `✅ Pal Captured by ${user.username}!`
+  );
   embed.addFields({
     name: "Captured By",
     value: `<@${user.id}>`,
@@ -75,7 +79,7 @@ async function startPublicSpawn(channel) {
   const message = await channel.send({
     embeds: [
       captureCommand.buildEncounterEmbed(encounter, publicSpawnButtonsInventory, {
-        title: "🔥 A Wild Pal Appeared!",
+        title: encounter.isShiny ? "✨ A SHINY Pal Appeared!" : "🔥 A Wild Pal Appeared!",
         description: "First trainer to throw a sphere gets the chance!",
         showInventory: false,
       }),

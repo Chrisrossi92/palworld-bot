@@ -55,7 +55,7 @@ module.exports = {
     const recentPals = userPals.slice(-10).reverse();
     const palsList = recentPals
       .map((pal) => {
-        return `• ${pal.name} | Lv. ${pal.level} | ${pal.rarity} | ${formatStars(
+        return `• ${pal.isShiny ? "✨ " : ""}${pal.name} | Lv. ${pal.level} | ${pal.rarity} | ${formatStars(
           pal.stars
         )} | Essence ${formatEssenceProgress(pal)} | ${formatCaughtDate(pal.caughtAt)}`;
       })

@@ -23,6 +23,7 @@ const rarityColors = {
   epic: 0x9b59b6,
   legendary: 0xf1c40f,
 };
+const shinyColor = 0xf1c40f;
 
 const rarityEmojis = {
   common: "⚪",
@@ -105,6 +106,14 @@ function buildEncounterEmbed(encounter, inventory, options = {}) {
     },
   ];
 
+  if (encounter.isShiny) {
+    fields.push({
+      name: "Variant",
+      value: "✨ SHINY",
+      inline: true,
+    });
+  }
+
   if (options.showInventory !== false) {
     fields.push({
       name: "🎒 Spheres",
@@ -113,8 +122,10 @@ function buildEncounterEmbed(encounter, inventory, options = {}) {
   }
 
   const embed = new EmbedBuilder()
-    .setTitle(options.title || "Wild Pal Encounter")
-    .setColor(rarityColors[encounter.rarity] || 0x95a5a6)
+    .setTitle(
+      options.title || (encounter.isShiny ? "✨ A SHINY Pal Appeared!" : "Wild Pal Encounter")
+    )
+    .setColor(encounter.isShiny ? shinyColor : rarityColors[encounter.rarity] || 0x95a5a6)
     .addFields(fields)
     .setTimestamp();
 
@@ -131,11 +142,13 @@ function buildEncounterEmbed(encounter, inventory, options = {}) {
 
 function buildResolvedEmbed(result, remaining) {
   const rarityEmoji = rarityEmojis[result.pal.rarity] || "";
-  const embedColor = result.success
-    ? ["epic", "legendary"].includes(result.pal.rarity)
-      ? rarityColors[result.pal.rarity] || 0x57f287
-      : 0x57f287
-    : 0xed4245;
+  const embedColor = result.pal.isShiny
+    ? shinyColor
+    : result.success
+      ? ["epic", "legendary"].includes(result.pal.rarity)
+        ? rarityColors[result.pal.rarity] || 0x57f287
+        : 0x57f287
+      : 0xed4245;
   const flavorText = result.success
     ? "Nice throw — added to your collection."
     : "It broke free. Better luck next time.";
@@ -160,13 +173,30 @@ function buildResolvedEmbed(result, remaining) {
   }
 
   const embed = new EmbedBuilder()
-    .setTitle(result.success ? "✅ Pal Captured!" : "❌ Pal Escaped!")
+    .setTitle(
+      result.pal.isShiny
+        ? result.success
+          ? "✨ SHINY Pal Captured!"
+          : "✨ SHINY Pal Escaped!"
+        : result.success
+          ? "✅ Pal Captured!"
+          : "❌ Pal Escaped!"
+    )
     .setColor(embedColor)
     .addFields(
       {
         name: "Wild Pal",
         value: `${rarityEmoji} ${result.pal.name} (Lv. ${result.pal.level}, ${result.pal.rarity})`,
       },
+      ...(result.pal.isShiny
+        ? [
+            {
+              name: "Variant",
+              value: "✨ SHINY",
+              inline: true,
+            },
+          ]
+        : []),
       {
         name: "Sphere Used",
         value: result.sphere,
@@ -267,12 +297,24 @@ function buildResolvedEmbed(result, remaining) {
 function buildThrowEmbed(encounter, sphere) {
   const imageUrl = getPalImageUrl(encounter);
   const embed = new EmbedBuilder()
-    .setTitle(`🎯 Throwing ${sphere} Sphere...`)
-    .setColor(0xf1c40f)
+    .setTitle(
+      encounter.isShiny
+        ? `✨ Throwing ${sphere} Sphere at a SHINY Pal...`
+        : `🎯 Throwing ${sphere} Sphere...`
+    )
+    .setColor(encounter.isShiny ? shinyColor : 0xf1c40f)
     .setDescription(
       `${encounter.name} is in sight. The sphere is flying toward its target...`
     )
     .setTimestamp();
+
+  if (encounter.isShiny) {
+    embed.addFields({
+      name: "Variant",
+      value: "✨ SHINY",
+      inline: true,
+    });
+  }
 
   if (imageUrl) {
     embed.setImage(imageUrl);
@@ -285,9 +327,17 @@ function buildShakeEmbed(encounter) {
   const imageUrl = getPalImageUrl(encounter);
   const embed = new EmbedBuilder()
     .setTitle("...shake...shake...")
-    .setColor(0xf39c12)
+    .setColor(encounter.isShiny ? shinyColor : 0xf39c12)
     .setDescription("The sphere rocks on the ground...")
     .setTimestamp();
+
+  if (encounter.isShiny) {
+    embed.addFields({
+      name: "Variant",
+      value: "✨ SHINY",
+      inline: true,
+    });
+  }
 
   if (imageUrl) {
     embed.setImage(imageUrl);

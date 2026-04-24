@@ -91,8 +91,8 @@ module.exports = {
 
     const imageUrl = getPalImageUrl(pal);
     const embed = new EmbedBuilder()
-      .setTitle(`${pal.name}`)
-      .setColor(0x5865f2)
+      .setTitle(`${pal.isShiny ? "✨ " : ""}${pal.name}`)
+      .setColor(pal.isShiny ? 0xf1c40f : 0x5865f2)
       .addFields(
         {
           name: "Level",
@@ -109,6 +109,15 @@ module.exports = {
           value: formatStars(pal.stars),
           inline: true,
         },
+        ...(pal.isShiny
+          ? [
+              {
+                name: "Variant",
+                value: "✨ SHINY",
+                inline: true,
+              },
+            ]
+          : []),
         {
           name: "Essence Progress",
           value: formatEssenceProgress(pal),
