@@ -9,6 +9,8 @@ const profileCommand = require("./commands/profile");
 const dailyCommand = require("./commands/daily");
 const spawnCommand = require("./commands/spawn");
 const inspectCommand = require("./commands/inspect");
+const shopCommand = require("./commands/shop");
+const buyCommand = require("./commands/buy");
 
 const commands = [
   pingCommand.data.toJSON(),
@@ -19,6 +21,8 @@ const commands = [
   dailyCommand.data.toJSON(),
   spawnCommand.data.toJSON(),
   inspectCommand.data.toJSON(),
+  shopCommand.data.toJSON(),
+  buyCommand.data.toJSON(),
 ];
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);

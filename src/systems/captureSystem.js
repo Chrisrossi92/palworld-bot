@@ -53,6 +53,14 @@ const defaultSphereInventory = {
 
 const defaultStartingCoins = 100;
 const starThresholds = [2, 5, 10, 20];
+const spherePrices = {
+  basic: 10,
+  mega: 30,
+  giga: 75,
+  hyper: 150,
+  ultra: 300,
+  legendary: 750,
+};
 
 function ensureJsonFile(filePath) {
   const dirPath = path.dirname(filePath);
@@ -452,6 +460,16 @@ function getUserLevel(userId) {
   return clampLevel(userRecord.level);
 }
 
+function getUserRecord(userId) {
+  const users = readUsers();
+  const userRecord = getDefaultUserRecord(users[userId]);
+
+  users[userId] = userRecord;
+  writeUsers(users);
+
+  return userRecord;
+}
+
 function consumeSphere(userId, sphere) {
   const users = readUsers();
   const userRecord = getDefaultUserRecord(users[userId]);
@@ -480,6 +498,55 @@ function consumeSphere(userId, sphere) {
     consumed: true,
     sphere: normalizedSphere,
     remaining: userRecord.spheres[normalizedSphere],
+  };
+}
+
+function buySpheres(userId, sphere, quantity) {
+  const normalizedSphere = Object.prototype.hasOwnProperty.call(spherePrices, sphere)
+    ? sphere
+    : null;
+
+  if (!normalizedSphere) {
+    throw new Error(`Invalid sphere type: ${sphere}`);
+  }
+
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    throw new Error(`Invalid sphere quantity: ${quantity}`);
+  }
+
+  const users = readUsers();
+  const userRecord = getDefaultUserRecord(users[userId]);
+  const unitPrice = spherePrices[normalizedSphere];
+  const totalCost = unitPrice * quantity;
+
+  if (userRecord.coins < totalCost) {
+    users[userId] = userRecord;
+    writeUsers(users);
+
+    return {
+      success: false,
+      sphere: normalizedSphere,
+      quantity,
+      totalCost,
+      coins: userRecord.coins,
+      updatedSphereCount: userRecord.spheres[normalizedSphere],
+    };
+  }
+
+  userRecord.coins -= totalCost;
+  userRecord.spheres[normalizedSphere] =
+    (userRecord.spheres[normalizedSphere] ?? 0) + quantity;
+  userRecord.updatedAt = new Date().toISOString();
+  users[userId] = userRecord;
+  writeUsers(users);
+
+  return {
+    success: true,
+    sphere: normalizedSphere,
+    quantity,
+    totalCost,
+    coins: userRecord.coins,
+    updatedSphereCount: userRecord.spheres[normalizedSphere],
   };
 }
 
@@ -682,6 +749,7 @@ function attemptCapture(userId, sphere = "basic") {
 }
 
 module.exports = {
+  buySpheres,
   attemptCapture,
   claimDailyReward,
   consumeSphere,
@@ -689,8 +757,10 @@ module.exports = {
   createEncounterForLevel,
   getUserLevel,
   getUserInventory,
+  getUserRecord,
   MAX_LEVEL,
   readUserPals,
   readUsers,
   resolveCaptureEncounter,
+  spherePrices,
 };
