@@ -459,7 +459,7 @@
     "name": "Herbil",
     "rarity": "common",
     "unlockLevel": 12,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Herbil_icon.png?5fa6bf"
   },
   {
     "name": "Hoocrates",
@@ -471,7 +471,7 @@
     "name": "Icelyn",
     "rarity": "common",
     "unlockLevel": 14,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Icelyn_icon.png?a9e576"
   },
   {
     "name": "Incineram",
@@ -525,7 +525,7 @@
     "name": "Katress Ignis",
     "rarity": "epic",
     "unlockLevel": 42,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Katress_Ignis_icon.png?864d2e"
   },
   {
     "name": "Kelpsea",
@@ -543,7 +543,7 @@
     "name": "Kikit",
     "rarity": "common",
     "unlockLevel": 12,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Kikit_icon.png?22418a"
   },
   {
     "name": "Killamari",
@@ -555,7 +555,7 @@
     "name": "Killamari Primo",
     "rarity": "uncommon",
     "unlockLevel": 22,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Killamari_Primo_icon.png?fc9662"
   },
   {
     "name": "Kingpaca",
@@ -573,7 +573,7 @@
     "name": "Knocklem",
     "rarity": "epic",
     "unlockLevel": 54,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Knocklem_icon.png?56868d"
   },
   {
     "name": "Kitsun",
@@ -585,7 +585,7 @@
     "name": "Kitsun Noct",
     "rarity": "epic",
     "unlockLevel": 44,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Kitsun_Noct_icon.png?293bc6"
   },
   {
     "name": "Lamball",
@@ -627,7 +627,7 @@
     "name": "Loupmoon Cryst",
     "rarity": "rare",
     "unlockLevel": 28,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Loupmoon_Cryst_icon.png?bcc27e"
   },
   {
     "name": "Lunaris",
@@ -693,13 +693,13 @@
     "name": "Menasting Terra",
     "rarity": "epic",
     "unlockLevel": 58,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Menasting_Terra_icon.png?16dedb"
   },
   {
     "name": "Mimog",
     "rarity": "rare",
     "unlockLevel": 34,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Mimog_icon.png?f7e491"
   },
   {
     "name": "Mossanda",
@@ -723,7 +723,7 @@
     "name": "Munchill",
     "rarity": "common",
     "unlockLevel": 12,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Munchill_icon.png?bd7080"
   },
   {
     "name": "Necromus",
@@ -735,13 +735,13 @@
     "name": "Neptilius",
     "rarity": "legendary",
     "unlockLevel": 66,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Neptilius_icon.png?9f50af"
   },
   {
     "name": "Nitemary",
     "rarity": "rare",
     "unlockLevel": 36,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Nitemary_icon.png?fe690d"
   },
   {
     "name": "Nitewing",
@@ -759,13 +759,13 @@
     "name": "Nyafia",
     "rarity": "common",
     "unlockLevel": 10,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Nyafia_icon.png?2b4665"
   },
   {
     "name": "Omascul",
     "rarity": "rare",
     "unlockLevel": 36,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Omascul_icon.png?5e8fc2"
   },
   {
     "name": "Orserk",
@@ -783,7 +783,7 @@
     "name": "Palumba",
     "rarity": "uncommon",
     "unlockLevel": 18,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Palumba_icon.png?635af9"
   },
   {
     "name": "Pengullet",
@@ -795,7 +795,7 @@
     "name": "Pengullet Lux",
     "rarity": "uncommon",
     "unlockLevel": 20,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Pengullet_Lux_icon.png?f2b855"
   },
   {
     "name": "Penking",
@@ -807,7 +807,7 @@
     "name": "Penking Lux",
     "rarity": "rare",
     "unlockLevel": 30,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Penking_Lux_icon.png?3be99f"
   },
   {
     "name": "Petallia",
@@ -819,13 +819,13 @@
     "name": "Prixter",
     "rarity": "rare",
     "unlockLevel": 34,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Prixter_icon.png?df1034"
   },
   {
     "name": "Prunelia",
     "rarity": "rare",
     "unlockLevel": 36,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Prunelia_icon.png?43ea0c"
   },
   {
     "name": "Pyrin",
@@ -1173,7 +1173,7 @@
     "name": "Xenovader",
     "rarity": "epic",
     "unlockLevel": 48,
-    "imageUrl": ""
+    "imageUrl": "https://palworld.wiki.gg/images/Xenovader_icon.png?11dfc8"
   },
   {
     "name": "Yakumo",

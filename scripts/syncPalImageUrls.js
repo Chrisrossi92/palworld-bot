@@ -87,6 +87,25 @@ function buildWikiPageUrl(name) {
   return `${WIKI_PAGE_BASE_URL}/${encodeURIComponent(String(name || "").replace(/\s+/g, "_"))}`;
 }
 
+function buildWikiPageCandidates(name) {
+  const trimmedName = String(name || "").trim();
+
+  if (!trimmedName) {
+    return [];
+  }
+
+  const candidates = [trimmedName.replace(/\s+/g, "_")];
+  const parts = trimmedName.split(/\s+/);
+
+  if (parts.length === 2) {
+    const [baseName, variant] = parts;
+
+    candidates.push(`${baseName}_(${variant})`);
+  }
+
+  return [...new Set(candidates)];
+}
+
 function extractMetaContent(html, propertyName) {
   const escapedName = propertyName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const patterns = [
@@ -126,19 +145,24 @@ function isHighConfidenceWikiImage(palName, ogTitle, imageUrl) {
 
   const normalizedPalName = normalizePalName(palName);
   const normalizedTitle = normalizePalName(ogTitle.replace(/-.*$/, "").trim());
-  const isTitleMatch = normalizedPalName === normalizedTitle;
+  const isTitleMatch =
+    normalizedPalName === normalizedTitle ||
+    normalizedTitle.includes(normalizedPalName) ||
+    normalizedPalName.includes(normalizedTitle);
   const normalizedImageUrl = normalizePalName(imageUrl);
   const hasPalNameInImageUrl = normalizedImageUrl.includes(normalizedPalName);
   const isLikelyImage =
     /^https?:\/\//i.test(imageUrl) &&
     !/logo|favicon|wordmark/i.test(imageUrl) &&
-    /wiki|static|images/i.test(imageUrl);
+    /(palworld\.wiki\.gg\/images|static\.wikia\.nocookie\.net\/palworld)/i.test(
+      imageUrl
+    );
 
   return isTitleMatch && isLikelyImage && hasPalNameInImageUrl;
 }
 
-async function fetchWikiImageUrl(palName) {
-  const response = await fetch(buildWikiPageUrl(palName));
+async function fetchWikiImageUrlForCandidate(palName, candidate) {
+  const response = await fetch(`${WIKI_PAGE_BASE_URL}/${encodeURIComponent(candidate)}`);
 
   if (!response.ok) {
     return "";
@@ -155,6 +179,27 @@ async function fetchWikiImageUrl(palName) {
   }
 
   return ogImage;
+}
+
+async function fetchWikiImageUrl(palName) {
+  const candidates = buildWikiPageCandidates(palName);
+  const directCandidate = candidates[0] || "";
+
+  for (const candidate of candidates) {
+    const imageUrl = await fetchWikiImageUrlForCandidate(palName, candidate);
+
+    if (imageUrl) {
+      return {
+        imageUrl,
+        matchType: candidate === directCandidate ? "direct" : "alt",
+      };
+    }
+  }
+
+  return {
+    imageUrl: "",
+    matchType: "",
+  };
 }
 
 function findSourcePal(pal, sourceIndex, aliases) {
@@ -176,8 +221,10 @@ function findSourcePal(pal, sourceIndex, aliases) {
 
 async function syncImageUrls(localPals, sourceIndex, aliases) {
   let sourceMatchedCount = 0;
-  let wikiMatchedCount = 0;
+  let wikiDirectMatchedCount = 0;
+  let wikiAltMatchedCount = 0;
   let missingCount = 0;
+  const missingNames = [];
 
   const updatedPals = [];
 
@@ -198,18 +245,24 @@ async function syncImageUrls(localPals, sourceIndex, aliases) {
       continue;
     }
 
-    const wikiImageUrl = await fetchWikiImageUrl(pal.name);
+    const wikiMatch = await fetchWikiImageUrl(pal.name);
 
-    if (wikiImageUrl) {
-      wikiMatchedCount += 1;
+    if (wikiMatch.imageUrl) {
+      if (wikiMatch.matchType === "alt") {
+        wikiAltMatchedCount += 1;
+      } else {
+        wikiDirectMatchedCount += 1;
+      }
+
       updatedPals.push({
         ...pal,
-        imageUrl: wikiImageUrl,
+        imageUrl: wikiMatch.imageUrl,
       });
       continue;
     }
 
     missingCount += 1;
+    missingNames.push(pal.name);
     updatedPals.push({
       ...pal,
       imageUrl: "",
@@ -219,8 +272,10 @@ async function syncImageUrls(localPals, sourceIndex, aliases) {
   return {
     updatedPals,
     sourceMatchedCount,
-    wikiMatchedCount,
+    wikiDirectMatchedCount,
+    wikiAltMatchedCount,
     missingCount,
+    missingNames,
   };
 }
 
@@ -239,8 +294,10 @@ async function main() {
   const {
     updatedPals,
     sourceMatchedCount,
-    wikiMatchedCount,
+    wikiDirectMatchedCount,
+    wikiAltMatchedCount,
     missingCount,
+    missingNames,
   } = await syncImageUrls(
     localPals,
     sourceIndex,
@@ -250,8 +307,12 @@ async function main() {
   writeLocalPals(updatedPals);
 
   console.log(`Source1 matched: ${sourceMatchedCount}`);
-  console.log(`Wiki matched: ${wikiMatchedCount}`);
+  console.log(`Wiki direct matched: ${wikiDirectMatchedCount}`);
+  console.log(`Wiki alt matched: ${wikiAltMatchedCount}`);
   console.log(`Still missing: ${missingCount}`);
+  if (missingNames.length > 0) {
+    console.log(`Still missing list: ${missingNames.join(", ")}`);
+  }
 }
 
 main().catch((error) => {
