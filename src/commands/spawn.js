@@ -6,6 +6,7 @@ const {
 const {
   createEncounterForLevel,
   consumeSphere,
+  findPalByName,
   getUserLevel,
   MAX_LEVEL,
   resolveCaptureEncounter,
@@ -58,7 +59,7 @@ function buildSpawnResolvedEmbed(result, remaining, user) {
   return embed;
 }
 
-async function startPublicSpawn(channel) {
+async function startPublicSpawn(channel, options = {}) {
   if (!channel) {
     throw new Error("A valid channel is required to start a public spawn.");
   }
@@ -74,6 +75,10 @@ async function startPublicSpawn(channel) {
   const encounter = createEncounterForLevel(MAX_LEVEL, {
     includeLevel: false,
     levelLabel: "Scales to trainer",
+    forcedRarity: options.forcedRarity || null,
+    forceShiny:
+      typeof options.forceShiny === "boolean" ? options.forceShiny : undefined,
+    forcedPal: options.forcedPal || null,
   });
 
   const message = await channel.send({
@@ -252,7 +257,34 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("spawn")
     .setDescription("Spawn a public wild Pal encounter in this channel.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .addStringOption((option) => {
+      option
+        .setName("rarity")
+        .setDescription("Force the rarity for this spawn.")
+        .setRequired(false)
+        .addChoices(
+          { name: "Common", value: "common" },
+          { name: "Uncommon", value: "uncommon" },
+          { name: "Rare", value: "rare" },
+          { name: "Epic", value: "epic" },
+          { name: "Legendary", value: "legendary" }
+        );
+
+      return option;
+    })
+    .addBooleanOption((option) =>
+      option
+        .setName("shiny")
+        .setDescription("Force this spawn to be shiny.")
+        .setRequired(false)
+    )
+    .addStringOption((option) =>
+      option
+        .setName("pal")
+        .setDescription("Force a specific Pal species.")
+        .setRequired(false)
+    ),
 
   async execute(interaction) {
     const hasAdminPermission =
@@ -271,7 +303,21 @@ module.exports = {
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      const result = await startPublicSpawn(interaction.channel);
+      const forcedRarity = interaction.options.getString("rarity");
+      const forcedShiny = interaction.options.getBoolean("shiny");
+      const palQuery = interaction.options.getString("pal");
+      const forcedPal = palQuery ? findPalByName(palQuery) : null;
+
+      if (palQuery && !forcedPal) {
+        await interaction.editReply("Could not find that Pal.");
+        return;
+      }
+
+      const result = await startPublicSpawn(interaction.channel, {
+        forcedRarity,
+        forceShiny: forcedShiny === null ? undefined : forcedShiny,
+        forcedPal,
+      });
 
       if (!result.started) {
         await interaction.editReply(

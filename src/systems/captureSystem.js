@@ -119,6 +119,21 @@ function readPalCatalog() {
   return defaultPalCatalog;
 }
 
+function findPalByName(name) {
+  if (!name || typeof name !== "string") {
+    return null;
+  }
+
+  const palCatalog = readPalCatalog();
+  const normalizedQuery = name.trim().toLowerCase();
+
+  return (
+    palCatalog.find((pal) => pal.name.toLowerCase() === normalizedQuery) ||
+    palCatalog.find((pal) => pal.name.toLowerCase().includes(normalizedQuery)) ||
+    null
+  );
+}
+
 function getStarCountFromEssence(essence) {
   if (essence >= starThresholds[3]) {
     return 4;
@@ -342,8 +357,8 @@ function chooseWeightedRarity() {
   return "common";
 }
 
-function chooseRandomPal(eligiblePals) {
-  const rarity = chooseWeightedRarity();
+function chooseRandomPal(eligiblePals, forcedRarity = null) {
+  const rarity = forcedRarity || chooseWeightedRarity();
   const rarityPool = eligiblePals.filter((pal) => pal.rarity === rarity);
 
   if (rarityPool.length === 0) {
@@ -675,15 +690,23 @@ function claimDailyReward(userId) {
 function createEncounterForLevel(userLevel, options = {}) {
   const clampedUserLevel = clampLevel(userLevel);
   const palCatalog = readPalCatalog();
-  const eligiblePals = palCatalog.filter(
+  let eligiblePals = palCatalog.filter(
     (pal) => pal.unlockLevel <= clampedUserLevel
   );
+
+  if (options.forcedPal) {
+    eligiblePals = eligiblePals.filter(
+      (pal) => pal.name.toLowerCase() === options.forcedPal.name.toLowerCase()
+    );
+  }
 
   if (eligiblePals.length === 0) {
     throw new Error("No eligible pals available for encounter generation.");
   }
 
-  const encounteredPal = chooseRandomPal(eligiblePals);
+  const encounteredPal = options.forcedPal
+    ? eligiblePals[0]
+    : chooseRandomPal(eligiblePals, options.forcedRarity || null);
   const minLevel = Math.max(1, Math.round(clampedUserLevel * 0.6));
   const level = options.includeLevel === false
     ? options.levelLabel || "Scales to trainer"
@@ -693,7 +716,10 @@ function createEncounterForLevel(userLevel, options = {}) {
     name: encounteredPal.name,
     level,
     rarity: encounteredPal.rarity,
-    isShiny: Math.random() < 0.02,
+    isShiny:
+      typeof options.forceShiny === "boolean"
+        ? options.forceShiny
+        : Math.random() < 0.02,
     imageUrl:
       typeof encounteredPal.imageUrl === "string" ? encounteredPal.imageUrl : "",
     unlockLevel: encounteredPal.unlockLevel,
@@ -771,6 +797,7 @@ module.exports = {
   consumeSphere,
   createEncounter,
   createEncounterForLevel,
+  findPalByName,
   getUserLevel,
   getUserInventory,
   getUserRecord,

@@ -1,6 +1,17 @@
 {
   "412831842304000030": [
     {
+      "name": "Orserk",
+      "level": 4,
+      "rarity": "epic",
+      "isShiny": true,
+      "imageUrl": "",
+      "caughtAt": "2026-04-24T13:54:18.080Z",
+      "stars": 0,
+      "essence": 0,
+      "extraEssence": 0
+    },
+    {
       "name": "Caprity",
       "level": 4,
       "rarity": "common",
