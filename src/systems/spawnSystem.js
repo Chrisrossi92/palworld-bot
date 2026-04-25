@@ -1,56 +1,52 @@
 const spawnCommand = require("../commands/spawn");
 
-const MIN_SPAWN_INTERVAL_MS = 10 * 60_000;
-const MAX_SPAWN_INTERVAL_MS = 20 * 60_000;
-const SPAWN_CHANCE = 0.15;
-const ACTIVE_SPAWN_LOG_COOLDOWN_MS = 10 * 60_000;
+const MINUTE_MS = 60_000;
 
 let spawnTimer = null;
-let lastActiveSpawnLogAt = 0;
 
-function getRandomIntervalMs() {
-  return (
-    MIN_SPAWN_INTERVAL_MS +
-    Math.floor(Math.random() * (MAX_SPAWN_INTERVAL_MS - MIN_SPAWN_INTERVAL_MS + 1))
-  );
+function getNextSpawnTime(now = new Date()) {
+  const nextHour = new Date(now);
+  nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+
+  const randomOffsetMinutes = Math.floor(Math.random() * 60);
+  return new Date(nextHour.getTime() + randomOffsetMinutes * MINUTE_MS);
+}
+
+function formatTime(date) {
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${hours}:${minutes}`;
 }
 
 function scheduleNextSpawn(client) {
-  const delay = getRandomIntervalMs();
+  const nextSpawnTime = getNextSpawnTime();
+  const delay = Math.max(0, nextSpawnTime.getTime() - Date.now());
+
+  console.log(`Next spawn scheduled at ${formatTime(nextSpawnTime)}`);
 
   spawnTimer = setTimeout(async () => {
     try {
       const channelId = process.env.SPAWN_CHANNEL_ID;
 
       if (!channelId) {
-        scheduleNextSpawn(client);
-        return;
-      }
-
-      if (Math.random() >= SPAWN_CHANCE) {
-        scheduleNextSpawn(client);
         return;
       }
 
       const channel = await client.channels.fetch(channelId);
 
       if (!channel || typeof channel.send !== "function") {
-        scheduleNextSpawn(client);
         return;
       }
 
       const result = await spawnCommand.startPublicSpawn(channel);
 
       if (!result.started) {
-        const now = Date.now();
-
-        if (now - lastActiveSpawnLogAt >= ACTIVE_SPAWN_LOG_COOLDOWN_MS) {
-          console.log("[spawnSystem] Auto spawn skipped because a spawn is already active.");
-          lastActiveSpawnLogAt = now;
+        if (result.reason === "active_spawn") {
+          console.log("Spawn skipped (active spawn exists)");
         }
       } else {
-        lastActiveSpawnLogAt = 0;
-        console.log(`[spawnSystem] Auto spawn created in channel ${channelId}.`);
+        console.log("Spawn triggered");
       }
     } catch (error) {
       console.error("[spawnSystem] Failed to process auto spawn:", error?.stack || error);
@@ -66,7 +62,7 @@ function startSpawnSystem(client) {
   }
 
   console.log(
-    `[spawnSystem] Auto spawn system started. Next rolls every 10-20 minutes at 15% chance.`
+    "[spawnSystem] Auto spawn system started. One spawn attempt will run each hour."
   );
   scheduleNextSpawn(client);
 }
