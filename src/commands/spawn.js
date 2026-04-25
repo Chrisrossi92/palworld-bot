@@ -70,12 +70,12 @@ function clearActiveSpawn(messageId) {
   }
 }
 
-function buildExpiredSpawnEmbed(encounter) {
-  return captureCommand.buildEncounterEmbed(encounter, publicSpawnButtonsInventory, {
+function getExpiredSpawnOptions() {
+  return {
     title: "💨 The wild Pal wandered off.",
     description: getSpawnDescription("No trainer acted in time."),
     showInventory: false,
-  });
+  };
 }
 
 function buildSpawnResolvedEmbed(result, remaining, user) {
@@ -121,15 +121,17 @@ async function startPublicSpawn(channel, options = {}) {
   });
 
   const message = await channel.send({
-    embeds: [
-      captureCommand.buildEncounterEmbed(encounter, publicSpawnButtonsInventory, {
+    ...(await captureCommand.buildEncounterPayload(
+      encounter,
+      publicSpawnButtonsInventory,
+      {
         title: getSpawnTitle(encounter),
         description: getSpawnDescription(
           "First trainer to throw a sphere gets the chance!"
         ),
         showInventory: false,
-      }),
-    ],
+      }
+    )),
     components: captureCommand.buildSphereButtons(
       publicSpawnButtonsInventory,
       false,
@@ -273,7 +275,11 @@ async function startPublicSpawn(channel, options = {}) {
       if (reason !== "resolved" && reason !== "error") {
         console.log(`[spawn] public spawn expired message=${message.id}`);
         await message.edit({
-          embeds: [buildExpiredSpawnEmbed(encounter)],
+          ...(await captureCommand.buildEncounterPayload(
+            encounter,
+            publicSpawnButtonsInventory,
+            getExpiredSpawnOptions()
+          )),
           components: captureCommand.buildSphereButtons(
             publicSpawnButtonsInventory,
             true,

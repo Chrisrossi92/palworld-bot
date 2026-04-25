@@ -12,6 +12,7 @@ const {
   getUserInventory,
   resolveCaptureEncounter,
 } = require("../systems/captureSystem");
+const { renderPalCard } = require("../systems/cardRenderer");
 
 const CAPTURE_COOLDOWN_MS = 10_000;
 const captureCooldowns = new Map();
@@ -133,11 +134,51 @@ function buildEncounterEmbed(encounter, inventory, options = {}) {
     embed.setDescription(options.description);
   }
 
-  if (imageUrl) {
+  if (options.cardFilename) {
+    embed.setImage(`attachment://${options.cardFilename}`);
+  } else if (imageUrl) {
     embed.setThumbnail(imageUrl);
   }
 
   return embed;
+}
+
+async function buildEncounterPayload(encounter, inventory, options = {}) {
+  const imageUrl = getPalImageUrl(encounter);
+
+  try {
+    const card = await renderPalCard({
+      pal: {
+        name: encounter.name,
+        imageUrl,
+      },
+      level: encounter.level,
+      rarity: encounter.rarity,
+      isShiny: encounter.isShiny,
+      title: options.title || (encounter.isShiny ? "✨ A SHINY Pal Appeared!" : "Wild Pal Encounter"),
+    });
+
+    return {
+      embeds: [
+        buildEncounterEmbed(encounter, inventory, {
+          ...options,
+          cardFilename: card.filename,
+        }),
+      ],
+      files: [
+        {
+          attachment: card.path,
+          name: card.filename,
+        },
+      ],
+    };
+  } catch (error) {
+    console.error("[capture] Failed to render encounter card:", error?.stack || error);
+
+    return {
+      embeds: [buildEncounterEmbed(encounter, inventory, options)],
+    };
+  }
 }
 
 function buildResolvedEmbed(result, remaining) {
@@ -406,7 +447,7 @@ module.exports = {
       const encounter = createEncounter(interaction.user.id);
       const inventory = getUserInventory(interaction.user.id);
       const message = await interaction.editReply({
-        embeds: [buildEncounterEmbed(encounter, inventory)],
+        ...(await buildEncounterPayload(encounter, inventory)),
         components: buildSphereButtons(inventory),
       });
 
@@ -510,7 +551,10 @@ module.exports = {
 
         try {
           await interaction.editReply({
-            embeds: [buildEncounterEmbed(encounter, getUserInventory(interaction.user.id))],
+            ...(await buildEncounterPayload(
+              encounter,
+              getUserInventory(interaction.user.id)
+            )),
             components: buildSphereButtons(
               getUserInventory(interaction.user.id),
               true
@@ -530,6 +574,7 @@ module.exports = {
     }
   },
   buildEncounterEmbed,
+  buildEncounterPayload,
   buildResolvedEmbed,
   buildShakeEmbed,
   buildSphereButtons,
