@@ -134,7 +134,7 @@ function buildEncounterEmbed(encounter, inventory, options = {}) {
   }
 
   if (imageUrl) {
-    embed.setImage(imageUrl);
+    embed.setThumbnail(imageUrl);
   }
 
   return embed;
@@ -288,7 +288,7 @@ function buildResolvedEmbed(result, remaining) {
     .setTimestamp();
 
   if (imageUrl) {
-    embed.setImage(imageUrl);
+    embed.setThumbnail(imageUrl);
   }
 
   return embed;
@@ -317,7 +317,7 @@ function buildThrowEmbed(encounter, sphere) {
   }
 
   if (imageUrl) {
-    embed.setImage(imageUrl);
+    embed.setThumbnail(imageUrl);
   }
 
   return embed;
@@ -340,7 +340,7 @@ function buildShakeEmbed(encounter) {
   }
 
   if (imageUrl) {
-    embed.setImage(imageUrl);
+    embed.setThumbnail(imageUrl);
   }
 
   return embed;
