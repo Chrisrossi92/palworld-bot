@@ -78,6 +78,12 @@ function formatSphereInventory(inventory) {
     .join("\n");
 }
 
+function formatCompactSphereInventory(inventory) {
+  return sphereChoices
+    .map(([name, value]) => `${name} ${inventory[value] ?? 0}`)
+    .join(" • ");
+}
+
 function buildSphereButtons(
   inventory,
   disabled = false,
@@ -100,26 +106,35 @@ function buildSphereButtons(
 function buildEncounterEmbed(encounter, inventory, options = {}) {
   const rarityEmoji = rarityEmojis[encounter.rarity] || "";
   const imageUrl = getPalImageUrl(encounter);
-  const fields = [
-    {
+  const fields = [];
+
+  if (!options.cardFilename) {
+    fields.push({
       name: "Wild Pal",
       value: `${rarityEmoji} ${encounter.name} (Lv. ${encounter.level}, ${encounter.rarity})`,
-    },
-  ];
-
-  if (encounter.isShiny) {
-    fields.push({
-      name: "Variant",
-      value: "✨ SHINY",
-      inline: true,
     });
+
+    if (encounter.isShiny) {
+      fields.push({
+        name: "Variant",
+        value: "✨ SHINY",
+        inline: true,
+      });
+    }
   }
 
   if (options.showInventory !== false) {
-    fields.push({
-      name: "🎒 Spheres",
-      value: formatSphereInventory(inventory),
-    });
+    if (options.cardFilename) {
+      fields.push({
+        name: "🎒 Spheres",
+        value: formatCompactSphereInventory(inventory),
+      });
+    } else {
+      fields.push({
+        name: "🎒 Spheres",
+        value: formatSphereInventory(inventory),
+      });
+    }
   }
 
   const embed = new EmbedBuilder()
@@ -127,8 +142,11 @@ function buildEncounterEmbed(encounter, inventory, options = {}) {
       options.title || (encounter.isShiny ? "✨ A SHINY Pal Appeared!" : "Wild Pal Encounter")
     )
     .setColor(encounter.isShiny ? shinyColor : rarityColors[encounter.rarity] || 0x95a5a6)
-    .addFields(fields)
     .setTimestamp();
+
+  if (fields.length > 0) {
+    embed.addFields(fields);
+  }
 
   if (options.description) {
     embed.setDescription(options.description);
@@ -155,7 +173,6 @@ async function buildEncounterPayload(encounter, inventory, options = {}) {
       level: encounter.level,
       rarity: encounter.rarity,
       isShiny: encounter.isShiny,
-      title: options.title || (encounter.isShiny ? "✨ A SHINY Pal Appeared!" : "Wild Pal Encounter"),
     });
 
     return {
