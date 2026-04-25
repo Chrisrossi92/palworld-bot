@@ -12,7 +12,6 @@ const {
   getUserInventory,
   resolveCaptureEncounter,
 } = require("../systems/captureSystem");
-const { renderPalCard } = require("../systems/cardRenderer");
 
 const CAPTURE_COOLDOWN_MS = 10_000;
 const captureCooldowns = new Map();
@@ -72,12 +71,6 @@ function getPalImageUrl(pal) {
   return palImageUrls[pal.name.toLowerCase()] || "";
 }
 
-function formatSphereInventory(inventory) {
-  return sphereChoices
-    .map(([name, value]) => `${name}: ${inventory[value] ?? 0}`)
-    .join("\n");
-}
-
 function formatCompactSphereInventory(inventory) {
   return sphereChoices
     .map(([name, value]) => `${name} ${inventory[value] ?? 0}`)
@@ -106,35 +99,26 @@ function buildSphereButtons(
 function buildEncounterEmbed(encounter, inventory, options = {}) {
   const rarityEmoji = rarityEmojis[encounter.rarity] || "";
   const imageUrl = getPalImageUrl(encounter);
-  const fields = [];
-
-  if (!options.cardFilename) {
-    fields.push({
+  const fields = [
+    {
       name: "Wild Pal",
       value: `${rarityEmoji} ${encounter.name} (Lv. ${encounter.level}, ${encounter.rarity})`,
-    });
+    },
+  ];
 
-    if (encounter.isShiny) {
-      fields.push({
-        name: "Variant",
-        value: "✨ SHINY",
-        inline: true,
-      });
-    }
+  if (encounter.isShiny) {
+    fields.push({
+      name: "Variant",
+      value: "✨ SHINY",
+      inline: true,
+    });
   }
 
   if (options.showInventory !== false) {
-    if (options.cardFilename) {
-      fields.push({
-        name: "🎒 Spheres",
-        value: formatCompactSphereInventory(inventory),
-      });
-    } else {
-      fields.push({
-        name: "🎒 Spheres",
-        value: formatSphereInventory(inventory),
-      });
-    }
+    fields.push({
+      name: "🎒 Spheres",
+      value: formatCompactSphereInventory(inventory),
+    });
   }
 
   const embed = new EmbedBuilder()
@@ -152,50 +136,11 @@ function buildEncounterEmbed(encounter, inventory, options = {}) {
     embed.setDescription(options.description);
   }
 
-  if (options.cardFilename) {
-    embed.setImage(`attachment://${options.cardFilename}`);
-  } else if (imageUrl) {
+  if (imageUrl) {
     embed.setThumbnail(imageUrl);
   }
 
   return embed;
-}
-
-async function buildEncounterPayload(encounter, inventory, options = {}) {
-  const imageUrl = getPalImageUrl(encounter);
-
-  try {
-    const card = await renderPalCard({
-      pal: {
-        name: encounter.name,
-        imageUrl,
-      },
-      level: encounter.level,
-      rarity: encounter.rarity,
-      isShiny: encounter.isShiny,
-    });
-
-    return {
-      embeds: [
-        buildEncounterEmbed(encounter, inventory, {
-          ...options,
-          cardFilename: card.filename,
-        }),
-      ],
-      files: [
-        {
-          attachment: card.path,
-          name: card.filename,
-        },
-      ],
-    };
-  } catch (error) {
-    console.error("[capture] Failed to render encounter card:", error?.stack || error);
-
-    return {
-      embeds: [buildEncounterEmbed(encounter, inventory, options)],
-    };
-  }
 }
 
 function buildResolvedEmbed(result, remaining) {
@@ -464,7 +409,7 @@ module.exports = {
       const encounter = createEncounter(interaction.user.id);
       const inventory = getUserInventory(interaction.user.id);
       const message = await interaction.editReply({
-        ...(await buildEncounterPayload(encounter, inventory)),
+        embeds: [buildEncounterEmbed(encounter, inventory)],
         components: buildSphereButtons(inventory),
       });
 
@@ -568,10 +513,7 @@ module.exports = {
 
         try {
           await interaction.editReply({
-            ...(await buildEncounterPayload(
-              encounter,
-              getUserInventory(interaction.user.id)
-            )),
+            embeds: [buildEncounterEmbed(encounter, getUserInventory(interaction.user.id))],
             components: buildSphereButtons(
               getUserInventory(interaction.user.id),
               true
@@ -591,7 +533,6 @@ module.exports = {
     }
   },
   buildEncounterEmbed,
-  buildEncounterPayload,
   buildResolvedEmbed,
   buildShakeEmbed,
   buildSphereButtons,

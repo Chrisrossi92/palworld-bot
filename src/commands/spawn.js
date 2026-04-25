@@ -121,17 +121,15 @@ async function startPublicSpawn(channel, options = {}) {
   });
 
   const message = await channel.send({
-    ...(await captureCommand.buildEncounterPayload(
-      encounter,
-      publicSpawnButtonsInventory,
-      {
+    embeds: [
+      captureCommand.buildEncounterEmbed(encounter, publicSpawnButtonsInventory, {
         title: getSpawnTitle(encounter),
         description: getSpawnDescription(
           "First trainer to throw a sphere gets the chance!"
         ),
         showInventory: false,
-      }
-    )),
+      }),
+    ],
     components: captureCommand.buildSphereButtons(
       publicSpawnButtonsInventory,
       false,
@@ -275,11 +273,13 @@ async function startPublicSpawn(channel, options = {}) {
       if (reason !== "resolved" && reason !== "error") {
         console.log(`[spawn] public spawn expired message=${message.id}`);
         await message.edit({
-          ...(await captureCommand.buildEncounterPayload(
-            encounter,
-            publicSpawnButtonsInventory,
-            getExpiredSpawnOptions()
-          )),
+          embeds: [
+            captureCommand.buildEncounterEmbed(
+              encounter,
+              publicSpawnButtonsInventory,
+              getExpiredSpawnOptions()
+            ),
+          ],
           components: captureCommand.buildSphereButtons(
             publicSpawnButtonsInventory,
             true,
