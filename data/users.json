@@ -8,6 +8,13 @@
     "failedCaptures": 9,
     "updatedAt": "2026-04-24T20:03:02.199Z",
     "lastDailyAt": "2026-04-23T21:47:29.535Z",
+    "starterClaimed": false,
+    "dailyQuests": {
+      "date": "2026-05-03",
+      "captureAttempts": 0,
+      "successfulCaptures": 0,
+      "claimed": false
+    },
     "spheres": {
       "basic": 0,
       "mega": 1,

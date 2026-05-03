@@ -60,7 +60,32 @@ const starterRewards = {
     giga: 1,
   },
 };
+const dailyQuestGoals = {
+  captureAttempts: 3,
+  successfulCaptures: 1,
+};
+const dailyQuestRewards = {
+  coins: 100,
+  xp: 50,
+  spheres: {
+    basic: 3,
+    mega: 1,
+  },
+};
 const starThresholds = [2, 5, 10, 20];
+const trainerTitleTiers = [
+  { minLevel: 1, maxLevel: 5, title: "Rookie Tamer" },
+  { minLevel: 6, maxLevel: 15, title: "Junior Tamer" },
+  { minLevel: 16, maxLevel: 30, title: "Skilled Tamer" },
+  { minLevel: 31, maxLevel: 50, title: "Elite Tamer" },
+  { minLevel: 51, maxLevel: MAX_LEVEL, title: "Master Tamer" },
+];
+const levelUnlocks = [
+  { level: 11, message: "Uncommon unlocked" },
+  { level: 26, message: "Rare unlocked" },
+  { level: 41, message: "Epic unlocked" },
+  { level: 61, message: "Legendary unlocked" },
+];
 const spherePrices = {
   basic: 10,
   mega: 30,
@@ -274,6 +299,45 @@ function writeUsers(data) {
   writeJsonFile(USERS_DATA_PATH, data);
 }
 
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getDefaultDailyQuests(existingDailyQuests) {
+  const today = getTodayKey();
+
+  if (
+    !existingDailyQuests ||
+    typeof existingDailyQuests !== "object" ||
+    existingDailyQuests.date !== today
+  ) {
+    return {
+      date: today,
+      captureAttempts: 0,
+      successfulCaptures: 0,
+      claimed: false,
+    };
+  }
+
+  return {
+    date: today,
+    captureAttempts:
+      Number.isInteger(existingDailyQuests.captureAttempts) &&
+      existingDailyQuests.captureAttempts >= 0
+        ? existingDailyQuests.captureAttempts
+        : 0,
+    successfulCaptures:
+      Number.isInteger(existingDailyQuests.successfulCaptures) &&
+      existingDailyQuests.successfulCaptures >= 0
+        ? existingDailyQuests.successfulCaptures
+        : 0,
+    claimed:
+      typeof existingDailyQuests.claimed === "boolean"
+        ? existingDailyQuests.claimed
+        : false,
+  };
+}
+
 function getDefaultUserRecord(existingUser) {
   const existingSpheres =
     existingUser && existingUser.spheres && typeof existingUser.spheres === "object"
@@ -321,6 +385,9 @@ function getDefaultUserRecord(existingUser) {
       existingUser && typeof existingUser.starterClaimed === "boolean"
         ? existingUser.starterClaimed
         : false,
+    dailyQuests: getDefaultDailyQuests(
+      existingUser && existingUser.dailyQuests
+    ),
     spheres: {
       basic: Number.isInteger(existingSpheres.basic) && existingSpheres.basic >= 0
         ? existingSpheres.basic
@@ -351,6 +418,22 @@ function randomInt(min, max) {
 
 function clampLevel(level) {
   return Math.max(1, Math.min(MAX_LEVEL, level));
+}
+
+function getTrainerTitle(level) {
+  const clampedLevel = clampLevel(level);
+  const tier = trainerTitleTiers.find(
+    ({ minLevel, maxLevel }) =>
+      clampedLevel >= minLevel && clampedLevel <= maxLevel
+  );
+
+  return tier ? tier.title : "Rookie Tamer";
+}
+
+function getLevelUnlockMessages(oldLevel, newLevel) {
+  return levelUnlocks
+    .filter(({ level }) => oldLevel < level && newLevel >= level)
+    .map(({ message }) => message);
 }
 
 function chooseWeightedRarity() {
@@ -455,19 +538,25 @@ function applyXpToUserRecord(userRecord, xpGained) {
   userRecord.xp += xpGained;
   userRecord.level = Math.floor(userRecord.xp / 100) + 1;
   userRecord.updatedAt = new Date().toISOString();
+  const leveledUp = userRecord.level > previousLevel;
 
   return {
     xpGained,
     xp: userRecord.xp,
     coins: userRecord.coins,
+    oldLevel: previousLevel,
     level: userRecord.level,
+    trainerTitle: getTrainerTitle(userRecord.level),
+    unlockMessages: leveledUp
+      ? getLevelUnlockMessages(previousLevel, userRecord.level)
+      : [],
     captures: userRecord.captures,
     streak: userRecord.streak,
     failedCaptures: userRecord.failedCaptures,
     updatedAt: userRecord.updatedAt,
     lastDailyAt: userRecord.lastDailyAt,
     spheres: { ...userRecord.spheres },
-    leveledUp: userRecord.level > previousLevel,
+    leveledUp,
   };
 }
 
@@ -622,6 +711,22 @@ function addSphereRewards(userRecord, rewards) {
   }
 }
 
+function isDailyQuestComplete(dailyQuests) {
+  return (
+    dailyQuests.captureAttempts >= dailyQuestGoals.captureAttempts &&
+    dailyQuests.successfulCaptures >= dailyQuestGoals.successfulCaptures
+  );
+}
+
+function trackDailyQuestProgress(userRecord, success) {
+  userRecord.dailyQuests = getDefaultDailyQuests(userRecord.dailyQuests);
+  userRecord.dailyQuests.captureAttempts += 1;
+
+  if (success) {
+    userRecord.dailyQuests.successfulCaptures += 1;
+  }
+}
+
 function updateUserProgress(userId, success, isShiny = false) {
   const users = readUsers();
   const userRecord = getDefaultUserRecord(users[userId]);
@@ -648,6 +753,7 @@ function updateUserProgress(userId, success, isShiny = false) {
     coinsGained += 10;
   }
 
+  trackDailyQuestProgress(userRecord, success);
   userRecord.coins += coinsGained;
   const progression = applyXpToUserRecord(userRecord, xpGained);
   users[userId] = userRecord;
@@ -656,6 +762,73 @@ function updateUserProgress(userId, success, isShiny = false) {
   return {
     ...progression,
     coinsGained,
+  };
+}
+
+function getDailyQuestStatus(userId) {
+  const users = readUsers();
+  const userRecord = getDefaultUserRecord(users[userId]);
+
+  users[userId] = userRecord;
+  writeUsers(users);
+
+  return {
+    dailyQuests: { ...userRecord.dailyQuests },
+    goals: { ...dailyQuestGoals },
+    rewards: {
+      coins: dailyQuestRewards.coins,
+      xp: dailyQuestRewards.xp,
+      spheres: { ...dailyQuestRewards.spheres },
+    },
+    complete: isDailyQuestComplete(userRecord.dailyQuests),
+  };
+}
+
+function claimDailyQuestReward(userId) {
+  const users = readUsers();
+  const userRecord = getDefaultUserRecord(users[userId]);
+  const complete = isDailyQuestComplete(userRecord.dailyQuests);
+
+  if (!complete || userRecord.dailyQuests.claimed) {
+    users[userId] = userRecord;
+    writeUsers(users);
+
+    return {
+      claimed: false,
+      alreadyClaimed: userRecord.dailyQuests.claimed,
+      complete,
+      dailyQuests: { ...userRecord.dailyQuests },
+      rewards: {
+        coins: dailyQuestRewards.coins,
+        xp: dailyQuestRewards.xp,
+        spheres: { ...dailyQuestRewards.spheres },
+      },
+      progression: null,
+    };
+  }
+
+  userRecord.dailyQuests.claimed = true;
+  userRecord.coins += dailyQuestRewards.coins;
+  addSphereRewards(userRecord, dailyQuestRewards.spheres);
+  const progression = applyXpToUserRecord(userRecord, dailyQuestRewards.xp);
+
+  users[userId] = userRecord;
+  writeUsers(users);
+
+  return {
+    claimed: true,
+    alreadyClaimed: false,
+    complete: true,
+    dailyQuests: { ...userRecord.dailyQuests },
+    rewards: {
+      coins: dailyQuestRewards.coins,
+      xp: dailyQuestRewards.xp,
+      spheres: { ...dailyQuestRewards.spheres },
+    },
+    progression: {
+      ...progression,
+      coinsGained: dailyQuestRewards.coins,
+    },
   };
 }
 
@@ -836,6 +1009,7 @@ module.exports = {
   buySpheres,
   attemptCapture,
   claimDailyReward,
+  claimDailyQuestReward,
   claimStarterRewards,
   consumeSphere,
   createEncounter,
@@ -844,6 +1018,8 @@ module.exports = {
   getUserLevel,
   getUserInventory,
   getUserRecord,
+  getTrainerTitle,
+  getDailyQuestStatus,
   MAX_LEVEL,
   readUserPals,
   readUsers,

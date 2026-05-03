@@ -12,6 +12,16 @@ function formatSphereRewards(rewards) {
     .join("\n");
 }
 
+function formatLevelUp(progression) {
+  return (
+    `Level ${progression.oldLevel} → ${progression.level}\n` +
+    `Title: ${progression.trainerTitle}` +
+    (progression.unlockMessages.length > 0
+      ? `\n${progression.unlockMessages.join("\n")}`
+      : "")
+  );
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("daily")
@@ -67,7 +77,15 @@ module.exports = {
         {
           name: "Sphere Rewards",
           value: formatSphereRewards(result.sphereRewards),
-        }
+        },
+        ...(result.progression.leveledUp
+          ? [
+              {
+                name: "🎉 LEVEL UP!",
+                value: formatLevelUp(result.progression),
+              },
+            ]
+          : [])
       )
       .setTimestamp();
 

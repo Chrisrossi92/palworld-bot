@@ -162,9 +162,19 @@ function buildResolvedEmbed(result, remaining) {
       : `Maxed (+${result.collectionUpdate.extraEssence} extra essence)`
     : "No change";
   const progressNotes = [];
+  const levelUpFields = [];
 
   if (result.progression.leveledUp) {
     progressNotes.push("Level Up!");
+    levelUpFields.push({
+      name: "🎉 LEVEL UP!",
+      value:
+        `Level ${result.progression.oldLevel} → ${result.progression.level}\n` +
+        `Title: ${result.progression.trainerTitle}` +
+        (result.progression.unlockMessages.length > 0
+          ? `\n${result.progression.unlockMessages.join("\n")}`
+          : ""),
+    });
   }
 
   if (result.collectionUpdate && result.collectionUpdate.starIncreased) {
@@ -286,7 +296,8 @@ function buildResolvedEmbed(result, remaining) {
       {
         name: "Progress",
         value: progressNotes.join(" | "),
-      }
+      },
+      ...levelUpFields
     )
     .setTimestamp();
 
