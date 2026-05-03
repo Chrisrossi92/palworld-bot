@@ -18,6 +18,12 @@ function formatQuestProgress(current, goal) {
   return `${Math.min(current, goal)}/${goal}`;
 }
 
+function formatQuestLine(label, current, goal) {
+  const icon = current >= goal ? "✅" : "⏳";
+
+  return `${icon} ${label} — ${formatQuestProgress(current, goal)}`;
+}
+
 function formatRewards(rewards) {
   return (
     `${rewards.coins} coins\n` +
@@ -40,25 +46,29 @@ function formatLevelUp(progression) {
 function buildQuestsEmbed(status, claimResult = null) {
   const { dailyQuests, goals, rewards, complete } = status;
   const claimed = claimResult ? claimResult.dailyQuests.claimed : dailyQuests.claimed;
+  const statusLabel = claimed
+    ? "✅ Claimed"
+    : complete
+      ? "🎁 Ready to Claim"
+      : "⏳ In Progress";
   const embed = new EmbedBuilder()
     .setTitle(claimResult?.claimed ? "🎉 Daily Reward Claimed!" : "Daily Quests")
     .setColor(claimed ? 0x95a5a6 : complete ? 0x2ecc71 : 0x3498db)
     .addFields(
       {
-        name: "Try 3 captures",
-        value: formatQuestProgress(
-          dailyQuests.captureAttempts,
-          goals.captureAttempts
-        ),
-        inline: true,
-      },
-      {
-        name: "Successfully catch 1 Pal",
-        value: formatQuestProgress(
-          dailyQuests.successfulCaptures,
-          goals.successfulCaptures
-        ),
-        inline: true,
+        name: "Today's Quests",
+        value: [
+          formatQuestLine(
+            "Try 3 captures",
+            dailyQuests.captureAttempts,
+            goals.captureAttempts
+          ),
+          formatQuestLine(
+            "Catch 1 Pal",
+            dailyQuests.successfulCaptures,
+            goals.successfulCaptures
+          ),
+        ].join("\n"),
       },
       {
         name: "Reward",
@@ -66,11 +76,7 @@ function buildQuestsEmbed(status, claimResult = null) {
       },
       {
         name: "Status",
-        value: claimed
-          ? "Claimed for today."
-          : complete
-            ? "Complete. Claim your reward."
-            : "In progress.",
+        value: statusLabel,
       }
     )
     .setFooter({ text: `Quest date: ${dailyQuests.date}` })
