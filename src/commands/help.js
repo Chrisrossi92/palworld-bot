@@ -20,7 +20,8 @@ module.exports = {
           name: "📦 Core Gameplay",
           value:
             "`/capture` — Encounter a wild Pal\n" +
-            "`/daily` — Claim daily rewards",
+            "`/daily` — Claim daily rewards\n" +
+            "`/quests` — View daily quests and claim quest rewards",
         },
         {
           name: "📊 Your Progress",
@@ -40,7 +41,6 @@ module.exports = {
           value:
             "`/capture` — Earn coins and XP whether you catch or miss\n" +
             "`/daily` — Claim daily coins, XP, and sphere rewards\n" +
-            "Public spawns — First player to throw gets the reward chance\n" +
             "Shiny Pals — Give bonus XP and coins",
         },
         {

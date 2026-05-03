@@ -42,11 +42,10 @@ module.exports = {
           name: "Gameplay Loop",
           value:
             "`/daily` - Claim daily coins, XP, and spheres\n" +
+            "`/quests` - Check daily quests and claim quest rewards\n" +
             "`/capture` - Encounter and try to catch a wild Pal\n" +
-            "`/mypals` - View your Pal collection\n" +
-            "`/inspect` - Inspect a specific Pal\n" +
-            "`/shop` and `/buy` - Check prices and buy spheres\n" +
-            "`/leaderboard` - Compare progress with other players",
+            "`/shop` and `/buy` - Spend coins on spheres\n" +
+            "`/profile` and `/mypals` - Track your progress and collection",
         },
         {
           name: "Current Inventory",
