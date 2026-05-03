@@ -20,7 +20,6 @@ module.exports = {
           name: "📦 Core Gameplay",
           value:
             "`/capture` — Encounter a wild Pal\n" +
-            "`/spawn` — (Admin) Spawn a public Pal\n" +
             "`/daily` — Claim daily rewards",
         },
         {
