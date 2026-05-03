@@ -52,6 +52,14 @@ const defaultSphereInventory = {
 };
 
 const defaultStartingCoins = 100;
+const starterRewards = {
+  coins: 250,
+  spheres: {
+    basic: 10,
+    mega: 3,
+    giga: 1,
+  },
+};
 const starThresholds = [2, 5, 10, 20];
 const spherePrices = {
   basic: 10,
@@ -309,6 +317,10 @@ function getDefaultUserRecord(existingUser) {
       existingUser && typeof existingUser.lastDailyAt === "string"
         ? existingUser.lastDailyAt
         : null,
+    starterClaimed:
+      existingUser && typeof existingUser.starterClaimed === "boolean"
+        ? existingUser.starterClaimed
+        : false,
     spheres: {
       basic: Number.isInteger(existingSpheres.basic) && existingSpheres.basic >= 0
         ? existingSpheres.basic
@@ -687,6 +699,36 @@ function claimDailyReward(userId) {
   };
 }
 
+function claimStarterRewards(userId) {
+  const users = readUsers();
+  const userRecord = getDefaultUserRecord(users[userId]);
+
+  if (userRecord.starterClaimed) {
+    users[userId] = userRecord;
+    writeUsers(users);
+
+    return {
+      claimed: false,
+      rewards: starterRewards,
+      user: userRecord,
+    };
+  }
+
+  userRecord.coins += starterRewards.coins;
+  addSphereRewards(userRecord, starterRewards.spheres);
+  userRecord.starterClaimed = true;
+  userRecord.updatedAt = new Date().toISOString();
+
+  users[userId] = userRecord;
+  writeUsers(users);
+
+  return {
+    claimed: true,
+    rewards: starterRewards,
+    user: userRecord,
+  };
+}
+
 function createEncounterForLevel(userLevel, options = {}) {
   const clampedUserLevel = clampLevel(userLevel);
   const palCatalog = readPalCatalog();
@@ -794,6 +836,7 @@ module.exports = {
   buySpheres,
   attemptCapture,
   claimDailyReward,
+  claimStarterRewards,
   consumeSphere,
   createEncounter,
   createEncounterForLevel,

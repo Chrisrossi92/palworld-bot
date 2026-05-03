@@ -1,4 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  MessageFlags,
+} = require("discord.js");
 const { buySpheres } = require("../systems/captureSystem");
 
 const sphereChoices = [
@@ -36,7 +40,7 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const sphere = interaction.options.getString("sphere");
     const quantity = interaction.options.getInteger("quantity");

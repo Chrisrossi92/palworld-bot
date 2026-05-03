@@ -1,4 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  MessageFlags,
+} = require("discord.js");
 const { claimDailyReward } = require("../systems/captureSystem");
 
 function formatSphereRewards(rewards) {
@@ -14,7 +18,7 @@ module.exports = {
     .setDescription("Claim your daily XP reward."),
 
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const result = claimDailyReward(interaction.user.id);
 

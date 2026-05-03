@@ -1,4 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  MessageFlags,
+} = require("discord.js");
 const { readUsers, readUserPals } = require("../systems/captureSystem");
 
 const defaultSpheres = {
@@ -110,7 +114,7 @@ module.exports = {
     .setDescription("Show your capture progression and stats."),
 
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const users = readUsers();
     const allUserPals = readUserPals();

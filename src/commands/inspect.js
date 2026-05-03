@@ -1,4 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  MessageFlags,
+} = require("discord.js");
 const { readUserPals } = require("../systems/captureSystem");
 
 const fallbackPalImageUrls = {
@@ -73,7 +77,7 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const targetName = interaction.options.getString("pal");
     const allUserPals = readUserPals();
