@@ -41,7 +41,7 @@ function buildQuestsEmbed(status, claimResult = null) {
   const { dailyQuests, goals, rewards, complete } = status;
   const claimed = claimResult ? claimResult.dailyQuests.claimed : dailyQuests.claimed;
   const embed = new EmbedBuilder()
-    .setTitle("Daily Quests")
+    .setTitle(claimResult?.claimed ? "🎉 Daily Reward Claimed!" : "Daily Quests")
     .setColor(claimed ? 0x95a5a6 : complete ? 0x2ecc71 : 0x3498db)
     .addFields(
       {
@@ -106,7 +106,7 @@ function buildClaimComponents(status) {
     new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(claimButtonId)
-        .setLabel("Claim Reward")
+        .setLabel("🎁 Claim Reward")
         .setStyle(ButtonStyle.Success)
     ),
   ];
@@ -138,7 +138,7 @@ module.exports = {
     collector.on("collect", async (buttonInteraction) => {
       if (buttonInteraction.user.id !== interaction.user.id) {
         await buttonInteraction.reply({
-          content: "This quest panel belongs to another trainer.",
+          content: "Not your quest.",
           flags: MessageFlags.Ephemeral,
         });
         return;
