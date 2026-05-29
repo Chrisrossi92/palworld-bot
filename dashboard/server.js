@@ -304,11 +304,11 @@ function handleInstall(response) {
   }
 
   sendLaunchPlaceholder(response, {
-    title: "Discord Install Coming Soon",
-    eyebrow: "Add to Discord",
-    description: "The public bot install link is not configured yet. Once installed, the first activity loop should get players into captures, quests, and dashboard-visible engagement quickly.",
+    title: "PalMaster Install Coming Soon",
+    eyebrow: "Add PalMaster to Discord",
+    description: "The public PalMaster install link is not configured yet. Once installed, the first activity loop should get players into captures, quests, and dashboard-visible engagement quickly.",
     actions: [
-      { href: "/login.html", label: "View Dashboard", className: "button-secondary" },
+      { href: "/login.html", label: "Open Dashboard", className: "button-secondary" },
       { href: "/", label: "Back to Home", className: "button-ghost" },
     ],
     steps: [
@@ -328,7 +328,7 @@ function handleSupport(response) {
   }
 
   sendLaunchPlaceholder(response, {
-    title: "Support Server Coming Soon",
+    title: "PalMaster Support Coming Soon",
     eyebrow: "Community support",
     description: "The support server link is not configured yet. The public landing page can keep this route as a safe placeholder until the support community is ready.",
     actions: [
