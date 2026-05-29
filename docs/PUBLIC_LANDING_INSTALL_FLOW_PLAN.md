@@ -362,6 +362,67 @@ SUPPORT_SERVER_URL=
 - Add onboarding empty-state copy for newly installed servers.
 - Keep this read-only and informational.
 
+## Phase 7B-1 Onboarding and Empty States
+
+Dashboard empty and low-activity states:
+
+- Show a welcome panel when server activity is empty or still below early thresholds.
+- Keep real metrics visible as zeros instead of faking live data.
+- Add first activity guidance:
+  - Run `/start`.
+  - Try `/capture`.
+  - Claim `/daily`.
+  - Check `/quests`.
+  - Return to dashboard once players interact.
+- Explain that captures create collection moments, quests create return loops, leaderboards create friendly competition, and dashboard metrics update after real player activity.
+
+Install success state:
+
+- Add an install success page with:
+  - Bot added successfully.
+  - Open Dashboard.
+  - Join Support Server.
+  - Getting Started checklist.
+
+Demo/preview state:
+
+- Empty servers may show example dashboard card labels to teach owners what will appear later.
+- Example content must be clearly labeled `Example Preview`.
+- Example content must not be presented as live server data.
+
+Landing alignment:
+
+- Landing messaging should match onboarding: owner dashboard value first, player commands as the engagement loop, and dashboard updates after real activity.
+
+## Phase 7B-2 Early Access Launch Polish
+
+Landing copy polish:
+
+- Hero copy should lead with server-owner benefit and avoid overclaiming maturity.
+- Early-access status should be visible in the first viewport.
+- Messaging should say the product is in active development and best for pilot/test servers.
+- Feedback should be explicitly welcomed.
+
+CTA polish:
+
+- `Add to Discord` should make clear that install access may require an early-access invite or configured `DISCORD_BOT_INVITE_URL`.
+- `View Dashboard` should make clear Discord login is required.
+- `Join Support Server` should explain where help and feedback will go once `SUPPORT_SERVER_URL` is configured.
+
+FAQ polish:
+
+- Clarify whether early access is free.
+- Clarify production readiness.
+- Clarify what the bot does today.
+- Clarify what the dashboard shows.
+- Clarify how to get help.
+- Clarify what happens after install.
+
+Launch readiness:
+
+- Added `docs/EARLY_ACCESS_LAUNCH_CHECKLIST.md`.
+- Checklist covers bot invite URL, support URL, Supabase-v2 intentional runtime selection, duplicate bot process checks, dashboard OAuth env, smoke tests, known limitations, and soft launch target tracking.
+
 ## Guardrails
 
 - Do not modify bot runtime code during planning.

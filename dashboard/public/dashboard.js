@@ -372,6 +372,65 @@ function renderHeroSummary({ engagement, paldeckHealth }) {
   setText("heroRecentCaptures", formatNumber(engagement.recentCapturesCount));
 }
 
+function getOnboardingState({ engagement, recentActivity }) {
+  const totalPlayers = Number(engagement.totalPlayers || 0);
+  const totalCaptures = Number(engagement.totalCaptures || 0);
+  const totalOwnedPals = Number(engagement.totalOwnedPals || 0);
+  const dailyQuestActivity = Number(engagement.dailyQuestActivity || 0);
+  const latestCaptures = Array.isArray(recentActivity.latestCaptures)
+    ? recentActivity.latestCaptures
+    : [];
+  const latestPlayerActivity = Array.isArray(recentActivity.latestPlayerActivity)
+    ? recentActivity.latestPlayerActivity
+    : [];
+  const hasNoActivity = totalPlayers === 0
+    && totalCaptures === 0
+    && totalOwnedPals === 0
+    && latestCaptures.length === 0
+    && latestPlayerActivity.length === 0;
+  const isLowActivity = totalPlayers < 3 || totalCaptures < 5;
+  const completedSteps = [
+    totalPlayers > 0,
+    totalCaptures > 0,
+    dailyQuestActivity > 0,
+    totalCaptures > 0 || latestPlayerActivity.length > 0,
+    latestCaptures.length > 0 || latestPlayerActivity.length > 0,
+  ].filter(Boolean).length;
+
+  let nextAction = "Recognize top collectors and keep the loop active.";
+
+  if (totalPlayers === 0) {
+    nextAction = "Invite the first player to run /start.";
+  } else if (totalCaptures === 0) {
+    nextAction = "Prompt players to try /capture.";
+  } else if (dailyQuestActivity === 0) {
+    nextAction = "Remind players to claim /daily and check /quests.";
+  } else if (latestCaptures.length === 0) {
+    nextAction = "Run a capture prompt so recent activity has something to show.";
+  }
+
+  return {
+    completedSteps,
+    hasNoActivity,
+    isLowActivity,
+    nextAction,
+  };
+}
+
+function renderOnboardingPanel({ engagement, recentActivity }) {
+  const panel = document.querySelector("#onboardingPanel");
+  const state = getOnboardingState({ engagement, recentActivity });
+
+  if (!state.hasNoActivity && !state.isLowActivity) {
+    panel.classList.add("is-hidden");
+    return;
+  }
+
+  panel.classList.remove("is-hidden");
+  setText("onboardingProgress", `${state.completedSteps} of 5 steps started`);
+  setText("nextRecommendedAction", state.nextAction);
+}
+
 function renderOwnerInsights({ engagement, topCollectors, paldeckHealth, recentActivity }) {
   const mostActive = Array.isArray(topCollectors.topCaptures)
     ? topCollectors.topCaptures[0]
@@ -455,6 +514,7 @@ async function loadDashboard() {
     recentActivity,
   });
   renderHeroSummary({ engagement, paldeckHealth });
+  renderOnboardingPanel({ engagement, recentActivity });
   status.textContent = "Owner overview loaded.";
 }
 

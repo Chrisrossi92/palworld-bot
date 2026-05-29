@@ -48,6 +48,48 @@
         </div>
       </section>
       <div class="dashboard-stack">
+        <section id="onboardingPanel" class="dashboard-section onboarding-panel is-hidden" aria-labelledby="onboardingHeading">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Getting started</div>
+              <h2 id="onboardingHeading">Welcome to your community dashboard</h2>
+            </div>
+            <div id="onboardingProgress" class="status">0 of 5 steps started</div>
+          </div>
+          <div class="onboarding-grid">
+            <article class="onboarding-card">
+              <h3>First activity checklist</h3>
+              <ol class="onboarding-list compact-onboarding-list">
+                <li>Run <strong>/start</strong></li>
+                <li>Try <strong>/capture</strong></li>
+                <li>Claim <strong>/daily</strong></li>
+                <li>Check <strong>/quests</strong></li>
+                <li>Return to dashboard</li>
+              </ol>
+              <p id="nextRecommendedAction" class="onboarding-action">Invite the first player to run /start.</p>
+            </article>
+            <article class="onboarding-card">
+              <h3>How activity becomes engagement</h3>
+              <p>
+                Captures create collection moments, quests give players a reason to return,
+                leaderboards create friendly competition, and this dashboard updates as real
+                server activity arrives.
+              </p>
+            </article>
+            <article class="onboarding-card example-preview-card">
+              <div class="example-label">Example Preview</div>
+              <h3>What owners will see</h3>
+              <div class="example-preview-grid">
+                <span>Top collector</span>
+                <span>Rare capture</span>
+                <span>Quest activity</span>
+                <span>Paldeck progress</span>
+              </div>
+              <p>Preview only. These are not live server metrics.</p>
+            </article>
+          </div>
+        </section>
+
         <section class="dashboard-section" aria-labelledby="insightsHeading">
           <div class="section-heading">
             <div>

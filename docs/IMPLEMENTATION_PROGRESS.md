@@ -44,17 +44,19 @@ This tracker records completed SaaS-readiness work and the planned sequence for 
 - Phase 7A-1 Landing Content and Route Plan.
 - Phase 7A-2 Static Public Landing Page.
 - Phase 7A-3 Install URL and Onboarding Polish.
+- Phase 7B-1 Onboarding and Empty States.
+- Phase 7B-2 Early Access Launch Polish.
+- Phase 7B-3 Early Access Deployment Prep.
 
 ## Current Phase
 
-- Phase 7A-4 Post-Install and Empty-State Copy.
+- Paldeck/profile improvements.
 
 ## Next Planned Phases
 
-1. Phase 7A-4 post-install and empty-state copy.
-2. Paldeck/profile improvements.
-3. Supabase runtime cutover implementation.
-4. Stripe billing.
+1. Paldeck/profile improvements.
+2. Supabase runtime cutover implementation.
+3. Stripe billing.
 
 ## Notes
 
@@ -105,6 +107,10 @@ This tracker records completed SaaS-readiness work and the planned sequence for 
 - Phase 7A-2 replaced `/` with a static public landing page and preserved dashboard login at `/login.html`.
 - Phase 7A-2 public landing smoke validation passed.
 - Phase 7A-3 polished `/install` and `/support` placeholders and added early onboarding copy.
+- Phase 7B-1 adds dashboard onboarding for empty and low-activity servers without faking live data.
+- Phase 7B-1 Onboarding and Empty States is completed.
+- Phase 7B-2 polishes early-access landing copy, CTA expectations, and launch readiness documentation.
+- Phase 7B-3 documents early-access deployment modes, process names, Supabase-v2 launch steps, dashboard hosting, duplicate bot checks, and JSON rollback.
 
 ## Post-Import Status
 
@@ -475,3 +481,73 @@ This tracker records completed SaaS-readiness work and the planned sequence for 
 - `/support` placeholder includes a `Back to Home` link.
 - Bot install OAuth and dashboard user OAuth remain separate flows.
 - No bot runtime code, JSON data files, storage providers, Stripe, or owner controls changed.
+
+## Phase 7B-1 Onboarding and Empty States
+
+- Phase 7B-1 completed.
+- Onboarding smoke status: accepted.
+- Dashboard now shows a welcome panel when server activity is empty or below early thresholds.
+- Dashboard onboarding panel is recorded as the first-time owner entry point for empty and low-activity servers.
+- Empty and low-activity guidance includes:
+  - Run `/start`.
+  - Try `/capture`.
+  - Claim `/daily`.
+  - Check `/quests`.
+  - Return to the dashboard once players interact.
+- Low-activity checklist is recorded as the primary next-action guidance.
+- First activity guidance explains how captures, quests, leaderboards, and dashboard updates work together.
+- Dashboard example cards are clearly labeled `Example Preview`.
+- Example preview content is not presented as live data.
+- Example Preview cards are recorded as educational preview content, not fake live metrics.
+- Added install success page at `/install-success.html`.
+- Install success page is recorded as part of the early owner onboarding path.
+- Install success page includes:
+  - Bot added successfully.
+  - Open Dashboard.
+  - Join Support Server.
+  - Getting Started checklist.
+- Landing page now includes guided launch messaging that matches onboarding.
+- No bot runtime code, JSON data files, storage providers, Stripe, or owner controls changed.
+
+## Phase 7B-2 Early Access Launch Polish
+
+- Landing hero copy now emphasizes server-owner value and pilot-server fit.
+- Early-access disclaimer added to the first viewport.
+- Landing copy now avoids claiming broad production maturity.
+- CTA messaging clarified:
+  - `Add to Discord` may require early-access invite/configured bot invite URL.
+  - `View Dashboard` requires Discord login.
+  - `Join Support Server` routes help and feedback when configured.
+- FAQ expanded and clarified:
+  - Is this free?
+  - Is it production-ready?
+  - What does the bot do today?
+  - What does the dashboard show?
+  - How do I get help?
+  - What happens after install?
+- Added `docs/EARLY_ACCESS_LAUNCH_CHECKLIST.md`.
+- Launch checklist covers bot invite URL, support URL, intentional Supabase-v2 runtime selection, duplicate bot process checks, dashboard OAuth env, smoke tests, known limitations, and soft launch target tracking.
+- No bot runtime code, JSON data files, storage providers, Stripe, or owner controls changed.
+
+## Phase 7B-3 Early Access Deployment Prep
+
+- Added `docs/EARLY_ACCESS_DEPLOYMENT_RUNBOOK.md`.
+- Documented runtime deployment modes:
+  - Bot process.
+  - Dashboard process.
+  - Supabase database.
+  - Public landing/dashboard URL.
+- Process names decided:
+  - `palworld-bot`.
+  - `palworld-dashboard`.
+- Deployment runbook covers:
+  - Required env vars.
+  - Starting bot with `STORAGE_PROVIDER=supabase-v2`.
+  - Starting dashboard with `npm run dashboard:start`.
+  - Duplicate bot process checks.
+  - PM2/service recommendations.
+  - Rollback to JSON.
+  - Log checks.
+  - Basic smoke test after deploy.
+- Added `dashboard:start` npm script alias for dashboard hosting.
+- No bot gameplay logic, JSON data files, storage provider defaults, or Stripe behavior changed.

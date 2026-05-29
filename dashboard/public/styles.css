@@ -97,6 +97,10 @@ a {
   line-height: 1;
 }
 
+.is-hidden {
+  display: none !important;
+}
+
 .onboarding-list {
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(31, 41, 55, 0.08);
@@ -111,6 +115,71 @@ a {
 .onboarding-list li {
   line-height: 1.45;
   padding-left: 4px;
+}
+
+.compact-onboarding-list {
+  background: transparent;
+  border: 0;
+  margin-bottom: 16px;
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+.onboarding-panel {
+  background:
+    linear-gradient(135deg, #ffffff 0%, var(--accent-soft) 68%, var(--gold-soft) 100%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.onboarding-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.onboarding-card {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(31, 41, 55, 0.09);
+  border-radius: 8px;
+  min-width: 0;
+  padding: 20px;
+}
+
+.onboarding-action {
+  color: var(--accent-dark);
+  font-weight: 800;
+  margin-bottom: 0;
+}
+
+.example-label {
+  background: var(--gold-soft);
+  border: 1px solid rgba(181, 126, 0, 0.2);
+  border-radius: 999px;
+  color: #8a5a00;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 850;
+  margin-bottom: 12px;
+  padding: 4px 9px;
+  text-transform: uppercase;
+}
+
+.example-preview-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.example-preview-grid span {
+  background: #ffffff;
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 10px;
 }
 
 h1,
@@ -225,6 +294,21 @@ p {
 .landing-hero-copy p {
   font-size: 18px;
   max-width: 680px;
+}
+
+.early-access-note,
+.preview-note {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 15px !important;
+  font-weight: 700;
+  padding: 12px 14px;
+}
+
+.preview-note {
+  margin: 16px 0 0;
 }
 
 .cta-row {
@@ -777,6 +861,10 @@ p {
   }
 
   .landing-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .onboarding-grid {
     grid-template-columns: 1fr;
   }
 
@@ -854,6 +942,10 @@ p {
   }
 
   .preview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-card-grid {
     grid-template-columns: 1fr;
   }
 
