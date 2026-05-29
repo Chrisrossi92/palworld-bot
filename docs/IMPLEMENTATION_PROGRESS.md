@@ -47,6 +47,8 @@ This tracker records completed SaaS-readiness work and the planned sequence for 
 - Phase 7B-1 Onboarding and Empty States.
 - Phase 7B-2 Early Access Launch Polish.
 - Phase 7B-3 Early Access Deployment Prep.
+- Phase 7C-1 Controlled VPS Deployment Planning.
+- Phase 7C-2 VPS Deployment Staging.
 
 ## Current Phase
 
@@ -111,6 +113,8 @@ This tracker records completed SaaS-readiness work and the planned sequence for 
 - Phase 7B-1 Onboarding and Empty States is completed.
 - Phase 7B-2 polishes early-access landing copy, CTA expectations, and launch readiness documentation.
 - Phase 7B-3 documents early-access deployment modes, process names, Supabase-v2 launch steps, dashboard hosting, duplicate bot checks, and JSON rollback.
+- Phase 7C-1 plans safe VPS deployment without touching existing `cdawg-bot`, `cdawg-dashboard`, Palworld game server, or Valheim services.
+- Phase 7C-2 stages exact VPS folder, env, PM2, startup, validation, smoke, log, duplicate-check, and rollback commands for `/root/palworld-owner-platform`.
 
 ## Post-Import Status
 
@@ -551,3 +555,55 @@ This tracker records completed SaaS-readiness work and the planned sequence for 
   - Basic smoke test after deploy.
 - Added `dashboard:start` npm script alias for dashboard hosting.
 - No bot gameplay logic, JSON data files, storage provider defaults, or Stripe behavior changed.
+
+## Phase 7C-1 Controlled VPS Deployment Planning
+
+- Added `docs/VPS_DEPLOYMENT_PLAN.md`.
+- VPS deployment plan covers current-state inspection:
+  - Existing PM2 processes.
+  - Old `/root/palworld-bot` directory.
+  - Duplicate bot process checks.
+  - Confirmation that `cdawg-bot` and `cdawg-dashboard` are not disrupted.
+- Deployment target documented:
+  - Recommended repo path: `/root/palworld-owner-platform`.
+  - PM2 process names: `palworld-bot`, `palworld-dashboard`.
+  - Dashboard port: `3000`.
+  - Public URL/domain and Discord OAuth callback plan.
+- Required production env documented for bot and dashboard.
+- Safe deployment sequence documented:
+  - Stop/delete only old Palworld PM2 processes.
+  - Back up old deployment directory if present.
+  - Pull/copy latest repo.
+  - Run `npm install`.
+  - Run validation.
+  - Start dashboard first.
+  - Smoke dashboard.
+  - Start bot only after duplicate checks.
+  - Smoke bot commands.
+- PM2 plan includes `pm2 save` and log commands.
+- Rollback plan covers stopping PM2 processes, restoring old folder if needed, and JSON fallback.
+- Do-not-touch list includes `cdawg-bot`, `cdawg-dashboard`, Palworld game server, and Valheim services.
+- No deployment was performed.
+
+## Phase 7C-2 VPS Deployment Staging
+
+- Added `docs/VPS_DEPLOYMENT_STAGING.md`.
+- Staging target remains `/root/palworld-owner-platform`.
+- Existing `cdawg-bot`, `cdawg-dashboard`, and `/root/palworld-bot` remain untouched.
+- Supabase-v2 runtime is assumed for the staged bot process.
+- Documented folder structure:
+  - `dashboard/`
+  - `data/`
+  - `docs/`
+  - `scripts/`
+  - `src/`
+  - `supabase/`
+  - `.env.bot`
+  - `.env.dashboard`
+  - `ecosystem.config.cjs`
+- Documented environment files for bot and dashboard.
+- Documented PM2 process definitions:
+  - `palworld-dashboard`
+  - `palworld-bot`
+- Documented clone/copy, `npm install`, validation, dashboard startup, bot startup, `pm2 save`, smoke tests, log commands, duplicate bot checks, and rollback.
+- No deployment was performed.

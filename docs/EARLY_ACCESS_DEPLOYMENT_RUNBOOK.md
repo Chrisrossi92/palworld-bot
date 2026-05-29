@@ -2,6 +2,8 @@
 
 This runbook prepares controlled early-access hosting for the bot and owner dashboard. It does not change bot gameplay, JSON data, Stripe, or storage defaults.
 
+For VPS-specific deployment sequencing, PM2 isolation from existing services, and the first live VPS inspection commands, see `docs/VPS_DEPLOYMENT_PLAN.md`.
+
 ## Runtime Deployment Modes
 
 Early access uses four runtime pieces:
