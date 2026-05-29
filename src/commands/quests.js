@@ -126,7 +126,7 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const status = getDailyQuestStatus(interaction.user.id);
+    const status = await getDailyQuestStatus(interaction.guildId, interaction.user.id);
     const message = await interaction.editReply({
       embeds: [buildQuestsEmbed(status)],
       components: buildClaimComponents(status),
@@ -156,8 +156,14 @@ module.exports = {
         return;
       }
 
-      const claimResult = claimDailyQuestReward(interaction.user.id);
-      const updatedStatus = getDailyQuestStatus(interaction.user.id);
+      const claimResult = await claimDailyQuestReward(
+        interaction.guildId,
+        interaction.user.id
+      );
+      const updatedStatus = await getDailyQuestStatus(
+        interaction.guildId,
+        interaction.user.id
+      );
 
       await interaction.editReply({
         embeds: [buildQuestsEmbed(updatedStatus, claimResult)],
@@ -173,7 +179,10 @@ module.exports = {
       }
 
       try {
-        const updatedStatus = getDailyQuestStatus(interaction.user.id);
+        const updatedStatus = await getDailyQuestStatus(
+          interaction.guildId,
+          interaction.user.id
+        );
         await interaction.editReply({
           embeds: [buildQuestsEmbed(updatedStatus)],
           components: [],

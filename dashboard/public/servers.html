@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Select Server</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">Palworld Owner Dashboard</div>
+      <a href="/logout">Sign out</a>
+    </header>
+    <main class="layout">
+      <section class="section">
+        <h1>Select a Server</h1>
+        <p>Choose an authorized Discord server to view owner metrics.</p>
+        <div class="toolbar">
+          <select id="guildSelect" class="select" aria-label="Discord server"></select>
+          <a id="openDashboard" class="button" href="/dashboard.html">Open Dashboard</a>
+        </div>
+        <div id="connectionStatus" class="status"></div>
+      </section>
+    </main>
+    <script src="/servers.js"></script>
+  </body>
+</html>

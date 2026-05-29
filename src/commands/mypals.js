@@ -237,9 +237,10 @@ module.exports = {
 
     const view = interaction.options.getString("view") || "all";
     const sort = interaction.options.getString("sort") || "recent";
-    const allUserPals = readUserPals();
-    const userPals = Array.isArray(allUserPals[interaction.user.id])
-      ? allUserPals[interaction.user.id]
+    const allUserPals = await readUserPals();
+    const guildUserPals = allUserPals[interaction.guildId] || {};
+    const userPals = Array.isArray(guildUserPals[interaction.user.id])
+      ? guildUserPals[interaction.user.id]
       : [];
 
     if (userPals.length === 0) {

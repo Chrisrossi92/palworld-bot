@@ -30,7 +30,7 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const result = claimDailyReward(interaction.user.id);
+    const result = await claimDailyReward(interaction.guildId, interaction.user.id);
 
     if (!result.claimed) {
       await interaction.editReply(

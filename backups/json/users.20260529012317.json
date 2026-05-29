@@ -1,0 +1,27 @@
+{
+  "412831842304000030": {
+    "xp": 433,
+    "coins": 293,
+    "level": 5,
+    "captures": 11,
+    "streak": 0,
+    "failedCaptures": 9,
+    "updatedAt": "2026-04-24T20:03:02.199Z",
+    "lastDailyAt": "2026-04-23T21:47:29.535Z",
+    "starterClaimed": false,
+    "dailyQuests": {
+      "date": "2026-05-03",
+      "captureAttempts": 0,
+      "successfulCaptures": 0,
+      "claimed": false
+    },
+    "spheres": {
+      "basic": 0,
+      "mega": 1,
+      "giga": 0,
+      "hyper": 0,
+      "ultra": 0,
+      "legendary": 0
+    }
+  }
+}

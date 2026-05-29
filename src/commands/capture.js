@@ -59,6 +59,12 @@ const sphereChoices = [
   ["Legendary", "legendary"],
 ];
 
+function logDeferState(label, interaction) {
+  console.log(
+    `[capture:${label}] id=${interaction.id} deferred=${interaction.deferred} replied=${interaction.replied} provider=${process.env.STORAGE_PROVIDER || "json"} pid=${process.pid}`
+  );
+}
+
 function getPalImageUrl(pal) {
   if (pal && typeof pal.imageUrl === "string" && pal.imageUrl.trim() !== "") {
     return pal.imageUrl.trim();
@@ -379,7 +385,9 @@ module.exports = {
 
   async execute(interaction) {
     const now = Date.now();
-    const lastCaptureAt = captureCooldowns.get(interaction.user.id);
+    const guildId = interaction.guildId;
+    const cooldownKey = `${guildId}:${interaction.user.id}`;
+    const lastCaptureAt = captureCooldowns.get(cooldownKey);
 
     if (lastCaptureAt && now - lastCaptureAt < CAPTURE_COOLDOWN_MS) {
       const secondsLeft = Math.ceil(
@@ -398,7 +406,7 @@ module.exports = {
       return;
     }
 
-    captureCooldowns.set(interaction.user.id, now);
+    captureCooldowns.set(cooldownKey, now);
 
     try {
       console.log(
@@ -409,7 +417,9 @@ module.exports = {
     }
 
     try {
+      logDeferState("before-defer", interaction);
       await interaction.deferReply();
+      logDeferState("after-defer", interaction);
       console.log(`[capture] after deferReply user=${interaction.user.id}`);
     } catch (error) {
       console.error("[capture] Failed during deferReply:", error);
@@ -417,8 +427,8 @@ module.exports = {
     }
 
     try {
-      const encounter = createEncounter(interaction.user.id);
-      const inventory = getUserInventory(interaction.user.id);
+      const encounter = await createEncounter(guildId, interaction.user.id);
+      const inventory = await getUserInventory(guildId, interaction.user.id);
       const message = await interaction.editReply({
         embeds: [buildEncounterEmbed(encounter, inventory)],
         components: buildSphereButtons(inventory),
@@ -444,44 +454,51 @@ module.exports = {
             `[capture] resolving encounter user=${interaction.user.id} sphere=${sphere}`
           );
 
-          const sphereUse = consumeSphere(interaction.user.id, sphere);
+          const sphereUse = await consumeSphere(guildId, interaction.user.id, sphere);
 
           if (!sphereUse.consumed) {
+            const disabledInventory = await getUserInventory(
+              guildId,
+              interaction.user.id
+            );
+
             await interaction.editReply({
               content: `❌ You don't have any ${sphereUse.sphere} spheres.`,
               embeds: [],
-              components: buildSphereButtons(
-                getUserInventory(interaction.user.id),
-                true
-              ),
+              components: buildSphereButtons(disabledInventory, true),
             });
             collector.stop("resolved");
             return;
           }
 
+          const throwingInventory = await getUserInventory(
+            guildId,
+            interaction.user.id
+          );
+
           await interaction.editReply({
             content: "",
             embeds: [buildThrowEmbed(encounter, sphere)],
-            components: buildSphereButtons(
-              getUserInventory(interaction.user.id),
-              true
-            ),
+            components: buildSphereButtons(throwingInventory, true),
           });
 
           await new Promise((res) => setTimeout(res, 1000));
 
+          const shakeInventory = await getUserInventory(
+            guildId,
+            interaction.user.id
+          );
+
           await interaction.editReply({
             content: "",
             embeds: [buildShakeEmbed(encounter)],
-            components: buildSphereButtons(
-              getUserInventory(interaction.user.id),
-              true
-            ),
+            components: buildSphereButtons(shakeInventory, true),
           });
 
           await new Promise((res) => setTimeout(res, 500));
 
-          const result = resolveCaptureEncounter(
+          const result = await resolveCaptureEncounter(
+            guildId,
             interaction.user.id,
             encounter,
             sphere
@@ -491,26 +508,30 @@ module.exports = {
             `[capture] after capture system result user=${interaction.user.id} success=${result.success} pal=${result.pal.name} level=${result.pal.level} sphere=${result.sphere} chance=${result.captureChance}`
           );
 
+          const resolvedInventory = await getUserInventory(
+            guildId,
+            interaction.user.id
+          );
+
           await interaction.editReply({
             content: "",
             embeds: [buildResolvedEmbed(result, sphereUse.remaining)],
-            components: buildSphereButtons(
-              getUserInventory(interaction.user.id),
-              true
-            ),
+            components: buildSphereButtons(resolvedInventory, true),
           });
 
           collector.stop("resolved");
         } catch (error) {
           console.error("[capture] Error resolving encounter button:", error);
 
+          const errorInventory = await getUserInventory(
+            guildId,
+            interaction.user.id
+          );
+
           await interaction.editReply({
             content: "❌ Something went wrong while processing /capture.",
             embeds: [],
-            components: buildSphereButtons(
-              getUserInventory(interaction.user.id),
-              true
-            ),
+            components: buildSphereButtons(errorInventory, true),
           });
 
           collector.stop("error");
@@ -523,12 +544,11 @@ module.exports = {
         }
 
         try {
+          const disabledInventory = await getUserInventory(guildId, interaction.user.id);
+
           await interaction.editReply({
-            embeds: [buildEncounterEmbed(encounter, getUserInventory(interaction.user.id))],
-            components: buildSphereButtons(
-              getUserInventory(interaction.user.id),
-              true
-            ),
+            embeds: [buildEncounterEmbed(encounter, disabledInventory)],
+            components: buildSphereButtons(disabledInventory, true),
           });
         } catch (error) {
           console.error("[capture] Failed to disable encounter buttons:", error);

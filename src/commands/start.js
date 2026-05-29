@@ -25,7 +25,7 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const result = claimStarterRewards(interaction.user.id);
+    const result = await claimStarterRewards(interaction.guildId, interaction.user.id);
 
     const embed = new EmbedBuilder()
       .setTitle("Welcome to Palworld Bot")

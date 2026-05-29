@@ -1,10 +1,6 @@
-const fs = require("fs");
-const path = require("path");
+const { createStorage } = require("../storage");
 
 const MAX_LEVEL = 70;
-const PALS_DATA_PATH = path.join(__dirname, "../../data/pals.json");
-const USER_PALS_DATA_PATH = path.join(__dirname, "../../data/user-pals.json");
-const USERS_DATA_PATH = path.join(__dirname, "../../data/users.json");
 
 const defaultPalCatalog = [
   { name: "Lamball", rarity: "common", unlockLevel: 1 },
@@ -95,69 +91,22 @@ const spherePrices = {
   legendary: 750,
 };
 
-function ensureJsonFile(filePath) {
-  const dirPath = path.dirname(filePath);
+const storage = createStorage({
+  defaultPalCatalog,
+  normalizeUserRecord: getDefaultUserRecord,
+  normalizeUserPals: consolidateUserPals,
+});
 
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, "{}\n", "utf8");
-  }
+async function readPalCatalog() {
+  return await storage.readPalCatalog();
 }
 
-function readJsonFile(filePath, label) {
-  ensureJsonFile(filePath);
-
-  try {
-    const raw = fs.readFileSync(filePath, "utf8").trim();
-    const parsed = raw ? JSON.parse(raw) : {};
-
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed;
-    }
-  } catch (error) {
-    console.error(`Failed to read ${label} data. Resetting file.`, error);
-  }
-
-  fs.writeFileSync(filePath, "{}\n", "utf8");
-  return {};
-}
-
-function writeJsonFile(filePath, data) {
-  ensureJsonFile(filePath);
-  fs.writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
-}
-
-function readPalCatalog() {
-  ensureJsonFile(PALS_DATA_PATH);
-
-  try {
-    const raw = fs.readFileSync(PALS_DATA_PATH, "utf8").trim();
-    const parsed = raw ? JSON.parse(raw) : defaultPalCatalog;
-
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
-    }
-  } catch (error) {
-    console.error("Failed to read pals data. Resetting file.", error);
-  }
-
-  fs.writeFileSync(
-    PALS_DATA_PATH,
-    `${JSON.stringify(defaultPalCatalog, null, 2)}\n`,
-    "utf8"
-  );
-  return defaultPalCatalog;
-}
-
-function findPalByName(name) {
+async function findPalByName(name) {
   if (!name || typeof name !== "string") {
     return null;
   }
 
-  const palCatalog = readPalCatalog();
+  const palCatalog = await readPalCatalog();
   const normalizedQuery = name.trim().toLowerCase();
 
   return (
@@ -268,35 +217,20 @@ function consolidateUserPals(userPals) {
     .sort((a, b) => new Date(b.caughtAt).getTime() - new Date(a.caughtAt).getTime());
 }
 
-function normalizeUserPalsData(data) {
-  const normalized = {};
-
-  for (const [userId, pals] of Object.entries(data)) {
-    normalized[userId] = consolidateUserPals(pals);
-  }
-
-  return normalized;
+async function readUserPals() {
+  return await storage.readUserPals();
 }
 
-function readUserPals() {
-  const raw = readJsonFile(USER_PALS_DATA_PATH, "user pals");
-  const normalized = normalizeUserPalsData(raw);
-
-  writeUserPals(normalized);
-
-  return normalized;
+async function writeUserPals(data) {
+  await storage.writeUserPals(data);
 }
 
-function writeUserPals(data) {
-  writeJsonFile(USER_PALS_DATA_PATH, normalizeUserPalsData(data));
+async function readUsers() {
+  return await storage.readUsers();
 }
 
-function readUsers() {
-  return readJsonFile(USERS_DATA_PATH, "users");
-}
-
-function writeUsers(data) {
-  writeJsonFile(USERS_DATA_PATH, data);
+async function writeUsers(data) {
+  await storage.writeUsers(data);
 }
 
 function getTodayKey() {
@@ -472,60 +406,54 @@ function calculateCaptureChance(rarity, level, sphere) {
   return Math.max(5, Math.min(95, finalChance));
 }
 
-function saveCapturedPal(userId, pal) {
+async function saveCapturedPal(guildId, userId, pal) {
   try {
-    const userPals = readUserPals();
+    return await storage.updateGuildOwnedPals(guildId, userId, (ownedPals) => {
+      const existingPal = ownedPals.find((entry) => entry.name === pal.name);
 
-    if (!Array.isArray(userPals[userId])) {
-      userPals[userId] = [];
-    }
-    const existingPal = userPals[userId].find((entry) => entry.name === pal.name);
+      if (!existingPal) {
+        const newPal = {
+          ...pal,
+          isShiny: Boolean(pal.isShiny),
+          stars: 0,
+          essence: 0,
+          extraEssence: 0,
+        };
 
-    if (!existingPal) {
-      const newPal = {
-        ...pal,
-        isShiny: Boolean(pal.isShiny),
-        stars: 0,
-        essence: 0,
-        extraEssence: 0,
-      };
+        ownedPals.push(newPal);
 
-      userPals[userId].push(newPal);
-      writeUserPals(userPals);
+        return {
+          outcome: "new",
+          pal: newPal,
+          stars: 0,
+          essence: 0,
+          extraEssence: 0,
+          nextStarThreshold: getNextStarThreshold(0),
+          starIncreased: false,
+        };
+      }
+
+      const previousStars = existingPal.stars ?? getStarCountFromEssence(existingPal.essence ?? 0);
+
+      existingPal.essence = (existingPal.essence ?? 0) + 1;
+      existingPal.stars = getStarCountFromEssence(existingPal.essence);
+      existingPal.extraEssence = getExtraEssence(existingPal.essence);
+      existingPal.caughtAt = pal.caughtAt;
+      existingPal.level = Math.max(existingPal.level, pal.level);
+      existingPal.rarity = pal.rarity;
+      existingPal.isShiny = existingPal.isShiny || Boolean(pal.isShiny);
+      existingPal.imageUrl = pal.imageUrl;
 
       return {
-        outcome: "new",
-        pal: newPal,
-        stars: 0,
-        essence: 0,
-        extraEssence: 0,
-        nextStarThreshold: getNextStarThreshold(0),
-        starIncreased: false,
+        outcome: "duplicate",
+        pal: existingPal,
+        stars: existingPal.stars,
+        essence: existingPal.essence,
+        extraEssence: existingPal.extraEssence,
+        nextStarThreshold: getNextStarThreshold(existingPal.stars),
+        starIncreased: existingPal.stars > previousStars,
       };
-    }
-
-    const previousStars = existingPal.stars ?? getStarCountFromEssence(existingPal.essence ?? 0);
-
-    existingPal.essence = (existingPal.essence ?? 0) + 1;
-    existingPal.stars = getStarCountFromEssence(existingPal.essence);
-    existingPal.extraEssence = getExtraEssence(existingPal.essence);
-    existingPal.caughtAt = pal.caughtAt;
-    existingPal.level = Math.max(existingPal.level, pal.level);
-    existingPal.rarity = pal.rarity;
-    existingPal.isShiny = existingPal.isShiny || Boolean(pal.isShiny);
-    existingPal.imageUrl = pal.imageUrl;
-
-    writeUserPals(userPals);
-
-    return {
-      outcome: "duplicate",
-      pal: existingPal,
-      stars: existingPal.stars,
-      essence: existingPal.essence,
-      extraEssence: existingPal.extraEssence,
-      nextStarThreshold: getNextStarThreshold(existingPal.stars),
-      starIncreased: existingPal.stars > previousStars,
-    };
+    });
   } catch (error) {
     console.error("[captureSystem] Failed to save captured pal:", error);
     throw error;
@@ -560,70 +488,48 @@ function applyXpToUserRecord(userRecord, xpGained) {
   };
 }
 
-function getUserInventory(userId) {
-  const users = readUsers();
-  const userRecord = getDefaultUserRecord(users[userId]);
-
-  users[userId] = userRecord;
-  writeUsers(users);
-
-  return {
-    ...userRecord.spheres,
-  };
+async function getUserInventory(guildId, userId) {
+  return await storage.getSphereInventory(guildId, userId);
 }
 
-function getUserLevel(userId) {
-  const users = readUsers();
-  const userRecord = getDefaultUserRecord(users[userId]);
-
-  users[userId] = userRecord;
-  writeUsers(users);
+async function getUserLevel(guildId, userId) {
+  const userRecord = await storage.getGuildPlayerRecord(guildId, userId);
 
   return clampLevel(userRecord.level);
 }
 
-function getUserRecord(userId) {
-  const users = readUsers();
-  const userRecord = getDefaultUserRecord(users[userId]);
-
-  users[userId] = userRecord;
-  writeUsers(users);
-
-  return userRecord;
+async function getUserRecord(guildId, userId) {
+  return await storage.getGuildPlayerRecord(guildId, userId);
 }
 
-function consumeSphere(userId, sphere) {
-  const users = readUsers();
-  const userRecord = getDefaultUserRecord(users[userId]);
+async function consumeSphere(guildId, userId, sphere) {
   const normalizedSphere = Object.prototype.hasOwnProperty.call(sphereBonus, sphere)
     ? sphere
     : "basic";
-  const currentCount = userRecord.spheres[normalizedSphere] ?? 0;
 
-  if (currentCount <= 0) {
-    users[userId] = userRecord;
-    writeUsers(users);
+  return await storage.updateGuildPlayerRecord(guildId, userId, (userRecord) => {
+    const currentCount = userRecord.spheres[normalizedSphere] ?? 0;
+
+    if (currentCount <= 0) {
+      return {
+        consumed: false,
+        sphere: normalizedSphere,
+        remaining: 0,
+      };
+    }
+
+    userRecord.spheres[normalizedSphere] = currentCount - 1;
+    userRecord.updatedAt = new Date().toISOString();
 
     return {
-      consumed: false,
+      consumed: true,
       sphere: normalizedSphere,
-      remaining: 0,
+      remaining: userRecord.spheres[normalizedSphere],
     };
-  }
-
-  userRecord.spheres[normalizedSphere] = currentCount - 1;
-  userRecord.updatedAt = new Date().toISOString();
-  users[userId] = userRecord;
-  writeUsers(users);
-
-  return {
-    consumed: true,
-    sphere: normalizedSphere,
-    remaining: userRecord.spheres[normalizedSphere],
-  };
+  });
 }
 
-function buySpheres(userId, sphere, quantity) {
+async function buySpheres(guildId, userId, sphere, quantity) {
   const normalizedSphere = Object.prototype.hasOwnProperty.call(spherePrices, sphere)
     ? sphere
     : null;
@@ -636,40 +542,35 @@ function buySpheres(userId, sphere, quantity) {
     throw new Error(`Invalid sphere quantity: ${quantity}`);
   }
 
-  const users = readUsers();
-  const userRecord = getDefaultUserRecord(users[userId]);
   const unitPrice = spherePrices[normalizedSphere];
   const totalCost = unitPrice * quantity;
 
-  if (userRecord.coins < totalCost) {
-    users[userId] = userRecord;
-    writeUsers(users);
+  return await storage.updateGuildPlayerRecord(guildId, userId, (userRecord) => {
+    if (userRecord.coins < totalCost) {
+      return {
+        success: false,
+        sphere: normalizedSphere,
+        quantity,
+        totalCost,
+        coins: userRecord.coins,
+        updatedSphereCount: userRecord.spheres[normalizedSphere],
+      };
+    }
+
+    userRecord.coins -= totalCost;
+    userRecord.spheres[normalizedSphere] =
+      (userRecord.spheres[normalizedSphere] ?? 0) + quantity;
+    userRecord.updatedAt = new Date().toISOString();
 
     return {
-      success: false,
+      success: true,
       sphere: normalizedSphere,
       quantity,
       totalCost,
       coins: userRecord.coins,
       updatedSphereCount: userRecord.spheres[normalizedSphere],
     };
-  }
-
-  userRecord.coins -= totalCost;
-  userRecord.spheres[normalizedSphere] =
-    (userRecord.spheres[normalizedSphere] ?? 0) + quantity;
-  userRecord.updatedAt = new Date().toISOString();
-  users[userId] = userRecord;
-  writeUsers(users);
-
-  return {
-    success: true,
-    sphere: normalizedSphere,
-    quantity,
-    totalCost,
-    coins: userRecord.coins,
-    updatedSphereCount: userRecord.spheres[normalizedSphere],
-  };
+  });
 }
 
 function generateDailySphereRewards() {
@@ -727,50 +628,44 @@ function trackDailyQuestProgress(userRecord, success) {
   }
 }
 
-function updateUserProgress(userId, success, isShiny = false) {
-  const users = readUsers();
-  const userRecord = getDefaultUserRecord(users[userId]);
-  const xpGained = isShiny
-    ? Math.round((success ? 25 : 10) * 1.5)
-    : success
-      ? 25
-      : 10;
-  let coinsGained = isShiny
-    ? Math.round((success ? 20 : 5) * 1.5)
-    : success
-      ? 20
-      : 5;
+async function updateUserProgress(guildId, userId, success, isShiny = false) {
+  return await storage.updateGuildPlayerRecord(guildId, userId, (userRecord) => {
+    const xpGained = isShiny
+      ? Math.round((success ? 25 : 10) * 1.5)
+      : success
+        ? 25
+        : 10;
+    let coinsGained = isShiny
+      ? Math.round((success ? 20 : 5) * 1.5)
+      : success
+        ? 20
+        : 5;
 
-  if (success) {
-    userRecord.captures += 1;
-    userRecord.streak += 1;
-  } else {
-    userRecord.failedCaptures += 1;
-    userRecord.streak = 0;
-  }
+    if (success) {
+      userRecord.captures += 1;
+      userRecord.streak += 1;
+    } else {
+      userRecord.failedCaptures += 1;
+      userRecord.streak = 0;
+    }
 
-  if (userRecord.streak >= 3) {
-    coinsGained += 10;
-  }
+    if (userRecord.streak >= 3) {
+      coinsGained += 10;
+    }
 
-  trackDailyQuestProgress(userRecord, success);
-  userRecord.coins += coinsGained;
-  const progression = applyXpToUserRecord(userRecord, xpGained);
-  users[userId] = userRecord;
-  writeUsers(users);
+    trackDailyQuestProgress(userRecord, success);
+    userRecord.coins += coinsGained;
+    const progression = applyXpToUserRecord(userRecord, xpGained);
 
-  return {
-    ...progression,
-    coinsGained,
-  };
+    return {
+      ...progression,
+      coinsGained,
+    };
+  });
 }
 
-function getDailyQuestStatus(userId) {
-  const users = readUsers();
-  const userRecord = getDefaultUserRecord(users[userId]);
-
-  users[userId] = userRecord;
-  writeUsers(users);
+async function getDailyQuestStatus(guildId, userId) {
+  const userRecord = await storage.getGuildPlayerRecord(guildId, userId);
 
   return {
     dailyQuests: { ...userRecord.dailyQuests },
@@ -784,52 +679,46 @@ function getDailyQuestStatus(userId) {
   };
 }
 
-function claimDailyQuestReward(userId) {
-  const users = readUsers();
-  const userRecord = getDefaultUserRecord(users[userId]);
-  const complete = isDailyQuestComplete(userRecord.dailyQuests);
+async function claimDailyQuestReward(guildId, userId) {
+  return await storage.updateGuildPlayerRecord(guildId, userId, (userRecord) => {
+    const complete = isDailyQuestComplete(userRecord.dailyQuests);
 
-  if (!complete || userRecord.dailyQuests.claimed) {
-    users[userId] = userRecord;
-    writeUsers(users);
+    if (!complete || userRecord.dailyQuests.claimed) {
+      return {
+        claimed: false,
+        alreadyClaimed: userRecord.dailyQuests.claimed,
+        complete,
+        dailyQuests: { ...userRecord.dailyQuests },
+        rewards: {
+          coins: dailyQuestRewards.coins,
+          xp: dailyQuestRewards.xp,
+          spheres: { ...dailyQuestRewards.spheres },
+        },
+        progression: null,
+      };
+    }
+
+    userRecord.dailyQuests.claimed = true;
+    userRecord.coins += dailyQuestRewards.coins;
+    addSphereRewards(userRecord, dailyQuestRewards.spheres);
+    const progression = applyXpToUserRecord(userRecord, dailyQuestRewards.xp);
 
     return {
-      claimed: false,
-      alreadyClaimed: userRecord.dailyQuests.claimed,
-      complete,
+      claimed: true,
+      alreadyClaimed: false,
+      complete: true,
       dailyQuests: { ...userRecord.dailyQuests },
       rewards: {
         coins: dailyQuestRewards.coins,
         xp: dailyQuestRewards.xp,
         spheres: { ...dailyQuestRewards.spheres },
       },
-      progression: null,
+      progression: {
+        ...progression,
+        coinsGained: dailyQuestRewards.coins,
+      },
     };
-  }
-
-  userRecord.dailyQuests.claimed = true;
-  userRecord.coins += dailyQuestRewards.coins;
-  addSphereRewards(userRecord, dailyQuestRewards.spheres);
-  const progression = applyXpToUserRecord(userRecord, dailyQuestRewards.xp);
-
-  users[userId] = userRecord;
-  writeUsers(users);
-
-  return {
-    claimed: true,
-    alreadyClaimed: false,
-    complete: true,
-    dailyQuests: { ...userRecord.dailyQuests },
-    rewards: {
-      coins: dailyQuestRewards.coins,
-      xp: dailyQuestRewards.xp,
-      spheres: { ...dailyQuestRewards.spheres },
-    },
-    progression: {
-      ...progression,
-      coinsGained: dailyQuestRewards.coins,
-    },
-  };
+  });
 }
 
 function isSameCalendarDay(dateA, dateB) {
@@ -840,71 +729,61 @@ function isSameCalendarDay(dateA, dateB) {
   );
 }
 
-function claimDailyReward(userId) {
-  const users = readUsers();
-  const userRecord = getDefaultUserRecord(users[userId]);
-  const now = new Date();
-  const lastDailyAt = userRecord.lastDailyAt ? new Date(userRecord.lastDailyAt) : null;
+async function claimDailyReward(guildId, userId) {
+  return await storage.updateGuildPlayerRecord(guildId, userId, (userRecord) => {
+    const now = new Date();
+    const lastDailyAt = userRecord.lastDailyAt ? new Date(userRecord.lastDailyAt) : null;
 
-  if (lastDailyAt && !Number.isNaN(lastDailyAt.getTime()) && isSameCalendarDay(lastDailyAt, now)) {
+    if (lastDailyAt && !Number.isNaN(lastDailyAt.getTime()) && isSameCalendarDay(lastDailyAt, now)) {
+      return {
+        claimed: false,
+        progression: null,
+      };
+    }
+
+    userRecord.lastDailyAt = now.toISOString();
+    const sphereRewards = generateDailySphereRewards();
+    addSphereRewards(userRecord, sphereRewards);
+    userRecord.coins += 100;
+    const progression = applyXpToUserRecord(userRecord, 50);
+
     return {
-      claimed: false,
-      progression: null,
+      claimed: true,
+      progression: {
+        ...progression,
+        coinsGained: 100,
+      },
+      sphereRewards,
     };
-  }
-
-  userRecord.lastDailyAt = now.toISOString();
-  const sphereRewards = generateDailySphereRewards();
-  addSphereRewards(userRecord, sphereRewards);
-  userRecord.coins += 100;
-  const progression = applyXpToUserRecord(userRecord, 50);
-
-  users[userId] = userRecord;
-  writeUsers(users);
-
-  return {
-    claimed: true,
-    progression: {
-      ...progression,
-      coinsGained: 100,
-    },
-    sphereRewards,
-  };
+  });
 }
 
-function claimStarterRewards(userId) {
-  const users = readUsers();
-  const userRecord = getDefaultUserRecord(users[userId]);
+async function claimStarterRewards(guildId, userId) {
+  return await storage.updateGuildPlayerRecord(guildId, userId, (userRecord) => {
+    if (userRecord.starterClaimed) {
+      return {
+        claimed: false,
+        rewards: starterRewards,
+        user: userRecord,
+      };
+    }
 
-  if (userRecord.starterClaimed) {
-    users[userId] = userRecord;
-    writeUsers(users);
+    userRecord.coins += starterRewards.coins;
+    addSphereRewards(userRecord, starterRewards.spheres);
+    userRecord.starterClaimed = true;
+    userRecord.updatedAt = new Date().toISOString();
 
     return {
-      claimed: false,
+      claimed: true,
       rewards: starterRewards,
       user: userRecord,
     };
-  }
-
-  userRecord.coins += starterRewards.coins;
-  addSphereRewards(userRecord, starterRewards.spheres);
-  userRecord.starterClaimed = true;
-  userRecord.updatedAt = new Date().toISOString();
-
-  users[userId] = userRecord;
-  writeUsers(users);
-
-  return {
-    claimed: true,
-    rewards: starterRewards,
-    user: userRecord,
-  };
+  });
 }
 
-function createEncounterForLevel(userLevel, options = {}) {
+async function createEncounterForLevel(userLevel, options = {}) {
   const clampedUserLevel = clampLevel(userLevel);
-  const palCatalog = readPalCatalog();
+  const palCatalog = await readPalCatalog();
   let eligiblePals = palCatalog.filter(
     (pal) => pal.unlockLevel <= clampedUserLevel
   );
@@ -941,14 +820,13 @@ function createEncounterForLevel(userLevel, options = {}) {
   };
 }
 
-function createEncounter(userId) {
-  const users = readUsers();
-  const userRecord = getDefaultUserRecord(users[userId]);
+async function createEncounter(guildId, userId) {
+  const userRecord = await storage.getGuildPlayerRecord(guildId, userId);
 
-  return createEncounterForLevel(userRecord.level);
+  return await createEncounterForLevel(userRecord.level);
 }
 
-function resolveCaptureEncounter(userId, encounterPal, sphere = "basic") {
+async function resolveCaptureEncounter(guildId, userId, encounterPal, sphere = "basic") {
   try {
     const normalizedSphere = Object.prototype.hasOwnProperty.call(
       sphereBonus,
@@ -974,14 +852,14 @@ function resolveCaptureEncounter(userId, encounterPal, sphere = "basic") {
     };
 
     if (success) {
-      const collectionUpdate = saveCapturedPal(userId, pal);
+      const collectionUpdate = await saveCapturedPal(guildId, userId, pal);
 
       return {
         pal,
         sphere: normalizedSphere,
         captureChance,
         success,
-        progression: updateUserProgress(userId, success, Boolean(encounterPal.isShiny)),
+        progression: await updateUserProgress(guildId, userId, success, Boolean(encounterPal.isShiny)),
         collectionUpdate,
       };
     }
@@ -991,7 +869,7 @@ function resolveCaptureEncounter(userId, encounterPal, sphere = "basic") {
       sphere: normalizedSphere,
       captureChance,
       success,
-      progression: updateUserProgress(userId, success, Boolean(encounterPal.isShiny)),
+      progression: await updateUserProgress(guildId, userId, success, Boolean(encounterPal.isShiny)),
       collectionUpdate: null,
     };
   } catch (error) {
@@ -1000,9 +878,9 @@ function resolveCaptureEncounter(userId, encounterPal, sphere = "basic") {
   }
 }
 
-function attemptCapture(userId, sphere = "basic") {
-  const encounter = createEncounter();
-  return resolveCaptureEncounter(userId, encounter, sphere);
+async function attemptCapture(guildId, userId, sphere = "basic") {
+  const encounter = await createEncounter(guildId, userId);
+  return await resolveCaptureEncounter(guildId, userId, encounter, sphere);
 }
 
 module.exports = {

@@ -14,6 +14,12 @@ const sphereChoices = [
   ["Legendary", "legendary"],
 ];
 
+function logDeferState(label, interaction) {
+  console.log(
+    `[buy:${label}] id=${interaction.id} deferred=${interaction.deferred} replied=${interaction.replied} provider=${process.env.STORAGE_PROVIDER || "json"} pid=${process.pid}`
+  );
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("buy")
@@ -40,11 +46,18 @@ module.exports = {
     ),
 
   async execute(interaction) {
+    logDeferState("before-defer", interaction);
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    logDeferState("after-defer", interaction);
 
     const sphere = interaction.options.getString("sphere");
     const quantity = interaction.options.getInteger("quantity");
-    const result = buySpheres(interaction.user.id, sphere, quantity);
+    const result = await buySpheres(
+      interaction.guildId,
+      interaction.user.id,
+      sphere,
+      quantity
+    );
 
     if (!result.success) {
       await interaction.editReply(

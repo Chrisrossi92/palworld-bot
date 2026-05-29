@@ -22,6 +22,12 @@ const rarityRank = {
   legendary: 5,
 };
 
+function logDeferState(label, interaction) {
+  console.log(
+    `[profile:${label}] id=${interaction.id} deferred=${interaction.deferred} replied=${interaction.replied} provider=${process.env.STORAGE_PROVIDER || "json"} pid=${process.pid}`
+  );
+}
+
 function formatPercent(value) {
   return `${(value * 100).toFixed(1)}%`;
 }
@@ -114,13 +120,22 @@ module.exports = {
     .setDescription("Show your capture progression and stats."),
 
   async execute(interaction) {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    logDeferState("before-defer", interaction);
 
-    const users = readUsers();
-    const allUserPals = readUserPals();
-    const user = users[interaction.user.id];
-    const userPals = Array.isArray(allUserPals[interaction.user.id])
-      ? allUserPals[interaction.user.id]
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      logDeferState("after-defer", interaction);
+    } else {
+      logDeferState("skip-defer", interaction);
+    }
+
+    const users = await readUsers();
+    const allUserPals = await readUserPals();
+    const guildUsers = users[interaction.guildId] || {};
+    const guildUserPals = allUserPals[interaction.guildId] || {};
+    const user = guildUsers[interaction.user.id];
+    const userPals = Array.isArray(guildUserPals[interaction.user.id])
+      ? guildUserPals[interaction.user.id]
       : [];
     const actualCapturedPalsCount = userPals.length;
 

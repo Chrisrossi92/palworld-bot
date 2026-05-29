@@ -105,10 +105,12 @@ module.exports = {
 
     const type = interaction.options.getString("type") || "captures";
     const config = LEADERBOARD_TYPES[type] || LEADERBOARD_TYPES.captures;
-    const allUserPals = readUserPals();
-    const allUsers = readUsers();
+    const allUserPals = await readUserPals();
+    const allUsers = await readUsers();
+    const guildUserPals = allUserPals[interaction.guildId] || {};
+    const guildUsers = allUsers[interaction.guildId] || {};
     const rankings = config
-      .compute(allUserPals, allUsers)
+      .compute(guildUserPals, guildUsers)
       .filter((entry) => entry.value > 0)
       .sort((a, b) => {
         if (b.value !== a.value) {

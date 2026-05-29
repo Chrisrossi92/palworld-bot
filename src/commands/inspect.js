@@ -80,9 +80,10 @@ module.exports = {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const targetName = interaction.options.getString("pal");
-    const allUserPals = readUserPals();
-    const userPals = Array.isArray(allUserPals[interaction.user.id])
-      ? allUserPals[interaction.user.id]
+    const allUserPals = await readUserPals();
+    const guildUserPals = allUserPals[interaction.guildId] || {};
+    const userPals = Array.isArray(guildUserPals[interaction.user.id])
+      ? guildUserPals[interaction.user.id]
       : [];
     const pal = userPals.find(
       (entry) => entry.name.toLowerCase() === targetName.toLowerCase()

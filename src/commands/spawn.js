@@ -22,7 +22,12 @@ const publicSpawnButtonsInventory = {
   legendary: 1,
 };
 
-let activeSpawn = null;
+const activeSpawns = new Map();
+
+function getSpawnKey(channel) {
+  const guildId = channel.guildId || channel.guild?.id || "dm";
+  return `${guildId}:${channel.id}`;
+}
 
 function getSpawnRarityLabel(rarity) {
   const labels = {
@@ -63,9 +68,11 @@ function getSpawnDescription(baseDescription) {
   return `${description}\n⚡ This one looks stronger than usual.`;
 }
 
-function clearActiveSpawn(messageId) {
+function clearActiveSpawn(spawnKey, messageId) {
+  const activeSpawn = activeSpawns.get(spawnKey);
+
   if (activeSpawn && activeSpawn.message.id === messageId) {
-    activeSpawn = null;
+    activeSpawns.delete(spawnKey);
     console.log(`[spawn] activeSpawn cleared message=${messageId}`);
   }
 }
@@ -103,6 +110,10 @@ async function startPublicSpawn(channel, options = {}) {
     throw new Error("A valid channel is required to start a public spawn.");
   }
 
+  const spawnKey = getSpawnKey(channel);
+  const guildId = channel.guildId || channel.guild?.id || null;
+  const activeSpawn = activeSpawns.get(spawnKey);
+
   if (activeSpawn) {
     return {
       started: false,
@@ -111,7 +122,7 @@ async function startPublicSpawn(channel, options = {}) {
     };
   }
 
-  const encounter = createEncounterForLevel(MAX_LEVEL, {
+  const encounter = await createEncounterForLevel(MAX_LEVEL, {
     includeLevel: false,
     levelLabel: "Scales to trainer",
     forcedRarity: options.forcedRarity || null,
@@ -137,12 +148,12 @@ async function startPublicSpawn(channel, options = {}) {
     ),
   });
 
-  activeSpawn = {
+  activeSpawns.set(spawnKey, {
     encounter,
     isResolved: false,
     isResolving: false,
     message,
-  };
+  });
   console.log(`[spawn] public spawn started message=${message.id} channel=${channel.id}`);
 
   const collector = message.createMessageComponentCollector({
@@ -169,6 +180,8 @@ async function startPublicSpawn(channel, options = {}) {
     }
 
     try {
+      const activeSpawn = activeSpawns.get(spawnKey);
+
       if (!activeSpawn || activeSpawn.message.id !== message.id) {
         return;
       }
@@ -179,7 +192,7 @@ async function startPublicSpawn(channel, options = {}) {
       }
 
       const [, sphere] = buttonInteraction.customId.split(":");
-      const sphereUse = consumeSphere(buttonInteraction.user.id, sphere);
+      const sphereUse = await consumeSphere(guildId, buttonInteraction.user.id, sphere);
 
       if (!sphereUse.consumed) {
         console.log(
@@ -196,7 +209,7 @@ async function startPublicSpawn(channel, options = {}) {
 
       const resolvedEncounter = {
         ...encounter,
-        level: getUserLevel(buttonInteraction.user.id),
+        level: await getUserLevel(guildId, buttonInteraction.user.id),
       };
 
       await message.edit({
@@ -221,7 +234,8 @@ async function startPublicSpawn(channel, options = {}) {
 
       await new Promise((res) => setTimeout(res, 500));
 
-      const result = resolveCaptureEncounter(
+      const result = await resolveCaptureEncounter(
+        guildId,
         buttonInteraction.user.id,
         resolvedEncounter,
         sphere
@@ -290,7 +304,7 @@ async function startPublicSpawn(channel, options = {}) {
     } catch (error) {
       console.error("[spawn] Failed to disable spawn buttons:", error);
     } finally {
-      clearActiveSpawn(message.id);
+      clearActiveSpawn(spawnKey, message.id);
     }
   });
 
@@ -353,7 +367,7 @@ module.exports = {
       const forcedRarity = interaction.options.getString("rarity");
       const forcedShiny = interaction.options.getBoolean("shiny");
       const palQuery = interaction.options.getString("pal");
-      const forcedPal = palQuery ? findPalByName(palQuery) : null;
+      const forcedPal = palQuery ? await findPalByName(palQuery) : null;
 
       if (palQuery) {
         console.log(

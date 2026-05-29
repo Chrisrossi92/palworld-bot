@@ -31,23 +31,53 @@ const commands = [
   questsCommand.data.toJSON(),
 ];
 
-const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+function requireEnv(name) {
+  const value = process.env[name];
+
+  if (!value || !value.trim()) {
+    throw new Error(`${name} is required.`);
+  }
+
+  return value.trim();
+}
+
+function getRegistrationConfig() {
+  const token = requireEnv("DISCORD_TOKEN");
+  const clientId = requireEnv("DISCORD_CLIENT_ID");
+  const scope = (process.env.REGISTER_COMMANDS_SCOPE || "global")
+    .trim()
+    .toLowerCase();
+
+  if (scope === "guild") {
+    const guildId = requireEnv("DISCORD_GUILD_ID");
+
+    return {
+      token,
+      route: Routes.applicationGuildCommands(clientId, guildId),
+      label: `dev guild ${guildId}`,
+    };
+  }
+
+  return {
+    token,
+    route: Routes.applicationCommands(clientId),
+    label: "global application commands",
+  };
+}
 
 async function registerCommands() {
   try {
-    console.log("🔄 Registering slash commands...");
+    const config = getRegistrationConfig();
+    const rest = new REST({ version: "10" }).setToken(config.token);
 
-    await rest.put(
-      Routes.applicationGuildCommands(
-        process.env.DISCORD_CLIENT_ID,
-        process.env.DISCORD_GUILD_ID
-      ),
-      { body: commands }
-    );
+    console.log(`🔄 Registering ${commands.length} slash commands to ${config.label}...`);
 
-    console.log("✅ Slash commands registered.");
+    await rest.put(config.route, { body: commands });
+
+    console.log(`✅ Slash commands registered to ${config.label}.`);
   } catch (error) {
     console.error("❌ Failed to register commands:", error);
+    process.exitCode = 1;
   }
 }
 

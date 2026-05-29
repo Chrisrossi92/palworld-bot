@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">Palworld Owner Dashboard</div>
+      <nav class="navlinks" aria-label="Dashboard navigation">
+        <a href="/servers.html">Change server</a>
+        <a href="/logout">Sign out</a>
+      </nav>
+    </header>
+    <main class="layout dashboard-layout">
+      <section class="dashboard-hero" aria-labelledby="guildName">
+        <div class="hero-main">
+          <div>
+            <div class="eyebrow">Owner command center</div>
+            <h1 id="guildName">Loading server...</h1>
+            <div id="guildIdentityMeta" class="identity-meta">Resolving server identity...</div>
+            <p id="dashboardStatus">Loading owner overview...</p>
+          </div>
+          <div class="health-card" aria-label="Community health score">
+            <div class="metric-label">Community Health</div>
+            <div id="communityHealthScore" class="health-score">--</div>
+          </div>
+        </div>
+        <div class="hero-summary" aria-label="Server summary">
+          <div class="summary-pill">
+            <span>Players</span>
+            <strong id="heroPlayers">0</strong>
+          </div>
+          <div class="summary-pill">
+            <span>Captures</span>
+            <strong id="heroCaptures">0</strong>
+          </div>
+          <div class="summary-pill">
+            <span>Paldeck</span>
+            <strong id="heroCompletion">0%</strong>
+          </div>
+          <div class="summary-pill">
+            <span>Recent Captures</span>
+            <strong id="heroRecentCaptures">0</strong>
+          </div>
+        </div>
+      </section>
+      <div class="dashboard-stack">
+        <section class="dashboard-section" aria-labelledby="insightsHeading">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Recommended attention</div>
+              <h2 id="insightsHeading">Owner Insights</h2>
+            </div>
+            <div id="insightsStatus" class="status">Loading...</div>
+          </div>
+          <div class="insight-grid" aria-label="Owner insight cards">
+            <article class="insight-card">
+              <div class="metric-label">MVP Collector</div>
+              <div id="mostActiveInsight" class="insight-value">Loading...</div>
+            </article>
+            <article class="insight-card">
+              <div class="metric-label">Paldeck Progress</div>
+              <div id="completionInsight" class="insight-value">Loading...</div>
+            </article>
+            <article class="insight-card">
+              <div class="metric-label">Suggested Action</div>
+              <div id="opportunityInsight" class="insight-value">Loading...</div>
+            </article>
+            <article class="insight-card">
+              <div class="metric-label">Rarest Recent Capture</div>
+              <div id="rarestCaptureInsight" class="insight-value">Loading...</div>
+            </article>
+          </div>
+        </section>
+
+        <section class="dashboard-section" aria-labelledby="engagementHeading">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Server health</div>
+              <h2 id="engagementHeading">Engagement Snapshot</h2>
+            </div>
+            <div id="engagementStatus" class="status">Loading...</div>
+          </div>
+          <div class="grid snapshot-grid" aria-label="Engagement snapshot metrics">
+            <article class="metric">
+              <div class="metric-label">Total Players</div>
+              <div id="totalPlayers" class="metric-value">0</div>
+            </article>
+            <article class="metric">
+              <div class="metric-label">Total Captures</div>
+              <div id="totalCaptures" class="metric-value">0</div>
+            </article>
+            <article class="metric">
+              <div class="metric-label">Total Owned Pals</div>
+              <div id="totalOwnedPals" class="metric-value">0</div>
+            </article>
+            <article class="metric">
+              <div class="metric-label">Daily Quest Activity</div>
+              <div id="dailyQuestActivity" class="metric-value">0</div>
+            </article>
+            <article class="metric">
+              <div class="metric-label">Recent Captures</div>
+              <div id="recentCapturesCount" class="metric-value">0</div>
+            </article>
+          </div>
+        </section>
+
+        <section class="dashboard-section" aria-labelledby="collectorsHeading">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Community leaders</div>
+              <h2 id="collectorsHeading">Top Collectors</h2>
+            </div>
+            <div id="collectorsStatus" class="status">Loading...</div>
+          </div>
+          <div class="panel-grid">
+            <article class="panel">
+              <h3>Captures Leaderboard</h3>
+              <ol id="topCapturesList" class="ranked-list">
+                <li class="muted">Loading...</li>
+              </ol>
+            </article>
+            <article class="panel">
+              <h3>Highest-Level Players</h3>
+              <ol id="highestLevelList" class="ranked-list">
+                <li class="muted">Loading...</li>
+              </ol>
+            </article>
+            <article class="metric compact-metric">
+              <div class="metric-label">Shiny Collectors</div>
+              <div id="shinyCollectorsCount" class="metric-value">0</div>
+            </article>
+          </div>
+        </section>
+
+        <section class="dashboard-section" aria-labelledby="paldeckHeading">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Collection progress</div>
+              <h2 id="paldeckHeading">Paldeck Health</h2>
+            </div>
+            <div id="paldeckStatus" class="status">Loading...</div>
+          </div>
+          <div class="grid three-grid" aria-label="Paldeck health metrics">
+            <article class="metric">
+              <div class="metric-label">Catalog Size</div>
+              <div id="catalogSize" class="metric-value">0</div>
+            </article>
+            <article class="metric">
+              <div class="metric-label">Unique Species Owned</div>
+              <div id="uniqueSpeciesOwned" class="metric-value">0</div>
+            </article>
+            <article class="metric">
+              <div class="metric-label">Completion</div>
+              <div id="completionPercentage" class="metric-value">0%</div>
+            </article>
+          </div>
+        </section>
+
+        <section class="dashboard-section" aria-labelledby="activityHeading">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Community feed</div>
+              <h2 id="activityHeading">Recent Activity</h2>
+            </div>
+            <div id="activityStatus" class="status">Loading...</div>
+          </div>
+          <div class="activity-summary" aria-label="Recent activity summary">
+            <article class="summary-card">
+              <div class="metric-label">Latest Capture</div>
+              <div id="latestCaptureSummary" class="summary-value">Loading...</div>
+            </article>
+            <article class="summary-card">
+              <div class="metric-label">Most Recent Active Player</div>
+              <div id="recentPlayerSummary" class="summary-value">Loading...</div>
+            </article>
+            <article class="summary-card">
+              <div class="metric-label">Recent Capture Count</div>
+              <div id="activityCaptureCount" class="summary-value">0</div>
+            </article>
+          </div>
+          <article class="panel activity-feed-panel">
+            <h3>Server Timeline</h3>
+            <ul id="serverActivityFeed" class="activity-list timeline-list">
+              <li class="muted">Loading...</li>
+            </ul>
+          </article>
+        </section>
+      </div>
+    </main>
+    <script src="/dashboard.js"></script>
+  </body>
+</html>
