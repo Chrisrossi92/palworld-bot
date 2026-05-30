@@ -483,6 +483,46 @@ p {
   margin: 0;
 }
 
+.site-footer {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  padding: 24px;
+}
+
+.site-footer a {
+  font-size: 14px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  color: var(--accent-dark);
+}
+
+.legal-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 6vh auto 0;
+  max-width: 820px;
+  padding: 32px;
+}
+
+.legal-panel h1 {
+  font-size: clamp(34px, 5vw, 56px);
+  line-height: 1;
+}
+
+.legal-panel h2 {
+  font-size: 22px;
+  margin-top: 26px;
+}
+
 .toolbar {
   align-items: center;
   display: flex;

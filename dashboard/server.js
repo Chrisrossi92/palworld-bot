@@ -37,6 +37,11 @@ const {
 const PUBLIC_DIR = path.join(__dirname, "public");
 const PORT = Number(process.env.DASHBOARD_PORT || 3000);
 const PROTECTED_HTML_ROUTES = new Set(["/servers.html", "/dashboard.html"]);
+const STATIC_ROUTE_ALIASES = new Map([
+  ["/privacy", "privacy.html"],
+  ["/terms", "terms.html"],
+  ["/contact", "contact.html"],
+]);
 const CONTENT_TYPES = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -78,7 +83,8 @@ function canAccessGuild(session, guildId) {
 }
 
 function sendStatic(response, fileName) {
-  const safeName = fileName === "/" ? "index.html" : fileName.replace(/^\/+/, "");
+  const safeName = STATIC_ROUTE_ALIASES.get(fileName)
+    || (fileName === "/" ? "index.html" : fileName.replace(/^\/+/, ""));
   const filePath = path.join(PUBLIC_DIR, safeName);
 
   if (!filePath.startsWith(PUBLIC_DIR)) {
@@ -293,6 +299,12 @@ function sendLaunchPlaceholder(response, {
         <div class="cta-row">${actionLinks}</div>
       </section>
     </main>
+    <footer class="site-footer">
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/terms">Terms of Service</a>
+      <a href="/contact">Contact</a>
+      <a href="/support" target="_blank" rel="noopener noreferrer external">Join Community</a>
+    </footer>
   </body>
 </html>`);
 }
