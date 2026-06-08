@@ -2,16 +2,22 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
   buildEncounterPayload,
+  buildShakePayload,
   buildResolvedPayload,
+  buildThrowPayload,
 } = require("../src/commands/capture");
 const {
+  buildCaptureShakeCardSvg,
   buildCaptureResultCardSvg,
   buildCaptureResultHighlights,
+  buildCaptureThrowCardSvg,
   buildCardSvg,
   buildPalImagePlaceholderSvg,
   estimateTextWidth,
   fitSvgText,
+  renderCaptureShakeCard,
   renderCaptureResultCard,
+  renderCaptureThrowCard,
   renderPalCardBuffer,
 } = require("../src/systems/cardRenderer");
 
@@ -290,6 +296,148 @@ test("buildResolvedPayload uses generated card attachment for captured results",
   assert.equal(payload.attachments.length, 0);
   assert.equal(payload.files.length, 1);
   assert.equal(payload.components.length, 2);
+});
+
+test("buildThrowPayload uses generated card attachment and clears stale attachments", async () => {
+  const payload = await buildThrowPayload(
+    buildEncounter(),
+    "basic",
+    buildInventory(),
+    {
+      renderCard: async () => ({
+        filename: "throw-card.png",
+        buffer: Buffer.from("fake-png"),
+      }),
+    }
+  );
+  const embed = payload.embeds[0].toJSON();
+
+  assert.equal(embed.title, "Sphere Thrown");
+  assert.equal(embed.image.url, "attachment://throw-card.png");
+  assert.deepEqual(payload.attachments, []);
+  assert.equal(payload.files.length, 1);
+  assert.equal(payload.components.length, 2);
+});
+
+test("buildShakePayload uses generated card attachment and clears stale attachments", async () => {
+  const payload = await buildShakePayload(
+    buildEncounter(),
+    "basic",
+    buildInventory(),
+    {
+      renderCard: async () => ({
+        filename: "shake-card.png",
+        buffer: Buffer.from("fake-png"),
+      }),
+    }
+  );
+  const embed = payload.embeds[0].toJSON();
+
+  assert.equal(embed.title, "The Sphere Shakes");
+  assert.equal(embed.image.url, "attachment://shake-card.png");
+  assert.deepEqual(payload.attachments, []);
+  assert.equal(payload.files.length, 1);
+  assert.equal(payload.components.length, 2);
+});
+
+test("buildThrowPayload falls back to throw embed when rendering fails", async () => {
+  const originalConsoleError = console.error;
+  let payload;
+
+  console.error = () => {};
+
+  try {
+    payload = await buildThrowPayload(
+      buildEncounter({ imageUrl: "https://example.com/lamball.png" }),
+      "basic",
+      buildInventory(),
+      {
+        renderCard: async () => {
+          throw new Error("render failed");
+        },
+      }
+    );
+  } finally {
+    console.error = originalConsoleError;
+  }
+
+  const embed = payload.embeds[0].toJSON();
+
+  assert.match(embed.title, /Throwing basic Sphere/);
+  assert.equal(embed.thumbnail.url, "https://example.com/lamball.png");
+  assert.equal(payload.files, undefined);
+  assert.deepEqual(payload.attachments, []);
+});
+
+test("buildShakePayload falls back to shake embed when rendering fails", async () => {
+  const originalConsoleError = console.error;
+  let payload;
+
+  console.error = () => {};
+
+  try {
+    payload = await buildShakePayload(
+      buildEncounter({ imageUrl: "https://example.com/lamball.png" }),
+      "basic",
+      buildInventory(),
+      {
+        renderCard: async () => {
+          throw new Error("render failed");
+        },
+      }
+    );
+  } finally {
+    console.error = originalConsoleError;
+  }
+
+  const embed = payload.embeds[0].toJSON();
+
+  assert.equal(embed.title, "...shake...shake...");
+  assert.equal(embed.thumbnail.url, "https://example.com/lamball.png");
+  assert.equal(payload.files, undefined);
+  assert.deepEqual(payload.attachments, []);
+});
+
+test("throw and shake cards keep cinematic sequence text minimal", () => {
+  const throwSvg = buildCaptureThrowCardSvg({
+    pal: buildEncounter({
+      name: "Broncherry Aqua Nocturnal Experimental Variant",
+    }),
+    sphere: "legendary",
+  });
+  const shakeSvg = buildCaptureShakeCardSvg({
+    pal: buildEncounter(),
+    sphere: "legendary",
+  });
+  const throwNameMatch = throwSvg.match(
+    /<text x="72" y="160"[^>]+font-size="(\d+)"[^>]*>([^<]+)<\/text>/
+  );
+
+  assert.match(throwSvg, /Sphere thrown!/);
+  assert.match(throwSvg, /Legendary Sphere/);
+  assert.ok(throwNameMatch);
+  assert.ok(estimateTextWidth(throwNameMatch[2], Number(throwNameMatch[1])) <= 280);
+  assert.match(shakeSvg, /The sphere shakes.../);
+  assert.match(shakeSvg, /Legendary Sphere/);
+  assert.doesNotMatch(`${throwSvg}\n${shakeSvg}`, /Inventory|coins|XP|Journal|Research|Server Goal/);
+});
+
+test("throw and shake renderers produce image buffers without Pal image URLs", async () => {
+  const throwCard = await renderCaptureThrowCard({
+    pal: buildEncounter(),
+    sphere: "basic",
+  });
+  const shakeCard = await renderCaptureShakeCard({
+    pal: buildEncounter(),
+    sphere: "basic",
+  });
+
+  assert.match(throwCard.filename, /^throw-\d+-lamball\.png$/);
+  assert.ok(Buffer.isBuffer(throwCard.buffer));
+  assert.ok(throwCard.buffer.length > 0);
+  assert.match(shakeCard.filename, /^shake-\d+-lamball\.png$/);
+  assert.ok(Buffer.isBuffer(shakeCard.buffer));
+  assert.ok(shakeCard.buffer.length > 0);
 });
 
 test("buildResolvedPayload uses generated card attachment for escaped results", async () => {

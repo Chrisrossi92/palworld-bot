@@ -8,7 +8,9 @@ const {
   ComponentType,
 } = require("discord.js");
 const {
+  renderCaptureShakeCard,
   renderCaptureResultCard,
+  renderCaptureThrowCard,
   renderPalCardBuffer,
 } = require("../systems/cardRenderer");
 const {
@@ -447,6 +449,102 @@ function buildResolvedCardEmbed(result, attachmentName) {
     .setTimestamp();
 }
 
+function buildThrowCardEmbed(encounter, sphere, attachmentName) {
+  return new EmbedBuilder()
+    .setTitle("Sphere Thrown")
+    .setColor(encounter.isShiny ? shinyColor : 0xf1c40f)
+    .setDescription(`${sphere} Sphere is in motion.`)
+    .setImage(`attachment://${attachmentName}`)
+    .setTimestamp();
+}
+
+function buildShakeCardEmbed(encounter, attachmentName) {
+  return new EmbedBuilder()
+    .setTitle("The Sphere Shakes")
+    .setColor(encounter.isShiny ? shinyColor : 0xf39c12)
+    .setDescription("The capture is still undecided.")
+    .setImage(`attachment://${attachmentName}`)
+    .setTimestamp();
+}
+
+async function buildThrowPayload(encounter, sphere, inventory, options = {}) {
+  const renderCard = options.renderCard || renderCaptureThrowCard;
+  const components = buildSphereButtons(inventory, true);
+
+  try {
+    const card = await renderCard({
+      pal: encounter,
+      sphere,
+    });
+    const attachmentName = card.filename || "capture-throw.png";
+    const attachmentSource = card.buffer || card.path;
+
+    if (!attachmentSource) {
+      throw new Error("Throw card renderer did not return a buffer or path.");
+    }
+
+    return {
+      content: "",
+      embeds: [buildThrowCardEmbed(encounter, sphere, attachmentName)],
+      components,
+      attachments: [],
+      files: [
+        new AttachmentBuilder(attachmentSource, {
+          name: attachmentName,
+        }),
+      ],
+    };
+  } catch (error) {
+    console.error("[capture] Failed to render throw card:", error);
+
+    return {
+      content: "",
+      embeds: [buildThrowEmbed(encounter, sphere)],
+      components,
+      attachments: [],
+    };
+  }
+}
+
+async function buildShakePayload(encounter, sphere, inventory, options = {}) {
+  const renderCard = options.renderCard || renderCaptureShakeCard;
+  const components = buildSphereButtons(inventory, true);
+
+  try {
+    const card = await renderCard({
+      pal: encounter,
+      sphere,
+    });
+    const attachmentName = card.filename || "capture-shake.png";
+    const attachmentSource = card.buffer || card.path;
+
+    if (!attachmentSource) {
+      throw new Error("Shake card renderer did not return a buffer or path.");
+    }
+
+    return {
+      content: "",
+      embeds: [buildShakeCardEmbed(encounter, attachmentName)],
+      components,
+      attachments: [],
+      files: [
+        new AttachmentBuilder(attachmentSource, {
+          name: attachmentName,
+        }),
+      ],
+    };
+  } catch (error) {
+    console.error("[capture] Failed to render shake card:", error);
+
+    return {
+      content: "",
+      embeds: [buildShakeEmbed(encounter)],
+      components,
+      attachments: [],
+    };
+  }
+}
+
 async function buildResolvedPayload(result, remaining, inventory, options = {}) {
   const components = buildSphereButtons(inventory, true);
   const renderCard = options.renderCard || renderCaptureResultCard;
@@ -645,28 +743,22 @@ module.exports = {
             interaction.user.id
           );
 
-          await interaction.editReply({
-            content: "",
-            embeds: [buildThrowEmbed(encounter, sphere)],
-            components: buildSphereButtons(throwingInventory, true),
-            attachments: [],
-          });
+          await interaction.editReply(
+            await buildThrowPayload(encounter, sphere, throwingInventory)
+          );
 
-          await new Promise((res) => setTimeout(res, 1000));
+          await new Promise((res) => setTimeout(res, 700));
 
           const shakeInventory = await getUserInventory(
             guildId,
             interaction.user.id
           );
 
-          await interaction.editReply({
-            content: "",
-            embeds: [buildShakeEmbed(encounter)],
-            components: buildSphereButtons(shakeInventory, true),
-            attachments: [],
-          });
+          await interaction.editReply(
+            await buildShakePayload(encounter, sphere, shakeInventory)
+          );
 
-          await new Promise((res) => setTimeout(res, 500));
+          await new Promise((res) => setTimeout(res, 900));
 
           const result = await resolveCaptureEncounter(
             guildId,
@@ -748,8 +840,12 @@ module.exports = {
   buildResolvedCardEmbed,
   buildResolvedEmbed,
   buildResolvedPayload,
+  buildShakeCardEmbed,
   buildShakeEmbed,
+  buildShakePayload,
   buildSphereButtons,
+  buildThrowCardEmbed,
   buildThrowEmbed,
+  buildThrowPayload,
   getWeeklyServerGoalCompletionField,
 };

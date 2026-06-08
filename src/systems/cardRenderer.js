@@ -486,6 +486,107 @@ function buildCaptureResultCardSvg(result) {
   `;
 }
 
+function buildCaptureThrowCardSvg({ pal, sphere }) {
+  const rarity = pal?.rarity || "common";
+  const accentColor = pal?.isShiny ? rarityColors.legendary : rarityColors[rarity] || rarityColors.common;
+  const palName = getPalName(pal);
+  const sphereName = capitalize(sphere || "basic");
+  const fittedTitle = fitSvgText("Sphere thrown!", {
+    maxWidth: 310,
+    preferredFontSize: 42,
+    minFontSize: 30,
+  });
+  const fittedSphere = fitSvgText(`${sphereName} Sphere`, {
+    maxWidth: 300,
+    preferredFontSize: 26,
+    minFontSize: 18,
+  });
+  const fittedName = fitSvgText(palName, {
+    maxWidth: 280,
+    preferredFontSize: 22,
+    minFontSize: 16,
+  });
+
+  return `
+    <svg width="${CARD_WIDTH}" height="${CARD_HEIGHT}" viewBox="0 0 ${CARD_WIDTH} ${CARD_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="throwBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#111820"/>
+          <stop offset="58%" stop-color="#1c252e"/>
+          <stop offset="100%" stop-color="#2b343c"/>
+        </linearGradient>
+        <radialGradient id="throwGlow" cx="70%" cy="45%" r="58%">
+          <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.24"/>
+          <stop offset="64%" stop-color="${accentColor}" stop-opacity="0.08"/>
+          <stop offset="100%" stop-color="${accentColor}" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="28" fill="url(#throwBg)"/>
+      <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="28" fill="url(#throwGlow)"/>
+      <rect x="4" y="4" width="${CARD_WIDTH - 8}" height="${CARD_HEIGHT - 8}" rx="24" fill="none" stroke="${accentColor}" stroke-width="4" opacity="0.76"/>
+      <path d="M0 236 C136 202 248 232 390 198 C518 168 610 180 700 138 L700 320 L0 320 Z" fill="#0c1118" opacity="0.58"/>
+      <path d="M68 218 C164 174 252 150 362 132" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.11" stroke-linecap="round"/>
+      <path d="M92 240 C200 188 290 162 414 142" fill="none" stroke="${accentColor}" stroke-width="5" opacity="0.42" stroke-linecap="round"/>
+      <circle cx="418" cy="142" r="28" fill="#101820" stroke="${accentColor}" stroke-width="5"/>
+      <circle cx="418" cy="142" r="11" fill="${accentColor}" opacity="0.88"/>
+      <text x="70" y="88" fill="#ffffff" font-size="${fittedTitle.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(fittedTitle.text)}</text>
+      <text x="72" y="126" fill="${accentColor}" font-size="${fittedSphere.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(fittedSphere.text)}</text>
+      <text x="72" y="160" fill="#aebbc7" font-size="${fittedName.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeSvgText(fittedName.text)}</text>
+      <rect x="400" y="30" width="264" height="260" rx="30" fill="#0d1117" opacity="0.58"/>
+      <rect x="412" y="42" width="240" height="236" rx="24" fill="#17212c" opacity="0.64"/>
+      <rect x="412" y="42" width="240" height="236" rx="24" fill="none" stroke="${accentColor}" stroke-width="3" opacity="0.42"/>
+    </svg>
+  `;
+}
+
+function buildCaptureShakeCardSvg({ pal, sphere }) {
+  const rarity = pal?.rarity || "common";
+  const accentColor = pal?.isShiny ? rarityColors.legendary : rarityColors[rarity] || rarityColors.common;
+  const sphereName = capitalize(sphere || "basic");
+  const fittedTitle = fitSvgText("The sphere shakes...", {
+    maxWidth: 332,
+    preferredFontSize: 38,
+    minFontSize: 28,
+  });
+  const fittedSphere = fitSvgText(`${sphereName} Sphere`, {
+    maxWidth: 270,
+    preferredFontSize: 22,
+    minFontSize: 17,
+  });
+
+  return `
+    <svg width="${CARD_WIDTH}" height="${CARD_HEIGHT}" viewBox="0 0 ${CARD_WIDTH} ${CARD_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="shakeBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#111820"/>
+          <stop offset="56%" stop-color="#1a242d"/>
+          <stop offset="100%" stop-color="#2a323b"/>
+        </linearGradient>
+        <radialGradient id="shakeGlow" cx="54%" cy="54%" r="58%">
+          <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.23"/>
+          <stop offset="66%" stop-color="${accentColor}" stop-opacity="0.07"/>
+          <stop offset="100%" stop-color="${accentColor}" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="28" fill="url(#shakeBg)"/>
+      <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="28" fill="url(#shakeGlow)"/>
+      <rect x="4" y="4" width="${CARD_WIDTH - 8}" height="${CARD_HEIGHT - 8}" rx="24" fill="none" stroke="${accentColor}" stroke-width="4" opacity="0.74"/>
+      <path d="M0 242 C120 214 250 236 390 200 C522 166 604 182 700 146 L700 320 L0 320 Z" fill="#0c1118" opacity="0.64"/>
+      <ellipse cx="350" cy="250" rx="160" ry="34" fill="#05080c" opacity="0.4"/>
+      <path d="M244 150 C224 128 224 104 244 82" fill="none" stroke="${accentColor}" stroke-width="5" opacity="0.34" stroke-linecap="round"/>
+      <path d="M456 150 C476 128 476 104 456 82" fill="none" stroke="${accentColor}" stroke-width="5" opacity="0.34" stroke-linecap="round"/>
+      <circle cx="350" cy="154" r="70" fill="#111820" stroke="${accentColor}" stroke-width="6"/>
+      <path d="M280 154 H420" stroke="${accentColor}" stroke-width="8" opacity="0.72"/>
+      <circle cx="350" cy="154" r="20" fill="${accentColor}" opacity="0.92"/>
+      <text x="350" y="68" text-anchor="middle" fill="#ffffff" font-size="${fittedTitle.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(fittedTitle.text)}</text>
+      <text x="350" y="242" text-anchor="middle" fill="#d9e1ea" font-size="${fittedSphere.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedSphere.text)}</text>
+      <circle cx="302" cy="274" r="8" fill="${accentColor}" opacity="0.9"/>
+      <circle cx="350" cy="274" r="8" fill="${accentColor}" opacity="0.62"/>
+      <circle cx="398" cy="274" r="8" fill="${accentColor}" opacity="0.34"/>
+    </svg>
+  `;
+}
+
 async function buildPalImageComposite(imageUrl, options = {}) {
   const width = 448;
   const height = 206;
@@ -554,6 +655,93 @@ async function buildPalImageComposite(imageUrl, options = {}) {
     );
     logImageDebug(
       `encounter decode failure pal="${palName}" url="${imageUrl}" status=${imageStatus || "unknown"} contentType="${imageContentType}" reason="${getErrorMessage(error)}"`
+    );
+    return buildPlaceholderComposite({
+      width,
+      height,
+      left,
+      top,
+      accentColor,
+      label: "FIELD SKETCH",
+    });
+  }
+
+  return {
+    input: palImage,
+    left,
+    top,
+  };
+}
+
+async function buildSequencePalImageComposite(imageUrl, options = {}) {
+  const width = 240;
+  const height = 236;
+  const left = 412;
+  const top = 42;
+  const accentColor = options.accentColor || rarityColors.common;
+  const palName = options.palName || "Unknown Pal";
+  const phase = options.phase || "sequence";
+  let imageBuffer = null;
+  let imageContentType = "";
+  let imageStatus = null;
+
+  if (imageUrl) {
+    try {
+      logImageDebug(`${phase} fetch start pal="${palName}" url="${imageUrl}"`);
+      const fetchResult = await fetchImageBuffer(imageUrl);
+      imageBuffer = fetchResult.buffer;
+      imageContentType = fetchResult.contentType;
+      imageStatus = fetchResult.status;
+      logImageDebug(
+        `${phase} fetch success pal="${palName}" status=${imageStatus} contentType="${imageContentType}" bytes=${imageBuffer.length}`
+      );
+    } catch (error) {
+      console.warn(
+        `[cardRenderer] Pal image unavailable for ${phase} pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"; using placeholder.`
+      );
+      logImageDebug(
+        `${phase} fetch failure pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"`
+      );
+    }
+  }
+
+  if (!imageBuffer) {
+    return buildPlaceholderComposite({
+      width,
+      height,
+      left,
+      top,
+      accentColor,
+      label: "FIELD SKETCH",
+    });
+  }
+
+  const roundedMask = Buffer.from(`
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="${width}" height="${height}" rx="24" fill="#fff"/>
+    </svg>
+  `);
+  let palImage;
+
+  try {
+    const metadata = await sharp(imageBuffer).metadata();
+    logImageDebug(
+      `${phase} decode success pal="${palName}" format=${metadata.format || "unknown"} width=${metadata.width || "unknown"} height=${metadata.height || "unknown"}`
+    );
+    palImage = await sharp(imageBuffer)
+      .resize(width, height, {
+        fit: "contain",
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
+      .composite([{ input: roundedMask, blend: "dest-in" }])
+      .png()
+      .toBuffer();
+  } catch (error) {
+    console.warn(
+      `[cardRenderer] Pal image decode failed for ${phase} pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"; using placeholder.`
+    );
+    logImageDebug(
+      `${phase} decode failure pal="${palName}" url="${imageUrl}" status=${imageStatus || "unknown"} contentType="${imageContentType}" reason="${getErrorMessage(error)}"`
     );
     return buildPlaceholderComposite({
       width,
@@ -711,6 +899,44 @@ async function renderPalCard({ pal, level, rarity, isShiny }) {
   };
 }
 
+async function renderCaptureThrowCard({ pal, sphere }) {
+  const imageUrl =
+    pal && typeof pal.imageUrl === "string" && pal.imageUrl.trim()
+      ? pal.imageUrl.trim()
+      : "";
+  const palName = getPalName(pal);
+  const palSlug = slugify(pal?.name);
+  const filename = `throw-${Date.now()}-${palSlug}.png`;
+  const accentColor = pal?.isShiny
+    ? rarityColors.legendary
+    : rarityColors[pal?.rarity] || rarityColors.common;
+  const baseCard = sharp(Buffer.from(buildCaptureThrowCardSvg({ pal, sphere })));
+  const imageComposite = await buildSequencePalImageComposite(imageUrl, {
+    accentColor,
+    palName,
+    phase: "throw",
+  });
+  const composites = imageComposite ? [imageComposite] : [];
+  const buffer = await baseCard.composite(composites).png().toBuffer();
+
+  return {
+    buffer,
+    filename,
+  };
+}
+
+async function renderCaptureShakeCard({ pal, sphere }) {
+  const palSlug = slugify(pal?.name);
+  const filename = `shake-${Date.now()}-${palSlug}.png`;
+  const baseCard = sharp(Buffer.from(buildCaptureShakeCardSvg({ pal, sphere })));
+  const buffer = await baseCard.png().toBuffer();
+
+  return {
+    buffer,
+    filename,
+  };
+}
+
 async function renderCaptureResultCard(result) {
   const pal = result?.pal || {};
   const imageUrl =
@@ -750,10 +976,14 @@ module.exports = {
   buildPalImagePlaceholderSvg,
   buildCaptureResultCardSvg,
   buildCaptureResultHighlights,
+  buildCaptureShakeCardSvg,
+  buildCaptureThrowCardSvg,
   buildCardSvg,
   estimateTextWidth,
   fitSvgText,
+  renderCaptureShakeCard,
   renderCaptureResultCard,
+  renderCaptureThrowCard,
   renderPalCard,
   renderPalCardBuffer,
 };
