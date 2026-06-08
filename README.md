@@ -83,8 +83,19 @@ has one weekly capture goal:
 The goal resets Monday at 00:00 UTC. Progress increments only after successful
 normal `/capture` attempts. Public `/spawn` captures do not advance the weekly
 goal. `/quests` shows server-wide progress, completion percentage, reset copy,
-and completed state. Alpha 0.6 does not grant rewards or add a claim flow for
-weekly goals.
+and completed state with completion time when available. When a normal
+successful `/capture` completes the weekly goal, the capture result shows a
+short server-wide completion message once. Alpha 0.7 does not grant rewards or
+add a claim flow for weekly goals.
+
+## Dashboard Retention Snapshot
+
+The owner dashboard includes a compact Retention Snapshot that answers whether
+players are returning and engaging. It shows Daily Research participation,
+Weekly Server Goal progress, Journal unlock momentum, and recent collection
+activity from Supabase-backed tables. The dashboard handles empty or missing
+retention tables with zero-state cards instead of requiring new migrations
+beyond the existing Journal, Daily Research, and Weekly Server Goal migrations.
 
 ## Local Setup
 

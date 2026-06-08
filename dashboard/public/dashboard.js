@@ -29,6 +29,29 @@ function formatDate(value) {
   });
 }
 
+function formatShortDateTime(value) {
+  if (!value) {
+    return "No activity yet";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "No activity yet";
+  }
+
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function pluralize(count, singular, plural = `${singular}s`) {
+  return Number(count || 0) === 1 ? singular : plural;
+}
+
 function formatRelativeTime(value) {
   if (!value) {
     return "Unknown time";
@@ -245,6 +268,75 @@ async function loadPaldeckHealth(guildId) {
     return paldeckHealth;
   } catch (error) {
     setStatus("paldeckStatus", error.message, true);
+    return {};
+  }
+}
+
+async function loadRetention(guildId) {
+  try {
+    const payload = await fetchJson(`/api/guilds/${encodeURIComponent(guildId)}/retention`);
+    const retention = payload.retention || {};
+    const dailyResearch = retention.dailyResearchToday || {};
+    const weeklyGoal = retention.weeklyServerGoal || {};
+    const journal = retention.journalMomentum || {};
+    const collection = retention.recentCollectionActivity || {};
+    const warnings = Array.isArray(retention.warnings) ? retention.warnings : [];
+    const weeklyStatus = weeklyGoal.complete
+      ? weeklyGoal.completedAt
+        ? `Complete ${formatShortDateTime(weeklyGoal.completedAt)}`
+        : "Complete"
+      : "In progress this week";
+    const researchDetail = Number(dailyResearch.participants || 0) > 0
+      ? `${formatNumber(dailyResearch.completed)} completed • ` +
+        `${formatNumber(dailyResearch.claimed)} claimed`
+      : "No participants today";
+    const journalDetail = Number(journal.totalUnlocks || 0) > 0
+      ? `${formatNumber(journal.playersWithUnlocks)} ` +
+        `${pluralize(journal.playersWithUnlocks, "player")} • ` +
+        `${formatNumber(journal.recentUnlocks)} in 7 days`
+      : "No Journal unlocks yet";
+    const collectionDetail = Number(collection.recentOwnedPalUpdates || 0) > 0
+      ? [
+        `${formatNumber(collection.activeCollectors)} active ` +
+          `${pluralize(collection.activeCollectors, "collector")}`,
+        collection.latestActivityAt ? `latest ${formatRelativeTime(collection.latestActivityAt)}` : "latest unknown",
+      ].join(" • ")
+      : "No recent collection updates";
+
+    setText("researchParticipants", formatNumber(dailyResearch.participants));
+    setText("researchDetail", researchDetail);
+    setText(
+      "weeklyGoalProgress",
+      `${formatNumber(weeklyGoal.progress)}/${formatNumber(weeklyGoal.target || 100)}`
+    );
+    setText(
+      "weeklyGoalDetail",
+      `${formatPercent(weeklyGoal.percentage)} • ${weeklyStatus}`
+    );
+    setText("journalUnlocks", formatNumber(journal.totalUnlocks));
+    setText("journalDetail", journalDetail);
+    setText("collectionActivity", formatNumber(collection.recentOwnedPalUpdates));
+    setText("collectionDetail", collectionDetail);
+    setStatus(
+      "retentionStatus",
+      warnings.length > 0
+        ? "Partial retention data. Apply Journal, Daily Research, and Weekly Goal migrations for full coverage."
+        : payload.hasSupabaseConnection
+          ? "Retention data loaded."
+          : "No Supabase connection.",
+      warnings.length > 0
+    );
+    return retention;
+  } catch (error) {
+    setStatus("retentionStatus", error.message, true);
+    setText("researchParticipants", "0");
+    setText("researchDetail", "No participants today");
+    setText("weeklyGoalProgress", "0/100");
+    setText("weeklyGoalDetail", "0% toward this week's goal");
+    setText("journalUnlocks", "0");
+    setText("journalDetail", "No Journal unlocks yet");
+    setText("collectionActivity", "0");
+    setText("collectionDetail", "No recent collection updates");
     return {};
   }
 }
@@ -505,6 +597,7 @@ async function loadDashboard() {
     loadTopCollectors(guildId),
     loadPaldeckHealth(guildId),
     loadRecentActivity(guildId),
+    loadRetention(guildId),
   ]);
 
   renderOwnerInsights({

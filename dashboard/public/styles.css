@@ -889,8 +889,20 @@ p {
   justify-content: space-between;
 }
 
+.section-copy {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+  margin-top: 6px;
+  max-width: 720px;
+}
+
 .snapshot-grid {
   grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.retention-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .three-grid {
@@ -938,6 +950,11 @@ p {
   padding: 20px;
 }
 
+.weekly-goal-card {
+  background: linear-gradient(180deg, #fffdf6 0%, #ffffff 100%);
+  border-color: #ead38c;
+}
+
 .compact-metric {
   min-height: 0;
 }
@@ -951,6 +968,15 @@ p {
 .metric-value {
   font-size: 32px;
   font-weight: 800;
+}
+
+.metric-detail {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+  margin-top: 10px;
+  overflow-wrap: anywhere;
 }
 
 .status {
@@ -1108,6 +1134,7 @@ p {
   }
 
   .insight-grid,
+  .retention-grid,
   .panel-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1163,6 +1190,7 @@ p {
   .panel-grid,
   .two-grid,
   .insight-grid,
+  .retention-grid,
   .hero-summary,
   .activity-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1255,6 +1283,7 @@ p {
   .panel-grid,
   .two-grid,
   .insight-grid,
+  .retention-grid,
   .hero-summary,
   .activity-summary {
     grid-template-columns: 1fr;

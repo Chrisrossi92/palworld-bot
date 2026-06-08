@@ -59,6 +59,72 @@ function emptyRecentActivity() {
   };
 }
 
+function emptyRetentionSnapshot(warnings = []) {
+  return {
+    dailyResearchToday: {
+      participants: 0,
+      completed: 0,
+      claimed: 0,
+    },
+    weeklyServerGoal: {
+      progress: 0,
+      target: 100,
+      percentage: 0,
+      complete: false,
+      completedAt: null,
+      weekStartDate: getUtcWeekStartDate(),
+    },
+    journalMomentum: {
+      totalUnlocks: 0,
+      playersWithUnlocks: 0,
+      recentUnlocks: 0,
+    },
+    recentCollectionActivity: {
+      recentOwnedPalUpdates: 0,
+      activeCollectors: 0,
+      latestActivityAt: null,
+    },
+    warnings,
+  };
+}
+
+function getUtcDateKey(value = new Date()) {
+  return value.toISOString().slice(0, 10);
+}
+
+function getUtcWeekStartDate(value = new Date()) {
+  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  const utcDate = new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate()
+  ));
+  const day = utcDate.getUTCDay();
+  const daysSinceMonday = day === 0 ? 6 : day - 1;
+
+  utcDate.setUTCDate(utcDate.getUTCDate() - daysSinceMonday);
+
+  return utcDate.toISOString().slice(0, 10);
+}
+
+function isMissingRelationError(error) {
+  return error && error.code === "42P01";
+}
+
+async function queryOptionalTable(pool, sql, params, warning, warnings, fallback) {
+  try {
+    const result = await pool.query(sql, params);
+    return result.rows[0] || fallback;
+  } catch (error) {
+    if (isMissingRelationError(error)) {
+      warnings.push(warning);
+      return fallback;
+    }
+
+    throw error;
+  }
+}
+
 function getGuildDisplayName(row) {
   if (row.name) {
     return row.name;
@@ -364,12 +430,176 @@ async function getRecentActivity(guildId, pool = createPool()) {
   };
 }
 
+async function getRetentionSnapshot(guildId, pool = createPool()) {
+  if (!pool) {
+    return emptyRetentionSnapshot(["No Supabase connection."]);
+  }
+
+  const today = getUtcDateKey();
+  const weekStartDate = getUtcWeekStartDate();
+  const warnings = [];
+  const [
+    dailyResearchRow,
+    weeklyGoalRow,
+    journalRow,
+    collectionRow,
+  ] = await Promise.all([
+    queryOptionalTable(
+      pool,
+      `
+        with selected_guild as (
+          select id
+          from public.discord_guilds
+          where discord_guild_id = $1
+        ),
+        players as (
+          select players.id
+          from public.guild_players players
+          join selected_guild guilds on guilds.id = players.guild_id
+        )
+        select
+          count(*)::integer as participants,
+          count(*) filter (where research.progress >= research.target)::integer as completed,
+          count(*) filter (where research.claimed = true)::integer as claimed
+        from public.player_daily_research research
+        join players on players.id = research.player_id
+        where research.research_date = $2::date;
+      `,
+      [guildId, today],
+      "Daily Research table is not available.",
+      warnings,
+      { participants: 0, completed: 0, claimed: 0 }
+    ),
+    queryOptionalTable(
+      pool,
+      `
+        select
+          goals.progress,
+          goals.target,
+          goals.completed_at,
+          goals.week_start_date::text
+        from public.guild_weekly_goals goals
+        join public.discord_guilds guilds on guilds.id = goals.guild_id
+        where guilds.discord_guild_id = $1
+          and goals.week_start_date = $2::date
+          and goals.goal_key = 'weekly-capture-100'
+        limit 1;
+      `,
+      [guildId, weekStartDate],
+      "Weekly Server Goal table is not available.",
+      warnings,
+      {
+        progress: 0,
+        target: 100,
+        completed_at: null,
+        week_start_date: weekStartDate,
+      }
+    ),
+    queryOptionalTable(
+      pool,
+      `
+        with selected_guild as (
+          select id
+          from public.discord_guilds
+          where discord_guild_id = $1
+        ),
+        players as (
+          select players.id
+          from public.guild_players players
+          join selected_guild guilds on guilds.id = players.guild_id
+        )
+        select
+          count(*)::integer as total_unlocks,
+          count(distinct journal.player_id)::integer as players_with_unlocks,
+          count(*) filter (where journal.unlocked_at >= now() - interval '7 days')::integer as recent_unlocks
+        from public.player_journal_entries journal
+        join players on players.id = journal.player_id;
+      `,
+      [guildId],
+      "Journal table is not available.",
+      warnings,
+      {
+        total_unlocks: 0,
+        players_with_unlocks: 0,
+        recent_unlocks: 0,
+      }
+    ),
+    queryOptionalTable(
+      pool,
+      `
+        with selected_guild as (
+          select id
+          from public.discord_guilds
+          where discord_guild_id = $1
+        ),
+        players as (
+          select players.id
+          from public.guild_players players
+          join selected_guild guilds on guilds.id = players.guild_id
+        )
+        select
+          count(*) filter (where owned.last_caught_at >= now() - interval '7 days')::integer as recent_owned_pal_updates,
+          count(distinct owned.player_id) filter (where owned.last_caught_at >= now() - interval '7 days')::integer as active_collectors,
+          max(owned.last_caught_at) as latest_activity_at
+        from public.player_owned_pals owned
+        join players on players.id = owned.player_id;
+      `,
+      [guildId],
+      "Owned Pal table is not available.",
+      warnings,
+      {
+        recent_owned_pal_updates: 0,
+        active_collectors: 0,
+        latest_activity_at: null,
+      }
+    ),
+  ]);
+
+  const weeklyProgress = Number(weeklyGoalRow.progress || 0);
+  const weeklyTarget = Number(weeklyGoalRow.target || 100);
+
+  return {
+    dailyResearchToday: {
+      participants: Number(dailyResearchRow.participants || 0),
+      completed: Number(dailyResearchRow.completed || 0),
+      claimed: Number(dailyResearchRow.claimed || 0),
+    },
+    weeklyServerGoal: {
+      progress: weeklyProgress,
+      target: weeklyTarget,
+      percentage: weeklyTarget > 0
+        ? Number(((Math.min(weeklyProgress, weeklyTarget) / weeklyTarget) * 100).toFixed(1))
+        : 0,
+      complete: weeklyTarget > 0 && weeklyProgress >= weeklyTarget,
+      completedAt: weeklyGoalRow.completed_at
+        ? weeklyGoalRow.completed_at.toISOString()
+        : null,
+      weekStartDate: String(weeklyGoalRow.week_start_date || weekStartDate).slice(0, 10),
+    },
+    journalMomentum: {
+      totalUnlocks: Number(journalRow.total_unlocks || 0),
+      playersWithUnlocks: Number(journalRow.players_with_unlocks || 0),
+      recentUnlocks: Number(journalRow.recent_unlocks || 0),
+    },
+    recentCollectionActivity: {
+      recentOwnedPalUpdates: Number(collectionRow.recent_owned_pal_updates || 0),
+      activeCollectors: Number(collectionRow.active_collectors || 0),
+      latestActivityAt: collectionRow.latest_activity_at
+        ? collectionRow.latest_activity_at.toISOString()
+        : null,
+    },
+    warnings,
+  };
+}
+
 module.exports = {
   getEngagementSnapshot,
   getGuildMetrics,
   getPaldeckHealth,
   getRecentActivity,
+  getRetentionSnapshot,
   getTopCollectors,
+  getUtcWeekStartDate,
   listInstalledGuildsForDiscordIds,
   listGuilds,
   upsertDiscordUserIdentity,

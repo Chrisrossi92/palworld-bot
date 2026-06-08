@@ -149,6 +149,17 @@ function buildEncounterEmbed(encounter, inventory, options = {}) {
   return embed;
 }
 
+function getWeeklyServerGoalCompletionField(result) {
+  if (!result?.success || !result.weeklyServerGoal?.newlyCompleted) {
+    return null;
+  }
+
+  return {
+    name: "Server Goal Complete",
+    value: "Together, the server captured 100 Pals this week.",
+  };
+}
+
 function buildResolvedEmbed(result, remaining) {
   const rarityEmoji = rarityEmojis[result.pal.rarity] || "";
   const embedColor = result.pal.isShiny
@@ -170,6 +181,7 @@ function buildResolvedEmbed(result, remaining) {
   const progressNotes = [];
   const levelUpFields = [];
   const journalUnlockFields = [];
+  const weeklyGoalCompletionField = getWeeklyServerGoalCompletionField(result);
 
   if (result.progression.leveledUp) {
     progressNotes.push("Level Up!");
@@ -203,6 +215,10 @@ function buildResolvedEmbed(result, remaining) {
         ...(hiddenUnlockCount > 0 ? [`• +${hiddenUnlockCount} more`] : []),
       ].join("\n"),
     });
+  }
+
+  if (weeklyGoalCompletionField) {
+    progressNotes.push("Server Goal Complete!");
   }
 
   if (progressNotes.length === 0) {
@@ -322,7 +338,8 @@ function buildResolvedEmbed(result, remaining) {
         value: progressNotes.join(" | "),
       },
       ...levelUpFields,
-      ...journalUnlockFields
+      ...journalUnlockFields,
+      ...(weeklyGoalCompletionField ? [weeklyGoalCompletionField] : [])
     )
     .setTimestamp();
 
@@ -591,4 +608,5 @@ module.exports = {
   buildShakeEmbed,
   buildSphereButtons,
   buildThrowEmbed,
+  getWeeklyServerGoalCompletionField,
 };

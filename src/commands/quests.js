@@ -41,10 +41,27 @@ function formatResearchRewards(rewards) {
   return `${rewards.coins} coins\n${rewards.xp} XP`;
 }
 
+function formatCompletedAt(timestamp) {
+  const date = new Date(timestamp);
+
+  if (!timestamp || Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString().replace("T", " ").slice(0, 16) + " UTC";
+}
+
 function formatServerGoal(serverGoalStatus) {
   if (!serverGoalStatus) {
     return "Server goal unavailable.";
   }
+
+  const completedAt = formatCompletedAt(serverGoalStatus.state.completedAt);
+  const status = serverGoalStatus.complete
+    ? completedAt
+      ? `✅ Complete (${completedAt})`
+      : "✅ Complete"
+    : "⏳ In Progress";
 
   return [
     serverGoalStatus.definition.title,
@@ -55,7 +72,7 @@ function formatServerGoal(serverGoalStatus) {
     ),
     `Completion: ${serverGoalStatus.completionPercentage}%`,
     `Reset: ${serverGoalStatus.resetLabel}`,
-    `Status: ${serverGoalStatus.complete ? "✅ Complete" : "⏳ In Progress"}`,
+    `Status: ${status}`,
   ].join("\n");
 }
 
@@ -299,4 +316,7 @@ module.exports = {
       }
     });
   },
+  buildQuestsEmbed,
+  formatCompletedAt,
+  formatServerGoal,
 };

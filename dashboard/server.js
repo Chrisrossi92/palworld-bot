@@ -10,6 +10,7 @@ const {
   getGuildMetrics,
   getPaldeckHealth,
   getRecentActivity,
+  getRetentionSnapshot,
   getTopCollectors,
   listGuilds,
   listInstalledGuildsForDiscordIds,
@@ -204,6 +205,23 @@ async function handleApi(request, response, url) {
     sendJson(response, 200, {
       guildId,
       recentActivity: await getRecentActivity(guildId),
+      hasSupabaseConnection: Boolean(process.env.SUPABASE_DB_URL),
+    });
+    return;
+  }
+
+  const retentionMatch = url.pathname.match(/^\/api\/guilds\/([^/]+)\/retention$/);
+  if (retentionMatch) {
+    const guildId = decodeURIComponent(retentionMatch[1]);
+
+    if (!canAccessGuild(session, guildId)) {
+      sendJson(response, 403, { error: "Guild access denied." });
+      return;
+    }
+
+    sendJson(response, 200, {
+      guildId,
+      retention: await getRetentionSnapshot(guildId),
       hasSupabaseConnection: Boolean(process.env.SUPABASE_DB_URL),
     });
     return;
