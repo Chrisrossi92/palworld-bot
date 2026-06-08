@@ -1,11 +1,16 @@
 const {
   SlashCommandBuilder,
   EmbedBuilder,
+  AttachmentBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
   ComponentType,
 } = require("discord.js");
+const {
+  renderCaptureResultCard,
+  renderPalCardBuffer,
+} = require("../systems/cardRenderer");
 const {
   createEncounter,
   consumeSphere,
@@ -147,6 +152,55 @@ function buildEncounterEmbed(encounter, inventory, options = {}) {
   }
 
   return embed;
+}
+
+function buildEncounterCardEmbed(encounter, attachmentName) {
+  return new EmbedBuilder()
+    .setTitle(encounter.isShiny ? "Lucky Pal Encounter" : "Wild Pal Encounter")
+    .setColor(encounter.isShiny ? shinyColor : rarityColors[encounter.rarity] || 0x95a5a6)
+    .setDescription("Choose a sphere to throw.")
+    .setImage(`attachment://${attachmentName}`)
+    .setTimestamp();
+}
+
+async function buildEncounterPayload(encounter, inventory, options = {}) {
+  const components = buildSphereButtons(
+    inventory,
+    options.buttonsDisabled === true
+  );
+  const renderCard = options.renderCard || renderPalCardBuffer;
+
+  try {
+    const card = await renderCard({
+      pal: encounter,
+      level: encounter.level,
+      rarity: encounter.rarity,
+      isShiny: encounter.isShiny,
+    });
+    const attachmentName = card.filename || "encounter-card.png";
+    const attachmentSource = card.buffer || card.path;
+
+    if (!attachmentSource) {
+      throw new Error("Encounter card renderer did not return a buffer or path.");
+    }
+
+    return {
+      embeds: [buildEncounterCardEmbed(encounter, attachmentName)],
+      components,
+      files: [
+        new AttachmentBuilder(attachmentSource, {
+          name: attachmentName,
+        }),
+      ],
+    };
+  } catch (error) {
+    console.error("[capture] Failed to render encounter card:", error);
+
+    return {
+      embeds: [buildEncounterEmbed(encounter, inventory)],
+      components,
+    };
+  }
 }
 
 function getWeeklyServerGoalCompletionField(result) {
@@ -350,6 +404,61 @@ function buildResolvedEmbed(result, remaining) {
   return embed;
 }
 
+function buildResolvedCardEmbed(result, attachmentName) {
+  return new EmbedBuilder()
+    .setTitle(result.success ? "Pal Captured" : "Pal Escaped")
+    .setColor(
+      result.pal.isShiny
+        ? shinyColor
+        : result.success
+          ? 0x57f287
+          : 0xed4245
+    )
+    .setDescription(
+      result.success
+        ? "Capture result recorded."
+        : "The encounter ended without a capture."
+    )
+    .setImage(`attachment://${attachmentName}`)
+    .setTimestamp();
+}
+
+async function buildResolvedPayload(result, remaining, inventory, options = {}) {
+  const components = buildSphereButtons(inventory, true);
+  const renderCard = options.renderCard || renderCaptureResultCard;
+
+  try {
+    const card = await renderCard(result);
+    const attachmentName = card.filename || "capture-result.png";
+    const attachmentSource = card.buffer || card.path;
+
+    if (!attachmentSource) {
+      throw new Error("Result card renderer did not return a buffer or path.");
+    }
+
+    return {
+      content: "",
+      embeds: [buildResolvedCardEmbed(result, attachmentName)],
+      components,
+      attachments: [],
+      files: [
+        new AttachmentBuilder(attachmentSource, {
+          name: attachmentName,
+        }),
+      ],
+    };
+  } catch (error) {
+    console.error("[capture] Failed to render result card:", error);
+
+    return {
+      content: "",
+      embeds: [buildResolvedEmbed(result, remaining)],
+      components,
+      attachments: [],
+    };
+  }
+}
+
 function buildThrowEmbed(encounter, sphere) {
   const imageUrl = getPalImageUrl(encounter);
   const embed = new EmbedBuilder()
@@ -465,10 +574,9 @@ module.exports = {
     try {
       const encounter = await createEncounter(guildId, interaction.user.id);
       const inventory = await getUserInventory(guildId, interaction.user.id);
-      const message = await interaction.editReply({
-        embeds: [buildEncounterEmbed(encounter, inventory)],
-        components: buildSphereButtons(inventory),
-      });
+      const message = await interaction.editReply(
+        await buildEncounterPayload(encounter, inventory)
+      );
 
       const collector = message.createMessageComponentCollector({
         componentType: ComponentType.Button,
@@ -502,6 +610,7 @@ module.exports = {
               content: `❌ You don't have any ${sphereUse.sphere} spheres.`,
               embeds: [],
               components: buildSphereButtons(disabledInventory, true),
+              attachments: [],
             });
             collector.stop("resolved");
             return;
@@ -516,6 +625,7 @@ module.exports = {
             content: "",
             embeds: [buildThrowEmbed(encounter, sphere)],
             components: buildSphereButtons(throwingInventory, true),
+            attachments: [],
           });
 
           await new Promise((res) => setTimeout(res, 1000));
@@ -529,6 +639,7 @@ module.exports = {
             content: "",
             embeds: [buildShakeEmbed(encounter)],
             components: buildSphereButtons(shakeInventory, true),
+            attachments: [],
           });
 
           await new Promise((res) => setTimeout(res, 500));
@@ -553,11 +664,13 @@ module.exports = {
             interaction.user.id
           );
 
-          await interaction.editReply({
-            content: "",
-            embeds: [buildResolvedEmbed(result, sphereUse.remaining)],
-            components: buildSphereButtons(resolvedInventory, true),
-          });
+          await interaction.editReply(
+            await buildResolvedPayload(
+              result,
+              sphereUse.remaining,
+              resolvedInventory
+            )
+          );
 
           collector.stop("resolved");
         } catch (error) {
@@ -572,6 +685,7 @@ module.exports = {
             content: "❌ Something went wrong while processing /capture.",
             embeds: [],
             components: buildSphereButtons(errorInventory, true),
+            attachments: [],
           });
 
           collector.stop("error");
@@ -586,10 +700,11 @@ module.exports = {
         try {
           const disabledInventory = await getUserInventory(guildId, interaction.user.id);
 
-          await interaction.editReply({
-            embeds: [buildEncounterEmbed(encounter, disabledInventory)],
-            components: buildSphereButtons(disabledInventory, true),
-          });
+          await interaction.editReply(
+            await buildEncounterPayload(encounter, disabledInventory, {
+              buttonsDisabled: true,
+            })
+          );
         } catch (error) {
           console.error("[capture] Failed to disable encounter buttons:", error);
         }
@@ -603,8 +718,12 @@ module.exports = {
       );
     }
   },
+  buildEncounterCardEmbed,
   buildEncounterEmbed,
+  buildEncounterPayload,
+  buildResolvedCardEmbed,
   buildResolvedEmbed,
+  buildResolvedPayload,
   buildShakeEmbed,
   buildSphereButtons,
   buildThrowEmbed,
