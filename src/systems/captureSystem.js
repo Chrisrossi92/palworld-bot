@@ -538,7 +538,7 @@ async function getJournalSummary(guildId, userId, ownedPals = null) {
   });
 }
 
-async function getPaldeckSummary(guildId, userId, ownedPals = null) {
+async function getPaldeckSummary(guildId, userId, ownedPals = null, options = {}) {
   const userPals = Array.isArray(ownedPals)
     ? ownedPals
     : await storage.getGuildOwnedPals(guildId, userId);
@@ -547,6 +547,7 @@ async function getPaldeckSummary(guildId, userId, ownedPals = null) {
   return buildPaldeckSummary({
     palCatalog,
     ownedPals: userPals,
+    ...options,
   });
 }
 

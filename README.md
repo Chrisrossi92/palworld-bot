@@ -13,7 +13,9 @@ A Discord bot for Palworld-inspired collecting and progression. The bot is curre
 - Weekly server capture goal shown in `/quests`.
 - Per-guild leaderboards.
 - Journal milestones for capture, collection, progression, and rare hunting goals.
-- Derived Paldeck completion visibility in `/profile` and `/mypals`.
+- Dedicated `/journal` command for milestone progress.
+- Dedicated `/paldeck` command and derived Paldeck completion visibility in
+  `/profile` and `/mypals`.
 - Pal catalog image support from `data/pals.json`.
 
 ## Commands
@@ -26,6 +28,8 @@ A Discord bot for Palworld-inspired collecting and progression. The bot is curre
 - `/daily` - Claim daily XP, coins, and sphere rewards.
 - `/quests` - View and claim daily quest rewards.
 - `/profile` - View your progression, stats, and inventory.
+- `/journal` - View your Journal completion, recent unlocks, and next milestones.
+- `/paldeck` - View Paldeck completion, recent species, and missing species preview.
 - `/mypals` - View your Palbox with filters and sorting.
 - `/inspect` - Inspect one owned Pal.
 - `/leaderboard` - View guild-scoped rankings.
@@ -42,17 +46,20 @@ after relevant player actions, currently focused on:
 - Progression: trainer level milestones.
 - Rare Hunter: rare, epic, and legendary collection milestones.
 
-New unlocks are shown in the `/capture` result when they happen. `/profile`
-shows Journal completion, recent unlocks, and the nearest locked milestones.
-Journal unlocks are scoped per Discord guild and player.
+New unlocks are shown in the `/capture` result when they happen. `/journal`
+shows Journal completion, category progress, recent unlocks, and the nearest
+locked milestones. `/profile` also includes a compact Journal summary. Journal
+unlocks are scoped per Discord guild and player.
 
 ## Paldeck Completion
 
 Paldeck completion is derived from the existing Pal catalog and each player's
 owned Pal collection. It does not add new persistence or schema requirements.
+`/paldeck` shows Paldeck completion, recent species, a small missing species
+preview, and the nearest Collector Journal milestone when one is available.
 `/profile` shows compact Paldeck completion, recent species, and the nearest
-Collector Journal milestone when one is available. `/mypals` shows Paldeck
-completion alongside Palbox filters and sorting.
+Collector Journal milestone. `/mypals` shows Paldeck completion alongside
+Palbox filters and sorting.
 
 ## Daily Research
 

@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
   evaluateJournal,
+  getJournalCategorySummary,
   getNextJournalMilestones,
   journalDefinitions,
   normalizeJournal,
@@ -128,6 +129,37 @@ test("summarizeJournal reports recent unlocks and total definitions", () => {
   assert.equal(summary.totalDefinitions, journalDefinitions.length);
   assert.equal(summary.completionPercentage, Number(((2 / journalDefinitions.length) * 100).toFixed(1)));
   assert.equal(summary.recentUnlocks[0].key, "progression-level-5");
+  assert.deepEqual(
+    summary.categoryBreakdown.map((entry) => [
+      entry.category,
+      entry.unlockedCount,
+      entry.totalDefinitions,
+    ]),
+    [
+      ["Discovery", 1, 4],
+      ["Collector", 0, 3],
+      ["Progression", 1, 4],
+      ["Rare Hunter", 0, 2],
+    ]
+  );
+});
+
+test("getJournalCategorySummary handles empty Journal state", () => {
+  const categories = getJournalCategorySummary(null);
+
+  assert.deepEqual(
+    categories.map((entry) => [
+      entry.category,
+      entry.unlockedCount,
+      entry.totalDefinitions,
+    ]),
+    [
+      ["Discovery", 0, 4],
+      ["Collector", 0, 3],
+      ["Progression", 0, 4],
+      ["Rare Hunter", 0, 2],
+    ]
+  );
 });
 
 test("summarizeJournal includes next milestone progress math", () => {

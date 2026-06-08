@@ -27,6 +27,8 @@ module.exports = {
           name: "📊 Your Progress",
           value:
             "`/profile` — View your stats\n" +
+            "`/journal` — View your Journal milestones\n" +
+            "`/paldeck` — View collection completion\n" +
             "`/mypals` — View your collection\n" +
             "`/inspect` — View a specific Pal",
         },

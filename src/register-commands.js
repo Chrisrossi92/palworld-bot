@@ -6,6 +6,8 @@ const captureCommand = require("./commands/capture");
 const myPalsCommand = require("./commands/mypals");
 const leaderboardCommand = require("./commands/leaderboard");
 const profileCommand = require("./commands/profile");
+const journalCommand = require("./commands/journal");
+const paldeckCommand = require("./commands/paldeck");
 const dailyCommand = require("./commands/daily");
 const spawnCommand = require("./commands/spawn");
 const inspectCommand = require("./commands/inspect");
@@ -21,6 +23,8 @@ const commands = [
   myPalsCommand.data.toJSON(),
   leaderboardCommand.data.toJSON(),
   profileCommand.data.toJSON(),
+  journalCommand.data.toJSON(),
+  paldeckCommand.data.toJSON(),
   dailyCommand.data.toJSON(),
   spawnCommand.data.toJSON(),
   inspectCommand.data.toJSON(),

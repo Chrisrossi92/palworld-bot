@@ -116,6 +116,8 @@ const metricLabels = {
   rareCaptures: "rare Pals",
 };
 
+const categoryOrder = ["Discovery", "Collector", "Progression", "Rare Hunter"];
+
 function isRarePal(pal) {
   return ["rare", "epic", "legendary"].includes(String(pal?.rarity || "").toLowerCase());
 }
@@ -254,6 +256,25 @@ function getNextJournalMilestones({
     .slice(0, limit);
 }
 
+function getJournalCategorySummary(journal) {
+  const normalizedJournal = normalizeJournal(journal);
+
+  return categoryOrder.map((category) => {
+    const definitions = journalDefinitions.filter(
+      (definition) => definition.category === category
+    );
+    const unlocked = definitions.filter((definition) =>
+      Boolean(normalizedJournal.unlocked[definition.key])
+    );
+
+    return {
+      category,
+      unlockedCount: unlocked.length,
+      totalDefinitions: definitions.length,
+    };
+  });
+}
+
 function summarizeJournal(journal, options = {}) {
   const normalizedJournal = normalizeJournal(journal);
   const unlockedEntries = Object.values(normalizedJournal.unlocked)
@@ -278,6 +299,7 @@ function summarizeJournal(journal, options = {}) {
       journal: normalizedJournal,
       limit: options.nextMilestoneLimit || 3,
     }),
+    categoryBreakdown: getJournalCategorySummary(normalizedJournal),
     unlockedCount: unlockedEntries.length,
     totalDefinitions,
     recentUnlocks: unlockedEntries.slice(0, 3),
@@ -287,6 +309,7 @@ function summarizeJournal(journal, options = {}) {
 module.exports = {
   buildJournalMetrics,
   evaluateJournal,
+  getJournalCategorySummary,
   getNextJournalMilestones,
   journalDefinitions,
   normalizeJournal,
