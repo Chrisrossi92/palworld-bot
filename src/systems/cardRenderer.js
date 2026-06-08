@@ -119,6 +119,14 @@ function fitSvgText(value, {
   };
 }
 
+function getErrorMessage(error) {
+  if (!error) {
+    return "unknown error";
+  }
+
+  return error.message || String(error);
+}
+
 async function fetchImageBuffer(imageUrl, timeoutMs = 2500) {
   if (!imageUrl) {
     return null;
@@ -145,6 +153,57 @@ async function fetchImageBuffer(imageUrl, timeoutMs = 2500) {
   return Buffer.from(await response.arrayBuffer());
 }
 
+function buildPalImagePlaceholderSvg({
+  width,
+  height,
+  accentColor,
+  label = "FIELD SKETCH",
+}) {
+  const centerX = Math.round(width / 2);
+  const centerY = Math.round(height / 2);
+  const headRadius = Math.round(Math.min(width, height) * 0.12);
+  const bodyWidth = Math.round(width * 0.42);
+  const bodyHeight = Math.round(height * 0.26);
+  const fittedLabel = fitSvgText(label, {
+    maxWidth: Math.max(80, width - 64),
+    preferredFontSize: 18,
+    minFontSize: 13,
+  });
+
+  return `
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="${width}" height="${height}" rx="24" fill="#111923"/>
+      <path d="M28 ${height - 52} C${Math.round(width * 0.28)} ${height - 92} ${Math.round(width * 0.48)} ${height - 34} ${width - 24} ${height - 84}" fill="none" stroke="${accentColor}" stroke-width="2" opacity="0.22"/>
+      <circle cx="${centerX}" cy="${centerY - 36}" r="${headRadius}" fill="${accentColor}" opacity="0.16"/>
+      <ellipse cx="${centerX}" cy="${centerY + 26}" rx="${Math.round(bodyWidth / 2)}" ry="${Math.round(bodyHeight / 2)}" fill="${accentColor}" opacity="0.13"/>
+      <path d="M${centerX - Math.round(bodyWidth / 2)} ${centerY + 24} C${centerX - 28} ${centerY - 4} ${centerX + 28} ${centerY - 4} ${centerX + Math.round(bodyWidth / 2)} ${centerY + 24}" fill="none" stroke="${accentColor}" stroke-width="5" opacity="0.3" stroke-linecap="round"/>
+      <circle cx="${centerX - 13}" cy="${centerY - 40}" r="4" fill="${accentColor}" opacity="0.46"/>
+      <circle cx="${centerX + 13}" cy="${centerY - 40}" r="4" fill="${accentColor}" opacity="0.46"/>
+      <text x="${centerX}" y="${height - 28}" text-anchor="middle" fill="#b9c5ce" font-size="${fittedLabel.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedLabel.text)}</text>
+    </svg>
+  `;
+}
+
+function buildPlaceholderComposite({
+  width,
+  height,
+  left,
+  top,
+  accentColor,
+  label,
+}) {
+  return {
+    input: Buffer.from(buildPalImagePlaceholderSvg({
+      width,
+      height,
+      accentColor,
+      label,
+    })),
+    left,
+    top,
+  };
+}
+
 function buildCardSvg({ pal, level, rarity, isShiny }) {
   const accentColor = rarityColors[rarity] || rarityColors.common;
   const palName = typeof pal?.name === "string" ? pal.name : "Unknown Pal";
@@ -152,8 +211,8 @@ function buildCardSvg({ pal, level, rarity, isShiny }) {
   const rarityText = rarity || "common";
   const fittedName = fitSvgText(palName, {
     maxWidth: 270,
-    preferredFontSize: 52,
-    minFontSize: 28,
+    preferredFontSize: 42,
+    minFontSize: 24,
   });
   const fittedRarity = fitSvgText(rarityText.toUpperCase(), {
     maxWidth: 136,
@@ -166,8 +225,8 @@ function buildCardSvg({ pal, level, rarity, isShiny }) {
   );
   const fittedLevel = fitSvgText(levelText, {
     maxWidth: 160,
-    preferredFontSize: 30,
-    minFontSize: 22,
+    preferredFontSize: 25,
+    minFontSize: 20,
   });
   const fittedLucky = fitSvgText("LUCKY", {
     maxWidth: 84,
@@ -195,9 +254,10 @@ function buildCardSvg({ pal, level, rarity, isShiny }) {
       <path d="M0 258 C142 220 266 244 410 206 C526 176 618 190 700 154" fill="none" stroke="${accentColor}" stroke-width="2" opacity="0.3"/>
       <rect x="0" y="0" width="14" height="${CARD_HEIGHT}" fill="${accentColor}"/>
       <circle cx="62" cy="54" r="14" fill="${accentColor}" opacity="0.95"/>
-      <text x="52" y="95" fill="#d6dee8" font-size="19" font-family="Arial, Helvetica, sans-serif" font-weight="800">FIELD ENCOUNTER</text>
-      <text x="52" y="164" fill="#ffffff" font-size="${fittedName.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(fittedName.text)}</text>
-      <text x="52" y="207" fill="#d9e1ea" font-size="${fittedLevel.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedLevel.text)}</text>
+      <text x="52" y="88" fill="#d6dee8" font-size="19" font-family="Arial, Helvetica, sans-serif" font-weight="800">WILD PAL</text>
+      <text x="52" y="118" fill="#8fa0ad" font-size="15" font-family="Arial, Helvetica, sans-serif" font-weight="700">Field encounter</text>
+      <text x="52" y="166" fill="#ffffff" font-size="${fittedName.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(fittedName.text)}</text>
+      <text x="52" y="205" fill="#d9e1ea" font-size="${fittedLevel.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedLevel.text)}</text>
       <rect x="52" y="226" width="${rarityBadgeWidth}" height="42" rx="21" fill="${accentColor}" opacity="0.2"/>
       <text x="74" y="255" fill="${accentColor}" font-size="${fittedRarity.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(fittedRarity.text)}</text>
       ${
@@ -405,20 +465,43 @@ function buildCaptureResultCardSvg(result) {
   `;
 }
 
-async function buildPalImageComposite(imageUrl) {
-  const imageBuffer = await fetchImageBuffer(imageUrl);
+async function buildPalImageComposite(imageUrl, options = {}) {
+  const width = 328;
+  const height = 260;
+  const left = 334;
+  const top = 30;
+  const accentColor = options.accentColor || rarityColors.common;
+  const palName = options.palName || "Unknown Pal";
+  let imageBuffer = null;
+
+  if (imageUrl) {
+    try {
+      imageBuffer = await fetchImageBuffer(imageUrl);
+    } catch (error) {
+      console.warn(
+        `[cardRenderer] Pal image unavailable for encounter pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"; using placeholder.`
+      );
+    }
+  }
 
   if (!imageBuffer) {
-    return null;
+    return buildPlaceholderComposite({
+      width,
+      height,
+      left,
+      top,
+      accentColor,
+      label: "FIELD SKETCH",
+    });
   }
 
   const roundedMask = Buffer.from(`
-    <svg width="328" height="260" viewBox="0 0 328 260" xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="0" width="328" height="260" rx="24" fill="#fff"/>
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="${width}" height="${height}" rx="24" fill="#fff"/>
     </svg>
   `);
   const palImage = await sharp(imageBuffer)
-    .resize(328, 260, {
+    .resize(width, height, {
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
@@ -428,25 +511,48 @@ async function buildPalImageComposite(imageUrl) {
 
   return {
     input: palImage,
-    left: 334,
-    top: 30,
+    left,
+    top,
   };
 }
 
-async function buildResultPalImageComposite(imageUrl) {
-  const imageBuffer = await fetchImageBuffer(imageUrl);
+async function buildResultPalImageComposite(imageUrl, options = {}) {
+  const width = 264;
+  const height = 256;
+  const left = 398;
+  const top = 34;
+  const accentColor = options.accentColor || rarityColors.common;
+  const palName = options.palName || "Unknown Pal";
+  let imageBuffer = null;
+
+  if (imageUrl) {
+    try {
+      imageBuffer = await fetchImageBuffer(imageUrl);
+    } catch (error) {
+      console.warn(
+        `[cardRenderer] Pal image unavailable for result pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"; using placeholder.`
+      );
+    }
+  }
 
   if (!imageBuffer) {
-    return null;
+    return buildPlaceholderComposite({
+      width,
+      height,
+      left,
+      top,
+      accentColor,
+      label: "FIELD SKETCH",
+    });
   }
 
   const roundedMask = Buffer.from(`
-    <svg width="264" height="256" viewBox="0 0 264 256" xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="0" width="264" height="256" rx="24" fill="#fff"/>
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="${width}" height="${height}" rx="24" fill="#fff"/>
     </svg>
   `);
   const palImage = await sharp(imageBuffer)
-    .resize(264, 256, {
+    .resize(width, height, {
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
@@ -456,8 +562,8 @@ async function buildResultPalImageComposite(imageUrl) {
 
   return {
     input: palImage,
-    left: 398,
-    top: 34,
+    left,
+    top,
   };
 }
 
@@ -469,7 +575,10 @@ async function renderPalCardBuffer({ pal, level, rarity, isShiny }) {
   const palSlug = slugify(pal?.name);
   const filename = `encounter-${Date.now()}-${palSlug}.png`;
   const baseCard = sharp(Buffer.from(buildCardSvg({ pal, level, rarity, isShiny })));
-  const imageComposite = await buildPalImageComposite(imageUrl);
+  const imageComposite = await buildPalImageComposite(imageUrl, {
+    accentColor: rarityColors[rarity] || rarityColors.common,
+    palName: getPalName(pal),
+  });
   const composites = imageComposite ? [imageComposite] : [];
   const buffer = await baseCard.composite(composites).png().toBuffer();
 
@@ -488,7 +597,10 @@ async function renderPalCard({ pal, level, rarity, isShiny }) {
   const filename = `encounter-${Date.now()}-${palSlug}.png`;
   const filePath = path.join(CARDS_DIR, filename);
   const baseCard = sharp(Buffer.from(buildCardSvg({ pal, level, rarity, isShiny })));
-  const imageComposite = await buildPalImageComposite(imageUrl);
+  const imageComposite = await buildPalImageComposite(imageUrl, {
+    accentColor: rarityColors[rarity] || rarityColors.common,
+    palName: getPalName(pal),
+  });
   const composites = imageComposite ? [imageComposite] : [];
 
   await fs.mkdir(CARDS_DIR, { recursive: true });
@@ -510,7 +622,14 @@ async function renderCaptureResultCard(result) {
   const resultSlug = result?.success ? "captured" : "escaped";
   const filename = `result-${resultSlug}-${Date.now()}-${palSlug}.png`;
   const baseCard = sharp(Buffer.from(buildCaptureResultCardSvg(result)));
-  const imageComposite = await buildResultPalImageComposite(imageUrl);
+  const imageComposite = await buildResultPalImageComposite(imageUrl, {
+    accentColor: pal.isShiny
+      ? rarityColors.legendary
+      : result?.success
+        ? resultColors.captured
+        : resultColors.escaped,
+    palName: getPalName(pal),
+  });
   const composites = imageComposite ? [imageComposite] : [];
   const buffer = await baseCard.composite(composites).png().toBuffer();
 
@@ -521,6 +640,7 @@ async function renderCaptureResultCard(result) {
 }
 
 module.exports = {
+  buildPalImagePlaceholderSvg,
   buildCaptureResultCardSvg,
   buildCaptureResultHighlights,
   buildCardSvg,

@@ -8,6 +8,7 @@ const {
   buildCaptureResultCardSvg,
   buildCaptureResultHighlights,
   buildCardSvg,
+  buildPalImagePlaceholderSvg,
   estimateTextWidth,
   fitSvgText,
   renderCaptureResultCard,
@@ -188,7 +189,7 @@ test("normal Pal names keep preferred encounter card font size", () => {
   assert.equal(fitted.text, "Lamball");
   assert.equal(fitted.fontSize, 52);
   assert.equal(fitted.truncated, false);
-  assert.match(svg, /font-size="52"[^>]*>Lamball<\/text>/);
+  assert.match(svg, /font-size="42"[^>]*>Lamball<\/text>/);
 });
 
 test("buildCardSvg applies fitted long Pal name before the art frame", () => {
@@ -199,7 +200,7 @@ test("buildCardSvg applies fitted long Pal name before the art frame", () => {
     isShiny: false,
   });
   const nameMatch = svg.match(
-    /<text x="52" y="164"[^>]+font-size="(\d+)"[^>]*>([^<]+)<\/text>/
+    /<text x="52" y="166"[^>]+font-size="(\d+)"[^>]*>([^<]+)<\/text>/
   );
 
   assert.ok(nameMatch);
@@ -208,6 +209,33 @@ test("buildCardSvg applies fitted long Pal name before the art frame", () => {
     estimateTextWidth(nameMatch[2], Number(nameMatch[1])) <= 300
   );
   assert.doesNotMatch(nameMatch[2], /Nocturnal/);
+});
+
+test("encounter Pal name font size is capped below oversized V1.5 text", () => {
+  const svg = buildCardSvg({
+    pal: buildEncounter(),
+    level: 7,
+    rarity: "common",
+    isShiny: false,
+  });
+  const nameMatch = svg.match(
+    /<text x="52" y="166"[^>]+font-size="(\d+)"[^>]*>Lamball<\/text>/
+  );
+
+  assert.ok(nameMatch);
+  assert.ok(Number(nameMatch[1]) <= 42);
+});
+
+test("missing Pal image placeholder renders intentional field sketch", () => {
+  const svg = buildPalImagePlaceholderSvg({
+    width: 328,
+    height: 260,
+    accentColor: "#3498db",
+  });
+
+  assert.match(svg, /FIELD SKETCH/);
+  assert.match(svg, /ellipse/);
+  assert.match(svg, /circle/);
 });
 
 test("encounter card stays focused on encounter identity only", () => {
@@ -222,6 +250,7 @@ test("encounter card stays focused on encounter identity only", () => {
   assert.match(svg, /Level 7/);
   assert.match(svg, /COMMON/);
   assert.match(svg, /LUCKY/);
+  assert.match(svg, /WILD PAL/);
   assert.doesNotMatch(svg, /Basic|Mega|Giga|Hyper|Ultra|Legendary/);
   assert.doesNotMatch(svg, /XP|coins|Journal|Research|Server Goal/);
 });
