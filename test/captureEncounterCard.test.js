@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
   buildEncounterPayload,
+  getCapturePresentationSteps,
   getCaptureShakeSteps,
   buildShakePayload,
   buildResolvedPayload,
@@ -473,6 +474,30 @@ test("getCaptureShakeSteps reaches three shakes for success and two for failure"
       [2, 3, 400],
     ]
   );
+});
+
+test("default capture presentation skips throw stage and starts with shakes", () => {
+  const successSteps = getCapturePresentationSteps({ success: true });
+  const failedSteps = getCapturePresentationSteps({ success: false });
+
+  assert.deepEqual(
+    successSteps.map((step) => step.type),
+    ["shake", "shake", "shake"]
+  );
+  assert.deepEqual(
+    successSteps.map((step) => step.shakeCount),
+    [1, 2, 3]
+  );
+  assert.deepEqual(
+    failedSteps.map((step) => step.type),
+    ["shake", "shake"]
+  );
+  assert.deepEqual(
+    failedSteps.map((step) => step.shakeCount),
+    [1, 2]
+  );
+  assert.equal(successSteps.some((step) => step.type === "throw"), false);
+  assert.equal(failedSteps.some((step) => step.type === "throw"), false);
 });
 
 test("throw and shake renderers produce image buffers without Pal image URLs", async () => {

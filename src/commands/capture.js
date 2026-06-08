@@ -21,7 +21,6 @@ const {
 } = require("../systems/captureSystem");
 
 const CAPTURE_COOLDOWN_MS = 10_000;
-const THROW_CARD_DELAY_MS = 250;
 const SHAKE_CARD_DELAYS_MS = [350, 400, 450];
 const SUCCESS_SHAKE_COUNT = 3;
 const FAILED_SHAKE_COUNT = 2;
@@ -493,6 +492,13 @@ function getCaptureShakeSteps(result) {
   }));
 }
 
+function getCapturePresentationSteps(result) {
+  return getCaptureShakeSteps(result).map((step) => ({
+    type: "shake",
+    ...step,
+  }));
+}
+
 async function buildThrowPayload(encounter, sphere, inventory, options = {}) {
   const renderCard = options.renderCard || renderCaptureThrowCard;
   const components = buildSphereButtons(inventory, true);
@@ -787,17 +793,6 @@ module.exports = {
             return;
           }
 
-          const throwingInventory = await getUserInventory(
-            guildId,
-            interaction.user.id
-          );
-
-          await interaction.editReply(
-            await buildThrowPayload(encounter, sphere, throwingInventory)
-          );
-
-          await new Promise((res) => setTimeout(res, THROW_CARD_DELAY_MS));
-
           const result = await resolveCaptureEncounter(
             guildId,
             interaction.user.id,
@@ -814,9 +809,9 @@ module.exports = {
             `[capture] after capture system result user=${interaction.user.id} success=${result.success} pal=${result.pal.name} level=${result.pal.level} sphere=${result.sphere} chance=${result.captureChance}`
           );
 
-          const shakeSteps = getCaptureShakeSteps(result);
+          const presentationSteps = getCapturePresentationSteps(result);
 
-          for (const step of shakeSteps) {
+          for (const step of presentationSteps) {
             const shakeInventory = await getUserInventory(
               guildId,
               interaction.user.id
@@ -929,6 +924,7 @@ module.exports = {
   buildThrowCardEmbed,
   buildThrowEmbed,
   buildThrowPayload,
+  getCapturePresentationSteps,
   getCaptureShakeSteps,
   getWeeklyServerGoalCompletionField,
 };
