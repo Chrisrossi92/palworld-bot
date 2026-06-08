@@ -2,12 +2,14 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const sharp = require("sharp");
 const {
   buildEncounterPayload,
   buildImmediateCaptureFeedbackPayload,
   buildLightweightShakePayload,
   buildShakePayload,
   buildResolvedPayload,
+  buildSphereButtons,
   buildThrowPayload,
 } = require("../src/commands/capture");
 const {
@@ -17,6 +19,8 @@ const {
   buildCaptureThrowCardSvg,
   buildCardSvg,
   buildPalImagePlaceholderSvg,
+  buildSphereIconSvg,
+  createPalArtBuffer,
   estimateTextWidth,
   fitSvgText,
   normalizeShakeCount,
@@ -25,6 +29,9 @@ const {
   renderCaptureThrowCard,
   renderPalCardBuffer,
 } = require("../src/systems/cardRenderer");
+const {
+  getSphereVisual,
+} = require("../src/systems/sphereVisuals");
 
 function buildEncounter(overrides = {}) {
   return {
@@ -90,6 +97,35 @@ function buildCaptureResult(overrides = {}) {
   };
 }
 
+async function getAlphaBounds(buffer) {
+  const image = sharp(buffer).ensureAlpha();
+  const metadata = await image.metadata();
+  const raw = await image.raw().toBuffer();
+  const channels = 4;
+  let minX = metadata.width;
+  let minY = metadata.height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < metadata.height; y += 1) {
+    for (let x = 0; x < metadata.width; x += 1) {
+      const alpha = raw[(y * metadata.width + x) * channels + 3];
+
+      if (alpha > 0) {
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+      }
+    }
+  }
+
+  return {
+    width: maxX >= minX ? maxX - minX + 1 : 0,
+    height: maxY >= minY ? maxY - minY + 1 : 0,
+  };
+}
+
 test("buildEncounterPayload uses generated card attachment when rendering succeeds", async () => {
   const payload = await buildEncounterPayload(
     buildEncounter(),
@@ -108,6 +144,25 @@ test("buildEncounterPayload uses generated card attachment when rendering succee
   assert.equal(embed.image.url, "attachment://encounter-card.png");
   assert.equal(payload.files.length, 1);
   assert.equal(payload.components.length, 2);
+});
+
+test("capture sphere buttons include PalMaster sphere emoji metadata", () => {
+  const rows = buildSphereButtons(buildInventory({
+    giga: 1,
+    hyper: 1,
+    ultra: 1,
+    legendary: 1,
+  }));
+  const buttons = rows.flatMap((row) => row.toJSON().components);
+
+  for (const key of ["basic", "mega", "giga", "hyper", "ultra", "legendary"]) {
+    const visual = getSphereVisual(key);
+    const button = buttons.find((component) => component.custom_id === `capture:${key}`);
+
+    assert.ok(button, `missing ${key} button`);
+    assert.equal(button.label, visual.label);
+    assert.equal(button.emoji.name, visual.emoji);
+  }
 });
 
 test("buildEncounterPayload shows Lucky encounter title for shiny encounters", async () => {
@@ -169,6 +224,64 @@ test("renderPalCardBuffer can render without a Pal image URL", async () => {
   assert.match(card.filename, /^encounter-\d+-lamball\.png$/);
   assert.ok(Buffer.isBuffer(card.buffer));
   assert.ok(card.buffer.length > 0);
+});
+
+test("createPalArtBuffer auto-crops transparent Pal image padding", async () => {
+  const paddedSource = await sharp({
+    create: {
+      width: 100,
+      height: 100,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
+  })
+    .composite([
+      {
+        input: Buffer.from(`
+          <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="20" height="20" fill="#ff0000"/>
+          </svg>
+        `),
+        left: 40,
+        top: 40,
+      },
+    ])
+    .png()
+    .toBuffer();
+  const uncropped = await createPalArtBuffer(paddedSource, {
+    width: 100,
+    height: 100,
+    autoCrop: false,
+  });
+  const cropped = await createPalArtBuffer(paddedSource, {
+    width: 100,
+    height: 100,
+    autoCrop: true,
+  });
+  const uncroppedBounds = await getAlphaBounds(uncropped);
+  const croppedBounds = await getAlphaBounds(cropped);
+
+  assert.ok(croppedBounds.width > uncroppedBounds.width);
+  assert.ok(croppedBounds.height > uncroppedBounds.height);
+});
+
+test("createPalArtBuffer safely handles opaque non-transparent images", async () => {
+  const source = await sharp({
+    create: {
+      width: 48,
+      height: 32,
+      channels: 3,
+      background: { r: 34, g: 120, b: 220 },
+    },
+  }).png().toBuffer();
+  const output = await createPalArtBuffer(source, {
+    width: 120,
+    height: 90,
+  });
+  const metadata = await sharp(output).metadata();
+
+  assert.equal(metadata.width, 120);
+  assert.equal(metadata.height, 90);
 });
 
 test("fitSvgText keeps long Pal names inside encounter card text bounds", () => {
@@ -602,6 +715,8 @@ test("captured result card focuses on outcome and earned rewards", () => {
   }));
 
   assert.match(svg, /CAPTURED!/);
+  assert.match(svg, /data-sphere-icon="basic"/);
+  assert.match(svg, /Basic Sphere/);
   assert.match(svg, /\+20 XP/);
   assert.match(svg, /\+40 coins/);
   assert.match(svg, /Level Up: 4 -&gt; 5/);
@@ -640,8 +755,23 @@ test("escaped result card remains minimal", () => {
   }));
 
   assert.match(svg, /ESCAPED!/);
-  assert.match(svg, /Sphere: basic/);
+  assert.match(svg, /data-sphere-icon="basic"/);
+  assert.match(svg, /Basic Sphere/);
   assert.doesNotMatch(svg, /XP|coins|Journal|Research|Server Goal|Level Up/);
+});
+
+test("buildSphereIconSvg renders original vector sphere marker", () => {
+  const svg = buildSphereIconSvg({
+    sphere: "legendary",
+    x: 10,
+    y: 20,
+    size: 32,
+  });
+
+  assert.match(svg, /data-sphere-icon="legendary"/);
+  assert.match(svg, /circle/);
+  assert.match(svg, /path/);
+  assert.doesNotMatch(svg, /image href|http|palworld/i);
 });
 
 test("buildCaptureResultCardSvg uses Lucky treatment for Lucky captures", () => {

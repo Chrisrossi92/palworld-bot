@@ -19,6 +19,10 @@ const {
   getUserInventory,
   resolveCaptureEncounter,
 } = require("../systems/captureSystem");
+const {
+  getSphereChoices,
+  getSphereVisual,
+} = require("../systems/sphereVisuals");
 
 const CAPTURE_COOLDOWN_MS = 10_000;
 const MAX_SHAKE_COUNT = 3;
@@ -58,14 +62,7 @@ const palImageUrls = {
     "https://static.wikia.nocookie.net/palworld/images/f/fd/Jetragon.png/revision/latest?cb=20240123200132",
 };
 
-const sphereChoices = [
-  ["Basic", "basic"],
-  ["Mega", "mega"],
-  ["Giga", "giga"],
-  ["Hyper", "hyper"],
-  ["Ultra", "ultra"],
-  ["Legendary", "legendary"],
-];
+const sphereChoices = getSphereChoices();
 
 function logDeferState(label, interaction) {
   console.log(
@@ -109,13 +106,16 @@ function buildSphereButtons(
   disabled = false,
   customIdPrefix = "capture"
 ) {
-  const buttons = sphereChoices.map(([name, value]) =>
-    new ButtonBuilder()
+  const buttons = sphereChoices.map(([name, value]) => {
+    const visual = getSphereVisual(value);
+
+    return new ButtonBuilder()
       .setCustomId(`${customIdPrefix}:${value}`)
       .setLabel(name)
+      .setEmoji(visual.emoji)
       .setStyle(ButtonStyle.Secondary)
-      .setDisabled(disabled || (inventory[value] ?? 0) <= 0)
-  );
+      .setDisabled(disabled || (inventory[value] ?? 0) <= 0);
+  });
 
   return [
     new ActionRowBuilder().addComponents(buttons.slice(0, 5)),

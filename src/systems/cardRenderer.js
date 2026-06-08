@@ -1,6 +1,10 @@
 const fs = require("fs/promises");
 const path = require("path");
 const sharp = require("sharp");
+const {
+  getSphereVisual,
+  normalizeSphereKey,
+} = require("./sphereVisuals");
 
 const CARD_WIDTH = 700;
 const CARD_HEIGHT = 320;
@@ -45,6 +49,10 @@ function capitalize(value) {
   }
 
   return `${text.charAt(0).toUpperCase()}${text.slice(1).toLowerCase()}`;
+}
+
+function formatSphereName(sphere) {
+  return getSphereVisual(sphere).label;
 }
 
 function estimateTextWidth(value, fontSize) {
@@ -135,6 +143,56 @@ function getErrorMessage(error) {
   }
 
   return error.message || String(error);
+}
+
+function buildRoundedMask(width, height, radius = 24) {
+  return Buffer.from(`
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="${width}" height="${height}" rx="${radius}" fill="#fff"/>
+    </svg>
+  `);
+}
+
+async function createPalArtBuffer(imageBuffer, {
+  width,
+  height,
+  radius = 24,
+  autoCrop = true,
+  phase = "image",
+  palName = "Unknown Pal",
+} = {}) {
+  const resizeOptions = {
+    fit: "contain",
+    background: { r: 0, g: 0, b: 0, alpha: 0 },
+  };
+  const render = (source) => source
+    .resize(width, height, resizeOptions)
+    .composite([{ input: buildRoundedMask(width, height, radius), blend: "dest-in" }])
+    .png()
+    .toBuffer();
+
+  if (autoCrop) {
+    try {
+      const croppedImage = sharp(imageBuffer, {
+        failOn: "none",
+      }).trim({
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+        threshold: 12,
+      });
+      const croppedBuffer = await render(croppedImage);
+      logImageDebug(`${phase} autocrop applied pal="${palName}"`);
+
+      return croppedBuffer;
+    } catch (error) {
+      logImageDebug(
+        `${phase} autocrop skipped pal="${palName}" reason="${getErrorMessage(error)}"`
+      );
+    }
+  }
+
+  return render(sharp(imageBuffer, {
+    failOn: "none",
+  }));
 }
 
 function isImageDebugEnabled() {
@@ -394,6 +452,33 @@ function fitResultLine(line) {
   });
 }
 
+function buildSphereIconSvg({
+  sphere,
+  x,
+  y,
+  size,
+}) {
+  const visual = getSphereVisual(sphere);
+  const radius = Math.round(size / 2);
+  const center = {
+    x: x + radius,
+    y: y + radius,
+  };
+  const bandY = center.y - Math.round(size * 0.06);
+  const dotRadius = Math.max(4, Math.round(size * 0.14));
+
+  return `
+    <g data-sphere-icon="${visual.key}">
+      <circle cx="${center.x}" cy="${center.y}" r="${radius}" fill="#0b1118" opacity="0.55"/>
+      <circle cx="${center.x}" cy="${center.y}" r="${radius - 2}" fill="${visual.primaryColor}"/>
+      <path d="M${x + 4} ${center.y} C${x + Math.round(size * 0.25)} ${center.y + Math.round(size * 0.16)} ${x + Math.round(size * 0.75)} ${center.y + Math.round(size * 0.16)} ${x + size - 4} ${center.y}" fill="none" stroke="#101820" stroke-width="${Math.max(4, Math.round(size * 0.12))}" opacity="0.9" stroke-linecap="round"/>
+      <path d="M${x + 7} ${bandY} H${x + size - 7}" stroke="${visual.accentColor}" stroke-width="${Math.max(2, Math.round(size * 0.06))}" opacity="0.88" stroke-linecap="round"/>
+      <circle cx="${center.x}" cy="${center.y}" r="${dotRadius}" fill="#111820" stroke="${visual.accentColor}" stroke-width="${Math.max(2, Math.round(size * 0.06))}"/>
+      <circle cx="${center.x - Math.round(size * 0.16)}" cy="${center.y - Math.round(size * 0.22)}" r="${Math.max(3, Math.round(size * 0.08))}" fill="#ffffff" opacity="0.42"/>
+    </g>
+  `;
+}
+
 function buildCaptureResultCardSvg(result) {
   const pal = result?.pal || {};
   const rarity = pal.rarity || "common";
@@ -428,8 +513,9 @@ function buildCaptureResultCardSvg(result) {
     preferredFontSize: 24,
     minFontSize: 18,
   });
-  const sphereLine = fitSvgText(`Sphere: ${result.sphere || "basic"}`, {
-    maxWidth: 314,
+  const sphereKey = normalizeSphereKey(result.sphere);
+  const sphereLine = fitSvgText(`${formatSphereName(sphereKey)} Sphere`, {
+    maxWidth: 268,
     preferredFontSize: 18,
     minFontSize: 15,
   });
@@ -469,7 +555,13 @@ function buildCaptureResultCardSvg(result) {
       <rect x="76" y="200" width="${rarityBadgeWidth}" height="38" rx="19" fill="${rarityAccent}" opacity="0.18"/>
       <text x="97" y="226" fill="${rarityAccent}" font-size="${fittedRarity.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedRarity.text)}</text>
       <text x="${levelX}" y="226" fill="#d9e1ea" font-size="${fittedLevel.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedLevel.text)}</text>
-      <text x="76" y="247" fill="#d7e0e8" font-size="${sphereLine.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeSvgText(sphereLine.text)}</text>
+      ${buildSphereIconSvg({
+        sphere: sphereKey,
+        x: 76,
+        y: 236,
+        size: 28,
+      })}
+      <text x="114" y="257" fill="#d7e0e8" font-size="${sphereLine.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(sphereLine.text)}</text>
       ${highlights.map((line, index) =>
         `<text x="76" y="${263 + index * 13}" fill="#aebbc7" font-size="${line.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeSvgText(line.text)}</text>`
       ).join("")}
@@ -660,11 +752,6 @@ async function buildPalImageComposite(imageUrl, options = {}) {
     });
   }
 
-  const roundedMask = Buffer.from(`
-    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="0" width="${width}" height="${height}" rx="24" fill="#fff"/>
-    </svg>
-  `);
   let palImage;
 
   try {
@@ -672,14 +759,13 @@ async function buildPalImageComposite(imageUrl, options = {}) {
     logImageDebug(
       `encounter decode success pal="${palName}" format=${metadata.format || "unknown"} width=${metadata.width || "unknown"} height=${metadata.height || "unknown"}`
     );
-    palImage = await sharp(imageBuffer)
-      .resize(width, height, {
-        fit: "contain",
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      })
-      .composite([{ input: roundedMask, blend: "dest-in" }])
-      .png()
-      .toBuffer();
+    palImage = await createPalArtBuffer(imageBuffer, {
+      width,
+      height,
+      radius: 24,
+      phase: "encounter",
+      palName,
+    });
   } catch (error) {
     console.warn(
       `[cardRenderer] Pal image decode failed for encounter pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"; using placeholder.`
@@ -747,11 +833,6 @@ async function buildSequencePalImageComposite(imageUrl, options = {}) {
     });
   }
 
-  const roundedMask = Buffer.from(`
-    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="0" width="${width}" height="${height}" rx="24" fill="#fff"/>
-    </svg>
-  `);
   let palImage;
 
   try {
@@ -759,14 +840,13 @@ async function buildSequencePalImageComposite(imageUrl, options = {}) {
     logImageDebug(
       `${phase} decode success pal="${palName}" format=${metadata.format || "unknown"} width=${metadata.width || "unknown"} height=${metadata.height || "unknown"}`
     );
-    palImage = await sharp(imageBuffer)
-      .resize(width, height, {
-        fit: "contain",
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      })
-      .composite([{ input: roundedMask, blend: "dest-in" }])
-      .png()
-      .toBuffer();
+    palImage = await createPalArtBuffer(imageBuffer, {
+      width,
+      height,
+      radius: 24,
+      phase,
+      palName,
+    });
   } catch (error) {
     console.warn(
       `[cardRenderer] Pal image decode failed for ${phase} pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"; using placeholder.`
@@ -833,11 +913,6 @@ async function buildResultPalImageComposite(imageUrl, options = {}) {
     });
   }
 
-  const roundedMask = Buffer.from(`
-    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="0" width="${width}" height="${height}" rx="24" fill="#fff"/>
-    </svg>
-  `);
   let palImage;
 
   try {
@@ -845,14 +920,13 @@ async function buildResultPalImageComposite(imageUrl, options = {}) {
     logImageDebug(
       `result decode success pal="${palName}" format=${metadata.format || "unknown"} width=${metadata.width || "unknown"} height=${metadata.height || "unknown"}`
     );
-    palImage = await sharp(imageBuffer)
-      .resize(width, height, {
-        fit: "contain",
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      })
-      .composite([{ input: roundedMask, blend: "dest-in" }])
-      .png()
-      .toBuffer();
+    palImage = await createPalArtBuffer(imageBuffer, {
+      width,
+      height,
+      radius: 24,
+      phase: "result",
+      palName,
+    });
   } catch (error) {
     console.warn(
       `[cardRenderer] Pal image decode failed for result pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"; using placeholder.`
@@ -1016,6 +1090,8 @@ module.exports = {
   buildCaptureShakeCardSvg,
   buildCaptureThrowCardSvg,
   buildCardSvg,
+  buildSphereIconSvg,
+  createPalArtBuffer,
   estimateTextWidth,
   fitSvgText,
   normalizeShakeCount,
