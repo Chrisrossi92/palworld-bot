@@ -137,7 +137,7 @@ function logImageDebug(message) {
     return;
   }
 
-  console.log(`[cardRenderer:image] ${message}`);
+  console.warn(`[cardRenderer:image] ${message}`);
 }
 
 async function fetchImageBuffer(imageUrl, timeoutMs = 2500) {
@@ -661,12 +661,20 @@ async function renderPalCardBuffer({ pal, level, rarity, isShiny }) {
     pal && typeof pal.imageUrl === "string" && pal.imageUrl.trim()
       ? pal.imageUrl.trim()
       : "";
+  const palName = getPalName(pal);
+
+  logImageDebug(
+    `renderPalCardBuffer start pal="${palName}" rarity="${rarity || "unknown"}" ` +
+    `level="${level ?? "unknown"}" isLucky=${Boolean(isShiny)} imageUrl="${imageUrl}" ` +
+    `imageUrlMissing=${imageUrl === ""}`
+  );
+
   const palSlug = slugify(pal?.name);
   const filename = `encounter-${Date.now()}-${palSlug}.png`;
   const baseCard = sharp(Buffer.from(buildCardSvg({ pal, level, rarity, isShiny })));
   const imageComposite = await buildPalImageComposite(imageUrl, {
     accentColor: rarityColors[rarity] || rarityColors.common,
-    palName: getPalName(pal),
+    palName,
   });
   const composites = imageComposite ? [imageComposite] : [];
   const buffer = await baseCard.composite(composites).png().toBuffer();
@@ -707,6 +715,14 @@ async function renderCaptureResultCard(result) {
     pal && typeof pal.imageUrl === "string" && pal.imageUrl.trim()
       ? pal.imageUrl.trim()
       : "";
+  const palName = getPalName(pal);
+
+  logImageDebug(
+    `renderCaptureResultCard start pal="${palName}" rarity="${pal.rarity || "unknown"}" ` +
+    `level="${pal.level ?? "unknown"}" isLucky=${Boolean(pal.isShiny)} ` +
+    `success=${Boolean(result?.success)} imageUrl="${imageUrl}" imageUrlMissing=${imageUrl === ""}`
+  );
+
   const palSlug = slugify(pal?.name);
   const resultSlug = result?.success ? "captured" : "escaped";
   const filename = `result-${resultSlug}-${Date.now()}-${palSlug}.png`;
@@ -717,7 +733,7 @@ async function renderCaptureResultCard(result) {
       : result?.success
         ? resultColors.captured
         : resultColors.escaped,
-    palName: getPalName(pal),
+    palName,
   });
   const composites = imageComposite ? [imageComposite] : [];
   const buffer = await baseCard.composite(composites).png().toBuffer();

@@ -70,6 +70,19 @@ function logDeferState(label, interaction) {
   );
 }
 
+function isImageDebugEnabled() {
+  return process.env.PALMASTER_IMAGE_DEBUG === "1" ||
+    process.env.CARD_IMAGE_DEBUG === "1";
+}
+
+function logCaptureImageDebug(message) {
+  if (!isImageDebugEnabled()) {
+    return;
+  }
+
+  console.warn(`[capture:image] ${message}`);
+}
+
 function getPalImageUrl(pal) {
   if (pal && typeof pal.imageUrl === "string" && pal.imageUrl.trim() !== "") {
     return pal.imageUrl.trim();
@@ -169,6 +182,17 @@ async function buildEncounterPayload(encounter, inventory, options = {}) {
     options.buttonsDisabled === true
   );
   const renderCard = options.renderCard || renderPalCardBuffer;
+  const imageUrl =
+    encounter && typeof encounter.imageUrl === "string"
+      ? encounter.imageUrl
+      : "";
+
+  logCaptureImageDebug(
+    `encounter payload pal="${encounter?.name || "Unknown Pal"}" ` +
+    `rarity="${encounter?.rarity || "unknown"}" level="${encounter?.level ?? "unknown"}" ` +
+    `isLucky=${Boolean(encounter?.isShiny)} imageUrl="${imageUrl}" ` +
+    `imageUrlMissing=${imageUrl.trim() === ""} willRenderCard=true`
+  );
 
   try {
     const card = await renderCard({
