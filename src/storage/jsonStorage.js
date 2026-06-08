@@ -248,10 +248,30 @@ function createJsonStorage({
     };
   }
 
+  function getDailyResearchState(guildId, userId) {
+    return {
+      ...getGuildPlayerRecord(guildId, userId).dailyResearch,
+    };
+  }
+
   function updateDailyQuestState(guildId, userId, updater) {
     return updateGuildPlayerRecord(guildId, userId, (userRecord) =>
       updater(userRecord.dailyQuests, userRecord)
     );
+  }
+
+  function updateDailyResearchState(guildId, userId, updater) {
+    return updateGuildPlayerRecord(guildId, userId, (userRecord) => {
+      const result = updater(userRecord.dailyResearch, userRecord);
+
+      if (result && result.state) {
+        userRecord.dailyResearch = result.state;
+      } else if (result) {
+        userRecord.dailyResearch = result;
+      }
+
+      return result;
+    });
   }
 
   function updateGuildOwnedPals(guildId, userId, updater) {
@@ -269,6 +289,7 @@ function createJsonStorage({
   }
 
   return {
+    getDailyResearchState,
     getDailyQuestState,
     getGuildOwnedPals,
     getGuildPlayerRecord,
@@ -278,6 +299,7 @@ function createJsonStorage({
     readPalCatalog,
     readUserPals,
     readUsers,
+    updateDailyResearchState,
     updateDailyQuestState,
     updateGuildOwnedPals,
     updateGuildPlayerRecord,

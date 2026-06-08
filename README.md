@@ -9,7 +9,9 @@ A Discord bot for Palworld-inspired collecting and progression. The bot is curre
 - Palbox collection tracking with duplicate condensation into stars and essence.
 - XP, level, coins, streaks, failed captures, and sphere inventory.
 - Daily rewards and daily quests.
+- Daily Research assignment shown in `/quests`.
 - Per-guild leaderboards.
+- Journal milestones for capture, collection, progression, and rare hunting goals.
 - Pal catalog image support from `data/pals.json`.
 
 ## Commands
@@ -27,6 +29,33 @@ A Discord bot for Palworld-inspired collecting and progression. The bot is curre
 - `/leaderboard` - View guild-scoped rankings.
 - `/shop` - View sphere prices.
 - `/buy` - Buy spheres with coins.
+
+## Journal
+
+The Journal is PalMaster's milestone layer for Alpha 0.2. Journal entries unlock
+after relevant player actions, currently focused on:
+
+- Discovery: total successful captures.
+- Collector: unique Pal species owned.
+- Progression: trainer level milestones.
+- Rare Hunter: rare, epic, and legendary collection milestones.
+
+New unlocks are shown in the `/capture` result when they happen. `/profile`
+shows Journal completion, recent unlocks, and the nearest locked milestones.
+Journal unlocks are scoped per Discord guild and player.
+
+## Daily Research
+
+Daily Research is PalMaster's Alpha 0.3 daily-return loop. Each player gets one
+guild-scoped assignment per UTC date:
+
+- Complete today's field research: try 3 captures.
+
+Progress increments on each normal `/capture` attempt, whether the Pal is caught
+or escapes. `/quests` shows Daily Research progress, reward, and claim status.
+Daily Research rewards are modest coins and XP only, claimable once per UTC date.
+This is separate from `/daily` and the existing daily quest reward.
+Repeated claim clicks are guarded in-process and by persisted claimed state.
 
 ## Local Setup
 
@@ -92,7 +121,13 @@ Required for registration:
 
 ## Validation
 
-There is no test or lint script yet. Run syntax validation with:
+Run focused unit tests with:
+
+```sh
+npm test
+```
+
+Run syntax validation with:
 
 ```sh
 find src scripts -name "*.js" -print0 | xargs -0 -n 1 node --check
@@ -161,6 +196,21 @@ node scripts/validateSupabaseStorageV2WriteDryRun.js
 ```
 
 Then smoke test in a dev/test Discord server before any production cutover.
+
+Journal persistence for Supabase requires applying
+`supabase/migrations/20260608000000_player_journal_entries.sql` before deploying
+code that reads or writes Journal entries with `STORAGE_PROVIDER=supabase` or
+`STORAGE_PROVIDER=supabase-v2`. JSON storage keeps Journal entries inside each
+guild-scoped player record in `data/users.json`.
+
+Daily Research persistence for Supabase requires applying
+`supabase/migrations/20260608010000_player_daily_research.sql` before deploying
+code that reads or writes Daily Research entries with `STORAGE_PROVIDER=supabase`
+or `STORAGE_PROVIDER=supabase-v2`. JSON storage keeps Daily Research state inside
+each guild-scoped player record in `data/users.json`.
+
+For the Alpha 0.3 deployment sequence, smoke tests, and rollback notes, see
+[docs/ALPHA_0_3_DEPLOYMENT_CHECKLIST.md](docs/ALPHA_0_3_DEPLOYMENT_CHECKLIST.md).
 
 ## Future SaaS Direction
 

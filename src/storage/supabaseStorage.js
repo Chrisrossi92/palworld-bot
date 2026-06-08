@@ -137,6 +137,7 @@ function playerRowToUserRecord(row) {
     lastDailyAt: row.last_daily_at,
     starterClaimed: row.starter_claimed,
     dailyQuests: row.daily_quests || null,
+    journal: row.journal || null,
     spheres: row.spheres || {},
   };
 }
@@ -152,6 +153,23 @@ function ownedPalRowToEntry(row) {
     stars: row.stars,
     essence: row.essence,
     extraEssence: row.extra_essence,
+  };
+}
+
+function dailyResearchRowToEntry(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    date: typeof row.research_date === "string"
+      ? row.research_date.slice(0, 10)
+      : String(row.research_date || ""),
+    assignmentKey: row.assignment_key,
+    progress: row.progress,
+    target: row.target,
+    claimed: row.claimed,
+    claimedAt: row.claimed_at || null,
   };
 }
 
@@ -271,6 +289,7 @@ function createSupabaseStorage({
 
     writeSphereInventory(guildId, userId, normalized.spheres);
     writeDailyQuestState(guildId, userId, normalized.dailyQuests);
+    writeJournal(guildId, userId, normalized.journal);
   }
 
   function readPlayerRecord(guildId, userId) {
@@ -306,7 +325,29 @@ function createSupabaseStorage({
             where quests.player_id = players.id
             order by quests.quest_date desc
             limit 1
-          ) as daily_quests
+          ) as daily_quests,
+          coalesce(
+            (
+              select jsonb_build_object(
+                'unlocked',
+                coalesce(
+                  jsonb_object_agg(
+                    journal.journal_key,
+                    jsonb_build_object(
+                      'key', journal.journal_key,
+                      'category', journal.category,
+                      'title', journal.title,
+                      'unlockedAt', journal.unlocked_at
+                    )
+                  ),
+                  '{}'::jsonb
+                )
+              )
+              from public.player_journal_entries journal
+              where journal.player_id = players.id
+            ),
+            '{"unlocked":{}}'::jsonb
+          ) as journal
         from public.guild_players players
         join public.discord_guilds guilds on guilds.id = players.guild_id
         join public.discord_users users on users.id = players.user_id
@@ -349,7 +390,29 @@ function createSupabaseStorage({
             where quests.player_id = players.id
             order by quests.quest_date desc
             limit 1
-          ) as daily_quests
+          ) as daily_quests,
+          coalesce(
+            (
+              select jsonb_build_object(
+                'unlocked',
+                coalesce(
+                  jsonb_object_agg(
+                    journal.journal_key,
+                    jsonb_build_object(
+                      'key', journal.journal_key,
+                      'category', journal.category,
+                      'title', journal.title,
+                      'unlockedAt', journal.unlocked_at
+                    )
+                  ),
+                  '{}'::jsonb
+                )
+              )
+              from public.player_journal_entries journal
+              where journal.player_id = players.id
+            ),
+            '{"unlocked":{}}'::jsonb
+          ) as journal
         from public.guild_players players
         join public.discord_guilds guilds on guilds.id = players.guild_id
         join public.discord_users users on users.id = players.user_id
@@ -393,7 +456,29 @@ function createSupabaseStorage({
             where quests.player_id = players.id
             order by quests.quest_date desc
             limit 1
-          ) as daily_quests
+          ) as daily_quests,
+          coalesce(
+            (
+              select jsonb_build_object(
+                'unlocked',
+                coalesce(
+                  jsonb_object_agg(
+                    journal.journal_key,
+                    jsonb_build_object(
+                      'key', journal.journal_key,
+                      'category', journal.category,
+                      'title', journal.title,
+                      'unlockedAt', journal.unlocked_at
+                    )
+                  ),
+                  '{}'::jsonb
+                )
+              )
+              from public.player_journal_entries journal
+              where journal.player_id = players.id
+            ),
+            '{"unlocked":{}}'::jsonb
+          ) as journal
         from public.guild_players players
         join public.discord_guilds guilds on guilds.id = players.guild_id
         join public.discord_users users on users.id = players.user_id
@@ -502,16 +587,129 @@ function createSupabaseStorage({
     `);
   }
 
+  function writeJournal(guildId, userId, journal) {
+    const unlocked =
+      journal && journal.unlocked && typeof journal.unlocked === "object"
+        ? journal.unlocked
+        : {};
+
+    for (const [key, entry] of Object.entries(unlocked)) {
+      runPsql(`
+        insert into public.player_journal_entries (
+          player_id,
+          journal_key,
+          category,
+          title,
+          unlocked_at
+        )
+        select
+          players.id,
+          ${sqlText(key)},
+          ${sqlText(entry.category || "Journal")},
+          ${sqlText(entry.title || key)},
+          ${sqlTimestamp(entry.unlockedAt)}
+        from public.guild_players players
+        join public.discord_guilds guilds on guilds.id = players.guild_id
+        join public.discord_users users on users.id = players.user_id
+        where guilds.discord_guild_id = ${sqlText(guildId)}
+          and users.discord_user_id = ${sqlText(userId)}
+        on conflict (player_id, journal_key) do update set
+          category = excluded.category,
+          title = excluded.title,
+          unlocked_at = excluded.unlocked_at;
+      `);
+    }
+  }
+
   function getDailyQuestState(guildId, userId) {
     return {
       ...getGuildPlayerRecord(guildId, userId).dailyQuests,
     };
   }
 
+  function readDailyResearchState(guildId, userId) {
+    const rows = readJson(`
+      select coalesce(jsonb_agg(to_jsonb(research_rows)), '[]'::jsonb)::text
+      from (
+        select
+          research.research_date::text,
+          research.assignment_key,
+          research.progress,
+          research.target,
+          research.claimed,
+          research.claimed_at
+        from public.player_daily_research research
+        join public.guild_players players on players.id = research.player_id
+        join public.discord_guilds guilds on guilds.id = players.guild_id
+        join public.discord_users users on users.id = players.user_id
+        where guilds.discord_guild_id = ${sqlText(guildId)}
+          and users.discord_user_id = ${sqlText(userId)}
+        order by research.research_date desc
+        limit 1
+      ) research_rows;
+    `, []);
+
+    return rows.length > 0 ? dailyResearchRowToEntry(rows[0]) : null;
+  }
+
+  function getDailyResearchState(guildId, userId) {
+    return readDailyResearchState(guildId, userId);
+  }
+
+  function writeDailyResearchState(guildId, userId, dailyResearch) {
+    if (!dailyResearch || !dailyResearch.date) {
+      return;
+    }
+
+    ensurePlayer(guildId, userId, readPlayerRecord(guildId, userId));
+
+    runPsql(`
+      insert into public.player_daily_research (
+        player_id,
+        research_date,
+        assignment_key,
+        progress,
+        target,
+        claimed,
+        claimed_at
+      )
+      select
+        players.id,
+        ${sqlDate(dailyResearch.date)},
+        ${sqlText(dailyResearch.assignmentKey)},
+        ${sqlInt(dailyResearch.progress, 0)},
+        ${sqlInt(dailyResearch.target, 3)},
+        ${sqlBool(dailyResearch.claimed)},
+        ${sqlTimestamp(dailyResearch.claimedAt)}
+      from public.guild_players players
+      join public.discord_guilds guilds on guilds.id = players.guild_id
+      join public.discord_users users on users.id = players.user_id
+      where guilds.discord_guild_id = ${sqlText(guildId)}
+        and users.discord_user_id = ${sqlText(userId)}
+        and ${sqlDate(dailyResearch.date)} is not null
+      on conflict (player_id, research_date) do update set
+        assignment_key = excluded.assignment_key,
+        progress = excluded.progress,
+        target = excluded.target,
+        claimed = excluded.claimed,
+        claimed_at = excluded.claimed_at;
+    `);
+  }
+
   function updateDailyQuestState(guildId, userId, updater) {
     return updateGuildPlayerRecord(guildId, userId, (userRecord) =>
       updater(userRecord.dailyQuests, userRecord)
     );
+  }
+
+  function updateDailyResearchState(guildId, userId, updater) {
+    const dailyResearch = getDailyResearchState(guildId, userId);
+    const result = updater(dailyResearch);
+    const nextState = result && result.state ? result.state : result;
+
+    writeDailyResearchState(guildId, userId, nextState);
+
+    return result === undefined ? nextState : result;
   }
 
   function readGuildOwnedPals(guildId) {
@@ -681,6 +879,7 @@ function createSupabaseStorage({
 
   return {
     getDailyQuestState,
+    getDailyResearchState,
     getGuildOwnedPals,
     getGuildPlayerRecord,
     getSphereInventory,
@@ -690,6 +889,7 @@ function createSupabaseStorage({
     readUserPals,
     readUsers,
     updateDailyQuestState,
+    updateDailyResearchState,
     updateGuildOwnedPals,
     updateGuildPlayerRecord,
     updateSphereInventory,

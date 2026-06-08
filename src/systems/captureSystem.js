@@ -1,4 +1,15 @@
 const { createStorage } = require("../storage");
+const {
+  claimDailyResearchState,
+  getDailyResearchStatus: buildDailyResearchStatus,
+  incrementDailyResearchProgress,
+  normalizeDailyResearchState,
+} = require("./dailyResearchSystem");
+const {
+  evaluateJournal,
+  normalizeJournal,
+  summarizeJournal,
+} = require("./journalSystem");
 
 const MAX_LEVEL = 70;
 
@@ -96,6 +107,7 @@ const storage = createStorage({
   normalizeUserRecord: getDefaultUserRecord,
   normalizeUserPals: consolidateUserPals,
 });
+const dailyResearchClaimLocks = new Set();
 
 async function readPalCatalog() {
   return await storage.readPalCatalog();
@@ -322,6 +334,10 @@ function getDefaultUserRecord(existingUser) {
     dailyQuests: getDefaultDailyQuests(
       existingUser && existingUser.dailyQuests
     ),
+    dailyResearch: normalizeDailyResearchState(
+      existingUser && existingUser.dailyResearch
+    ),
+    journal: normalizeJournal(existingUser && existingUser.journal),
     spheres: {
       basic: Number.isInteger(existingSpheres.basic) && existingSpheres.basic >= 0
         ? existingSpheres.basic
@@ -502,6 +518,18 @@ async function getUserRecord(guildId, userId) {
   return await storage.getGuildPlayerRecord(guildId, userId);
 }
 
+async function getJournalSummary(guildId, userId, ownedPals = null) {
+  const userRecord = await storage.getGuildPlayerRecord(guildId, userId);
+  const userPals = Array.isArray(ownedPals)
+    ? ownedPals
+    : await storage.getGuildOwnedPals(guildId, userId);
+
+  return summarizeJournal(userRecord.journal, {
+    userRecord,
+    ownedPals: userPals,
+  });
+}
+
 async function consumeSphere(guildId, userId, sphere) {
   const normalizedSphere = Object.prototype.hasOwnProperty.call(sphereBonus, sphere)
     ? sphere
@@ -664,6 +692,17 @@ async function updateUserProgress(guildId, userId, success, isShiny = false) {
   });
 }
 
+async function incrementDailyResearchAttempt(guildId, userId) {
+  try {
+    return await storage.updateDailyResearchState(guildId, userId, (dailyResearch) =>
+      incrementDailyResearchProgress(dailyResearch)
+    );
+  } catch (error) {
+    console.error("[captureSystem] Daily Research progress failed:", error);
+    return null;
+  }
+}
+
 async function getDailyQuestStatus(guildId, userId) {
   const userRecord = await storage.getGuildPlayerRecord(guildId, userId);
 
@@ -677,6 +716,12 @@ async function getDailyQuestStatus(guildId, userId) {
     },
     complete: isDailyQuestComplete(userRecord.dailyQuests),
   };
+}
+
+async function getDailyResearchStatus(guildId, userId) {
+  const dailyResearch = await storage.getDailyResearchState(guildId, userId);
+
+  return buildDailyResearchStatus(dailyResearch);
 }
 
 async function claimDailyQuestReward(guildId, userId) {
@@ -719,6 +764,60 @@ async function claimDailyQuestReward(guildId, userId) {
       },
     };
   });
+}
+
+async function claimDailyResearchReward(guildId, userId) {
+  const claimLockKey = `${guildId}:${userId}`;
+
+  if (dailyResearchClaimLocks.has(claimLockKey)) {
+    return {
+      claimed: false,
+      alreadyClaimed: false,
+      inProgress: true,
+      complete: true,
+      state: null,
+      rewards: null,
+      progression: null,
+      message: "Daily Research claim already in progress.",
+    };
+  }
+
+  dailyResearchClaimLocks.add(claimLockKey);
+
+  try {
+    const claimResult = await storage.updateDailyResearchState(
+      guildId,
+      userId,
+      (dailyResearch) => claimDailyResearchState(dailyResearch)
+    );
+
+    if (!claimResult.claimed) {
+      return {
+        ...claimResult,
+        progression: null,
+      };
+    }
+
+    const progression = await storage.updateGuildPlayerRecord(guildId, userId, (userRecord) => {
+      userRecord.coins += claimResult.rewards.coins;
+      const updatedProgression = applyXpToUserRecord(
+        userRecord,
+        claimResult.rewards.xp
+      );
+
+      return {
+        ...updatedProgression,
+        coinsGained: claimResult.rewards.coins,
+      };
+    });
+
+    return {
+      ...claimResult,
+      progression,
+    };
+  } finally {
+    dailyResearchClaimLocks.delete(claimLockKey);
+  }
 }
 
 function isSameCalendarDay(dateA, dateB) {
@@ -781,6 +880,33 @@ async function claimStarterRewards(guildId, userId) {
   });
 }
 
+async function evaluateAndPersistJournal(guildId, userId) {
+  try {
+    const ownedPals = await storage.getGuildOwnedPals(guildId, userId);
+
+    return await storage.updateGuildPlayerRecord(guildId, userId, (userRecord) => {
+      const evaluation = evaluateJournal({
+        userRecord,
+        ownedPals,
+        journal: userRecord.journal,
+      });
+
+      userRecord.journal = evaluation.journal;
+
+      return evaluation;
+    });
+  } catch (error) {
+    console.error("[captureSystem] Journal evaluation failed:", error);
+    return {
+      failed: true,
+      error: "Journal progress could not be saved for this capture.",
+      newlyUnlocked: [],
+      unlockedCount: 0,
+      totalDefinitions: 0,
+    };
+  }
+}
+
 async function createEncounterForLevel(userLevel, options = {}) {
   const clampedUserLevel = clampLevel(userLevel);
   const palCatalog = await readPalCatalog();
@@ -826,7 +952,13 @@ async function createEncounter(guildId, userId) {
   return await createEncounterForLevel(userRecord.level);
 }
 
-async function resolveCaptureEncounter(guildId, userId, encounterPal, sphere = "basic") {
+async function resolveCaptureEncounter(
+  guildId,
+  userId,
+  encounterPal,
+  sphere = "basic",
+  options = {}
+) {
   try {
     const normalizedSphere = Object.prototype.hasOwnProperty.call(
       sphereBonus,
@@ -853,24 +985,49 @@ async function resolveCaptureEncounter(guildId, userId, encounterPal, sphere = "
 
     if (success) {
       const collectionUpdate = await saveCapturedPal(guildId, userId, pal);
+      const progression = await updateUserProgress(
+        guildId,
+        userId,
+        success,
+        Boolean(encounterPal.isShiny)
+      );
+      const dailyResearch = options.trackDailyResearch
+        ? await incrementDailyResearchAttempt(guildId, userId)
+        : null;
+      const journal = await evaluateAndPersistJournal(guildId, userId);
 
       return {
         pal,
         sphere: normalizedSphere,
         captureChance,
         success,
-        progression: await updateUserProgress(guildId, userId, success, Boolean(encounterPal.isShiny)),
+        progression,
         collectionUpdate,
+        dailyResearch,
+        journal,
       };
     }
+
+    const progression = await updateUserProgress(
+      guildId,
+      userId,
+      success,
+      Boolean(encounterPal.isShiny)
+    );
+    const dailyResearch = options.trackDailyResearch
+      ? await incrementDailyResearchAttempt(guildId, userId)
+      : null;
+    const journal = await evaluateAndPersistJournal(guildId, userId);
 
     return {
       pal,
       sphere: normalizedSphere,
       captureChance,
       success,
-      progression: await updateUserProgress(guildId, userId, success, Boolean(encounterPal.isShiny)),
+      progression,
       collectionUpdate: null,
+      dailyResearch,
+      journal,
     };
   } catch (error) {
     console.error("[captureSystem] resolveCaptureEncounter failed:", error);
@@ -880,13 +1037,16 @@ async function resolveCaptureEncounter(guildId, userId, encounterPal, sphere = "
 
 async function attemptCapture(guildId, userId, sphere = "basic") {
   const encounter = await createEncounter(guildId, userId);
-  return await resolveCaptureEncounter(guildId, userId, encounter, sphere);
+  return await resolveCaptureEncounter(guildId, userId, encounter, sphere, {
+    trackDailyResearch: true,
+  });
 }
 
 module.exports = {
   buySpheres,
   attemptCapture,
   claimDailyReward,
+  claimDailyResearchReward,
   claimDailyQuestReward,
   claimStarterRewards,
   consumeSphere,
@@ -896,6 +1056,8 @@ module.exports = {
   getUserLevel,
   getUserInventory,
   getUserRecord,
+  getJournalSummary,
+  getDailyResearchStatus,
   getTrainerTitle,
   getDailyQuestStatus,
   MAX_LEVEL,

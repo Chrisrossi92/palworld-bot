@@ -9,6 +9,8 @@ const TABLES = [
   "player_sphere_inventory",
   "player_owned_pals",
   "player_daily_quests",
+  "player_journal_entries",
+  "player_daily_research",
   "pal_catalog",
 ];
 

@@ -162,6 +162,8 @@ async function main() {
     const v2Inventory = await storage.v2.getSphereInventory(TARGET_GUILD_ID, TARGET_USER_ID);
     const v1DailyQuest = storage.v1.getDailyQuestState(TARGET_GUILD_ID, TARGET_USER_ID);
     const v2DailyQuest = await storage.v2.getDailyQuestState(TARGET_GUILD_ID, TARGET_USER_ID);
+    const v1DailyResearch = storage.v1.getDailyResearchState(TARGET_GUILD_ID, TARGET_USER_ID);
+    const v2DailyResearch = await storage.v2.getDailyResearchState(TARGET_GUILD_ID, TARGET_USER_ID);
 
     console.log("Supabase storage V2 read-only validation");
     console.log("No writes are performed.");
@@ -188,6 +190,7 @@ async function main() {
       failures
     );
     compare("daily quest presence", Boolean(v1DailyQuest), Boolean(v2DailyQuest), failures);
+    compare("daily research presence", Boolean(v1DailyResearch), Boolean(v2DailyResearch), failures);
 
     if (failures.length > 0) {
       console.error("");

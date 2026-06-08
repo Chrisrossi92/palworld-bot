@@ -3,7 +3,11 @@ const {
   EmbedBuilder,
   MessageFlags,
 } = require("discord.js");
-const { readUsers, readUserPals } = require("../systems/captureSystem");
+const {
+  getJournalSummary,
+  readUsers,
+  readUserPals,
+} = require("../systems/captureSystem");
 
 const defaultSpheres = {
   basic: 10,
@@ -114,6 +118,31 @@ function getMostRecentCapture(pals) {
   }, null);
 }
 
+function formatJournalSummary(summary) {
+  if (!summary) {
+    return "No Journal data yet.";
+  }
+
+  const progressLine =
+    `${summary.unlockedCount}/${summary.totalDefinitions} unlocked ` +
+    `(${summary.completionPercentage}% complete)`;
+  const recent = Array.isArray(summary.recentUnlocks) && summary.recentUnlocks.length > 0
+    ? summary.recentUnlocks
+      .map((entry) => `Unlocked: ${entry.category} - ${entry.title}`)
+      .join("\n")
+    : "Unlocked: None yet";
+  const nextMilestones = Array.isArray(summary.nextMilestones) && summary.nextMilestones.length > 0
+    ? summary.nextMilestones
+      .map((milestone) =>
+        `Next: ${milestone.category} - ${milestone.title} ` +
+        `(${milestone.value}/${milestone.target} ${milestone.metricLabel})`
+      )
+      .join("\n")
+    : "Next: All current Journal entries complete";
+
+  return `${progressLine}\n${recent}\n${nextMilestones}`;
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("profile")
@@ -152,6 +181,11 @@ module.exports = {
     const rarestPal = getRarestPal(userPals);
     const recentCapture = getMostRecentCapture(userPals);
     const sphereInventory = getSphereInventory(user);
+    const journalSummary = await getJournalSummary(
+      interaction.guildId,
+      interaction.user.id,
+      userPals
+    );
 
     const embed = new EmbedBuilder()
       .setTitle(`${interaction.user.username}'s Profile`)
@@ -188,6 +222,10 @@ module.exports = {
         {
           name: "Recent Capture",
           value: formatCapture(recentCapture),
+        },
+        {
+          name: "Journal",
+          value: formatJournalSummary(journalSummary),
         },
         {
           name: "🎒 Spheres",

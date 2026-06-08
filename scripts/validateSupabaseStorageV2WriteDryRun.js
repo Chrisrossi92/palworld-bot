@@ -27,6 +27,32 @@ function normalizeDailyQuests(existingDailyQuests) {
   };
 }
 
+function normalizeDailyResearch(existingDailyResearch) {
+  return {
+    date:
+      existingDailyResearch && existingDailyResearch.date
+        ? existingDailyResearch.date
+        : "2026-05-29",
+    assignmentKey:
+      existingDailyResearch && existingDailyResearch.assignmentKey
+        ? existingDailyResearch.assignmentKey
+        : "field-research-3-captures",
+    progress:
+      existingDailyResearch && Number.isInteger(existingDailyResearch.progress)
+        ? existingDailyResearch.progress
+        : 0,
+    target:
+      existingDailyResearch && Number.isInteger(existingDailyResearch.target)
+        ? existingDailyResearch.target
+        : 3,
+    claimed: Boolean(existingDailyResearch && existingDailyResearch.claimed),
+    claimedAt:
+      existingDailyResearch && typeof existingDailyResearch.claimedAt === "string"
+        ? existingDailyResearch.claimedAt
+        : null,
+  };
+}
+
 function normalizeUserRecord(existingUser) {
   const spheres = existingUser && existingUser.spheres && typeof existingUser.spheres === "object"
     ? existingUser.spheres
@@ -52,6 +78,7 @@ function normalizeUserRecord(existingUser) {
         : null,
     starterClaimed: Boolean(existingUser && existingUser.starterClaimed),
     dailyQuests: normalizeDailyQuests(existingUser && existingUser.dailyQuests),
+    dailyResearch: normalizeDailyResearch(existingUser && existingUser.dailyResearch),
     spheres: Object.fromEntries(
       REQUIRED_SPHERES.map((sphere) => [
         sphere,
@@ -169,6 +196,13 @@ async function main() {
       dailyQuests.claimed = true;
     });
 
+    await storage.updateDailyResearchState(TEST_GUILD_ID, TEST_USER_ID, (dailyResearch) => ({
+      ...normalizeDailyResearch(dailyResearch),
+      progress: 3,
+      claimed: true,
+      claimedAt: "2026-05-29T12:00:00.000Z",
+    }));
+
     await storage.writeUserPals({
       [TEST_GUILD_ID]: {
         [TEST_USER_ID]: [
@@ -200,6 +234,7 @@ async function main() {
     const player = await storage.getGuildPlayerRecord(TEST_GUILD_ID, TEST_USER_ID);
     const inventory = await storage.getSphereInventory(TEST_GUILD_ID, TEST_USER_ID);
     const dailyQuest = await storage.getDailyQuestState(TEST_GUILD_ID, TEST_USER_ID);
+    const dailyResearch = await storage.getDailyResearchState(TEST_GUILD_ID, TEST_USER_ID);
     const ownedPals = await storage.getGuildOwnedPals(TEST_GUILD_ID, TEST_USER_ID);
 
     assertEqual("player xp", player.xp, 50, failures);
@@ -209,6 +244,9 @@ async function main() {
     assertEqual("legendary spheres", inventory.legendary, 1, failures);
     assertEqual("daily quest claimed", dailyQuest.claimed, true, failures);
     assertEqual("daily quest attempts", dailyQuest.captureAttempts, 3, failures);
+    assertEqual("daily research progress", dailyResearch.progress, 3, failures);
+    assertEqual("daily research claimed", dailyResearch.claimed, true, failures);
+    assertEqual("daily research assignment", dailyResearch.assignmentKey, "field-research-3-captures", failures);
     assertEqual("owned Pal count", ownedPals.length, 1, failures);
     assertEqual("owned Pal name", ownedPals[0] && ownedPals[0].name, TEST_PAL_NAME, failures);
     assertEqual("owned Pal level", ownedPals[0] && ownedPals[0].level, 6, failures);

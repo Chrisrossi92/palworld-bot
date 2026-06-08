@@ -8,11 +8,14 @@ const {
   MessageFlags,
 } = require("discord.js");
 const {
+  claimDailyResearchReward,
   claimDailyQuestReward,
+  getDailyResearchStatus,
   getDailyQuestStatus,
 } = require("../systems/captureSystem");
 
 const claimButtonId = "quests:claim";
+const researchClaimButtonId = "research:claim";
 
 function formatQuestProgress(current, goal) {
   return `${Math.min(current, goal)}/${goal}`;
@@ -33,6 +36,10 @@ function formatRewards(rewards) {
   );
 }
 
+function formatResearchRewards(rewards) {
+  return `${rewards.coins} coins\n${rewards.xp} XP`;
+}
+
 function formatLevelUp(progression) {
   return (
     `Level ${progression.oldLevel} → ${progression.level}\n` +
@@ -43,16 +50,16 @@ function formatLevelUp(progression) {
   );
 }
 
-function buildQuestsEmbed(status, claimResult = null) {
+function buildQuestsEmbed(status, researchStatus, claimResult = null) {
   const { dailyQuests, goals, rewards, complete } = status;
-  const claimed = claimResult ? claimResult.dailyQuests.claimed : dailyQuests.claimed;
+  const claimed = dailyQuests.claimed;
   const statusLabel = claimed
     ? "✅ Claimed"
     : complete
       ? "🎁 Ready to Claim"
       : "⏳ In Progress";
   const embed = new EmbedBuilder()
-    .setTitle(claimResult?.claimed ? "🎉 Daily Reward Claimed!" : "Daily Quests")
+    .setTitle(claimResult?.claimed ? "🎉 Reward Claimed!" : "Daily Quests")
     .setColor(claimed ? 0x95a5a6 : complete ? 0x2ecc71 : 0x3498db)
     .addFields(
       {
@@ -77,12 +84,31 @@ function buildQuestsEmbed(status, claimResult = null) {
       {
         name: "Status",
         value: statusLabel,
+      },
+      {
+        name: "Daily Research",
+        value: [
+          researchStatus.assignment.title,
+          formatQuestLine(
+            researchStatus.assignment.description,
+            researchStatus.state.progress,
+            researchStatus.state.target
+          ),
+          `Reward: ${formatResearchRewards(researchStatus.rewards)}`,
+          `Status: ${
+            researchStatus.state.claimed
+              ? "✅ Claimed"
+              : researchStatus.claimable
+                ? "🎁 Ready to Claim"
+                : "⏳ In Progress"
+          }`,
+        ].join("\n"),
       }
     )
     .setFooter({ text: `Quest date: ${dailyQuests.date}` })
     .setTimestamp();
 
-  if (claimResult && claimResult.claimed) {
+  if (claimResult && claimResult.claimed && claimResult.dailyQuests) {
     embed.addFields({
       name: "Reward Claimed",
       value:
@@ -90,6 +116,15 @@ function buildQuestsEmbed(status, claimResult = null) {
         `+${claimResult.rewards.xp} XP\n` +
         `+${claimResult.rewards.spheres.basic} basic spheres\n` +
         `+${claimResult.rewards.spheres.mega} mega sphere`,
+    });
+  }
+
+  if (claimResult && claimResult.claimed && claimResult.state) {
+    embed.addFields({
+      name: "Research Reward Claimed",
+      value:
+        `+${claimResult.rewards.coins} coins\n` +
+        `+${claimResult.rewards.xp} XP`,
     });
   }
 
@@ -103,18 +138,33 @@ function buildQuestsEmbed(status, claimResult = null) {
   return embed;
 }
 
-function buildClaimComponents(status) {
-  if (!status.complete || status.dailyQuests.claimed) {
+function buildClaimComponents(status, researchStatus) {
+  const buttons = [];
+
+  if (status.complete && !status.dailyQuests.claimed) {
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId(claimButtonId)
+        .setLabel("🎁 Claim Quest Reward")
+        .setStyle(ButtonStyle.Success)
+    );
+  }
+
+  if (researchStatus.claimable) {
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId(researchClaimButtonId)
+        .setLabel("🔎 Claim Research")
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
+
+  if (buttons.length === 0) {
     return [];
   }
 
   return [
-    new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(claimButtonId)
-        .setLabel("🎁 Claim Reward")
-        .setStyle(ButtonStyle.Success)
-    ),
+    new ActionRowBuilder().addComponents(buttons),
   ];
 }
 
@@ -126,13 +176,19 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const status = await getDailyQuestStatus(interaction.guildId, interaction.user.id);
+    const [status, researchStatus] = await Promise.all([
+      getDailyQuestStatus(interaction.guildId, interaction.user.id),
+      getDailyResearchStatus(interaction.guildId, interaction.user.id),
+    ]);
     const message = await interaction.editReply({
-      embeds: [buildQuestsEmbed(status)],
-      components: buildClaimComponents(status),
+      embeds: [buildQuestsEmbed(status, researchStatus)],
+      components: buildClaimComponents(status, researchStatus),
     });
 
-    if (!status.complete || status.dailyQuests.claimed) {
+    if (
+      (!status.complete || status.dailyQuests.claimed) &&
+      !researchStatus.claimable
+    ) {
       return;
     }
 
@@ -152,25 +208,32 @@ module.exports = {
 
       await buttonInteraction.deferUpdate();
 
-      if (buttonInteraction.customId !== claimButtonId) {
+      if (
+        buttonInteraction.customId !== claimButtonId &&
+        buttonInteraction.customId !== researchClaimButtonId
+      ) {
         return;
       }
 
-      const claimResult = await claimDailyQuestReward(
-        interaction.guildId,
-        interaction.user.id
-      );
-      const updatedStatus = await getDailyQuestStatus(
-        interaction.guildId,
-        interaction.user.id
-      );
+      const claimResult = buttonInteraction.customId === claimButtonId
+        ? await claimDailyQuestReward(interaction.guildId, interaction.user.id)
+        : await claimDailyResearchReward(interaction.guildId, interaction.user.id);
+      const [updatedStatus, updatedResearchStatus] = await Promise.all([
+        getDailyQuestStatus(interaction.guildId, interaction.user.id),
+        getDailyResearchStatus(interaction.guildId, interaction.user.id),
+      ]);
 
       await interaction.editReply({
-        embeds: [buildQuestsEmbed(updatedStatus, claimResult)],
-        components: [],
+        embeds: [buildQuestsEmbed(updatedStatus, updatedResearchStatus, claimResult)],
+        components: buildClaimComponents(updatedStatus, updatedResearchStatus),
       });
 
-      collector.stop("claimed");
+      if (
+        (!updatedStatus.complete || updatedStatus.dailyQuests.claimed) &&
+        !updatedResearchStatus.claimable
+      ) {
+        collector.stop("claimed");
+      }
     });
 
     collector.on("end", async (collected, reason) => {
@@ -179,12 +242,12 @@ module.exports = {
       }
 
       try {
-        const updatedStatus = await getDailyQuestStatus(
-          interaction.guildId,
-          interaction.user.id
-        );
+        const [updatedStatus, updatedResearchStatus] = await Promise.all([
+          getDailyQuestStatus(interaction.guildId, interaction.user.id),
+          getDailyResearchStatus(interaction.guildId, interaction.user.id),
+        ]);
         await interaction.editReply({
-          embeds: [buildQuestsEmbed(updatedStatus)],
+          embeds: [buildQuestsEmbed(updatedStatus, updatedResearchStatus)],
           components: [],
         });
       } catch (error) {

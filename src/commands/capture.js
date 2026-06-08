@@ -169,6 +169,7 @@ function buildResolvedEmbed(result, remaining) {
     : "No change";
   const progressNotes = [];
   const levelUpFields = [];
+  const journalUnlockFields = [];
 
   if (result.progression.leveledUp) {
     progressNotes.push("Level Up!");
@@ -185,6 +186,23 @@ function buildResolvedEmbed(result, remaining) {
 
   if (result.collectionUpdate && result.collectionUpdate.starIncreased) {
     progressNotes.push("Star Up!");
+  }
+
+  if (result.journal && result.journal.newlyUnlocked.length > 0) {
+    progressNotes.push("Journal Updated!");
+    const visibleUnlocks = result.journal.newlyUnlocked.slice(0, 3);
+    const hiddenUnlockCount = result.journal.newlyUnlocked.length - visibleUnlocks.length;
+    journalUnlockFields.push({
+      name: result.journal.newlyUnlocked.length === 1
+        ? "New Journal Entry"
+        : "New Journal Entries",
+      value: [
+        ...visibleUnlocks
+        .map((entry) => `${entry.category}: ${entry.title}`)
+          .map((line) => `• ${line}`),
+        ...(hiddenUnlockCount > 0 ? [`• +${hiddenUnlockCount} more`] : []),
+      ].join("\n"),
+    });
   }
 
   if (progressNotes.length === 0) {
@@ -303,7 +321,8 @@ function buildResolvedEmbed(result, remaining) {
         name: "Progress",
         value: progressNotes.join(" | "),
       },
-      ...levelUpFields
+      ...levelUpFields,
+      ...journalUnlockFields
     )
     .setTimestamp();
 
@@ -501,7 +520,8 @@ module.exports = {
             guildId,
             interaction.user.id,
             encounter,
-            sphere
+            sphere,
+            { trackDailyResearch: true }
           );
 
           console.log(

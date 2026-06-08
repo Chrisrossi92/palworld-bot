@@ -24,6 +24,8 @@ const REQUIRED_TABLES = [
   "capture_history",
   "daily_reward_claims",
   "player_daily_quests",
+  "player_journal_entries",
+  "player_daily_research",
   "spawn_configs",
   "spawn_events",
   "guild_subscriptions",
