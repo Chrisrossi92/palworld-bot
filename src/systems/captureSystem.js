@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const { createStorage } = require("../storage");
 const {
   claimDailyResearchState,
@@ -19,6 +21,7 @@ const {
 } = require("./weeklyServerGoalSystem");
 
 const MAX_LEVEL = 70;
+const LOCAL_PAL_CATALOG_PATH = path.join(__dirname, "../../data/pals.json");
 
 const defaultPalCatalog = [
   { name: "Lamball", rarity: "common", unlockLevel: 1 },
@@ -115,9 +118,91 @@ const storage = createStorage({
   normalizeUserPals: consolidateUserPals,
 });
 const dailyResearchClaimLocks = new Set();
+let localCatalogImageUrlIndex = null;
 
 async function readPalCatalog() {
-  return await storage.readPalCatalog();
+  const palCatalog = await storage.readPalCatalog();
+
+  return hydrateCatalogImageUrls(palCatalog);
+}
+
+function normalizeCatalogLookupName(name) {
+  return String(name || "")
+    .trim()
+    .toLowerCase();
+}
+
+function hasImageUrl(pal) {
+  return typeof pal?.imageUrl === "string" && pal.imageUrl.trim() !== "";
+}
+
+function getLocalCatalogImageUrlIndex() {
+  if (localCatalogImageUrlIndex) {
+    return localCatalogImageUrlIndex;
+  }
+
+  localCatalogImageUrlIndex = new Map();
+
+  try {
+    const raw = fs.readFileSync(LOCAL_PAL_CATALOG_PATH, "utf8");
+    const parsed = JSON.parse(raw);
+
+    if (!Array.isArray(parsed)) {
+      return localCatalogImageUrlIndex;
+    }
+
+    for (const pal of parsed) {
+      if (!pal || typeof pal.name !== "string" || !hasImageUrl(pal)) {
+        continue;
+      }
+
+      localCatalogImageUrlIndex.set(
+        normalizeCatalogLookupName(pal.name),
+        pal.imageUrl.trim()
+      );
+    }
+  } catch (error) {
+    console.warn(
+      `[captureSystem] Local Pal image catalog fallback unavailable: ${error.message}`
+    );
+  }
+
+  return localCatalogImageUrlIndex;
+}
+
+function hydrateCatalogImageUrls(palCatalog) {
+  if (!Array.isArray(palCatalog) || palCatalog.length === 0) {
+    return Array.isArray(palCatalog) ? palCatalog : [];
+  }
+
+  const localImageUrls = getLocalCatalogImageUrlIndex();
+
+  if (localImageUrls.size === 0) {
+    return palCatalog;
+  }
+
+  return palCatalog.map((pal) => {
+    if (!pal || typeof pal !== "object" || hasImageUrl(pal)) {
+      return pal;
+    }
+
+    const fallbackImageUrl = localImageUrls.get(
+      normalizeCatalogLookupName(pal.name)
+    );
+
+    if (!fallbackImageUrl) {
+      return pal;
+    }
+
+    return {
+      ...pal,
+      imageUrl: fallbackImageUrl,
+    };
+  });
+}
+
+function resetLocalCatalogImageUrlCacheForTests() {
+  localCatalogImageUrlIndex = null;
 }
 
 async function findPalByName(name) {
@@ -1123,10 +1208,12 @@ module.exports = {
   getWeeklyServerGoalStatus,
   getTrainerTitle,
   getDailyQuestStatus,
+  hydrateCatalogImageUrls,
   MAX_LEVEL,
   readPalCatalog,
   readUserPals,
   readUsers,
+  resetLocalCatalogImageUrlCacheForTests,
   resolveCaptureEncounter,
   spherePrices,
 };
