@@ -127,6 +127,19 @@ function getErrorMessage(error) {
   return error.message || String(error);
 }
 
+function isImageDebugEnabled() {
+  return process.env.PALMASTER_IMAGE_DEBUG === "1" ||
+    process.env.CARD_IMAGE_DEBUG === "1";
+}
+
+function logImageDebug(message) {
+  if (!isImageDebugEnabled()) {
+    return;
+  }
+
+  console.log(`[cardRenderer:image] ${message}`);
+}
+
 async function fetchImageBuffer(imageUrl, timeoutMs = 2500) {
   if (!imageUrl) {
     return null;
@@ -150,7 +163,13 @@ async function fetchImageBuffer(imageUrl, timeoutMs = 2500) {
     throw new Error(`Failed to fetch Pal image: ${response.status}`);
   }
 
-  return Buffer.from(await response.arrayBuffer());
+  const buffer = Buffer.from(await response.arrayBuffer());
+
+  return {
+    buffer,
+    contentType: response.headers.get("content-type") || "",
+    status: response.status,
+  };
 }
 
 function buildPalImagePlaceholderSvg({
@@ -473,13 +492,25 @@ async function buildPalImageComposite(imageUrl, options = {}) {
   const accentColor = options.accentColor || rarityColors.common;
   const palName = options.palName || "Unknown Pal";
   let imageBuffer = null;
+  let imageContentType = "";
+  let imageStatus = null;
 
   if (imageUrl) {
     try {
-      imageBuffer = await fetchImageBuffer(imageUrl);
+      logImageDebug(`encounter fetch start pal="${palName}" url="${imageUrl}"`);
+      const fetchResult = await fetchImageBuffer(imageUrl);
+      imageBuffer = fetchResult.buffer;
+      imageContentType = fetchResult.contentType;
+      imageStatus = fetchResult.status;
+      logImageDebug(
+        `encounter fetch success pal="${palName}" status=${imageStatus} contentType="${imageContentType}" bytes=${imageBuffer.length}`
+      );
     } catch (error) {
       console.warn(
         `[cardRenderer] Pal image unavailable for encounter pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"; using placeholder.`
+      );
+      logImageDebug(
+        `encounter fetch failure pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"`
       );
     }
   }
@@ -500,14 +531,37 @@ async function buildPalImageComposite(imageUrl, options = {}) {
       <rect x="0" y="0" width="${width}" height="${height}" rx="24" fill="#fff"/>
     </svg>
   `);
-  const palImage = await sharp(imageBuffer)
-    .resize(width, height, {
-      fit: "contain",
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    })
-    .composite([{ input: roundedMask, blend: "dest-in" }])
-    .png()
-    .toBuffer();
+  let palImage;
+
+  try {
+    const metadata = await sharp(imageBuffer).metadata();
+    logImageDebug(
+      `encounter decode success pal="${palName}" format=${metadata.format || "unknown"} width=${metadata.width || "unknown"} height=${metadata.height || "unknown"}`
+    );
+    palImage = await sharp(imageBuffer)
+      .resize(width, height, {
+        fit: "contain",
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
+      .composite([{ input: roundedMask, blend: "dest-in" }])
+      .png()
+      .toBuffer();
+  } catch (error) {
+    console.warn(
+      `[cardRenderer] Pal image decode failed for encounter pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"; using placeholder.`
+    );
+    logImageDebug(
+      `encounter decode failure pal="${palName}" url="${imageUrl}" status=${imageStatus || "unknown"} contentType="${imageContentType}" reason="${getErrorMessage(error)}"`
+    );
+    return buildPlaceholderComposite({
+      width,
+      height,
+      left,
+      top,
+      accentColor,
+      label: "FIELD SKETCH",
+    });
+  }
 
   return {
     input: palImage,
@@ -524,13 +578,25 @@ async function buildResultPalImageComposite(imageUrl, options = {}) {
   const accentColor = options.accentColor || rarityColors.common;
   const palName = options.palName || "Unknown Pal";
   let imageBuffer = null;
+  let imageContentType = "";
+  let imageStatus = null;
 
   if (imageUrl) {
     try {
-      imageBuffer = await fetchImageBuffer(imageUrl);
+      logImageDebug(`result fetch start pal="${palName}" url="${imageUrl}"`);
+      const fetchResult = await fetchImageBuffer(imageUrl);
+      imageBuffer = fetchResult.buffer;
+      imageContentType = fetchResult.contentType;
+      imageStatus = fetchResult.status;
+      logImageDebug(
+        `result fetch success pal="${palName}" status=${imageStatus} contentType="${imageContentType}" bytes=${imageBuffer.length}`
+      );
     } catch (error) {
       console.warn(
         `[cardRenderer] Pal image unavailable for result pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"; using placeholder.`
+      );
+      logImageDebug(
+        `result fetch failure pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"`
       );
     }
   }
@@ -551,14 +617,37 @@ async function buildResultPalImageComposite(imageUrl, options = {}) {
       <rect x="0" y="0" width="${width}" height="${height}" rx="24" fill="#fff"/>
     </svg>
   `);
-  const palImage = await sharp(imageBuffer)
-    .resize(width, height, {
-      fit: "contain",
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    })
-    .composite([{ input: roundedMask, blend: "dest-in" }])
-    .png()
-    .toBuffer();
+  let palImage;
+
+  try {
+    const metadata = await sharp(imageBuffer).metadata();
+    logImageDebug(
+      `result decode success pal="${palName}" format=${metadata.format || "unknown"} width=${metadata.width || "unknown"} height=${metadata.height || "unknown"}`
+    );
+    palImage = await sharp(imageBuffer)
+      .resize(width, height, {
+        fit: "contain",
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
+      .composite([{ input: roundedMask, blend: "dest-in" }])
+      .png()
+      .toBuffer();
+  } catch (error) {
+    console.warn(
+      `[cardRenderer] Pal image decode failed for result pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"; using placeholder.`
+    );
+    logImageDebug(
+      `result decode failure pal="${palName}" url="${imageUrl}" status=${imageStatus || "unknown"} contentType="${imageContentType}" reason="${getErrorMessage(error)}"`
+    );
+    return buildPlaceholderComposite({
+      width,
+      height,
+      left,
+      top,
+      accentColor,
+      label: "FIELD SKETCH",
+    });
+  }
 
   return {
     input: palImage,
