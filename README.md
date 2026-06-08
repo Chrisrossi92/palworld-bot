@@ -13,6 +13,7 @@ A Discord bot for Palworld-inspired collecting and progression. The bot is curre
 - Weekly server capture goal shown in `/quests`.
 - Per-guild leaderboards.
 - Journal milestones for capture, collection, progression, and rare hunting goals.
+- Shareable `/trainer` card generated from current trainer progress.
 - Dedicated `/journal` command for milestone progress.
 - Dedicated `/paldeck` command and derived Paldeck completion visibility in
   `/profile` and `/mypals`.
@@ -28,6 +29,7 @@ A Discord bot for Palworld-inspired collecting and progression. The bot is curre
 - `/daily` - Claim daily XP, coins, and sphere rewards.
 - `/quests` - View and claim daily quest rewards.
 - `/profile` - View your progression, stats, and inventory.
+- `/trainer` - Share your PalMaster trainer card.
 - `/journal` - View your Journal completion, recent unlocks, and next milestones.
 - `/paldeck` - View Paldeck completion, recent species, and missing species preview.
 - `/mypals` - View your Palbox with filters and sorting.
@@ -35,6 +37,14 @@ A Discord bot for Palworld-inspired collecting and progression. The bot is curre
 - `/leaderboard` - View guild-scoped rankings.
 - `/shop` - View sphere prices.
 - `/buy` - Buy spheres with coins.
+
+## Trainer Card
+
+`/trainer` generates a public, shareable trainer card from existing progress. It
+shows the Discord username, level-derived trainer title, favorite Pal, Paldeck
+completion, and Journal completion. Trainer Card V1 is display-only: it uses
+defaults and derived data, does not add customization writes, and does not
+require a new database table.
 
 ## Journal
 

@@ -358,6 +358,95 @@ function getPalName(pal) {
     : "Unknown Pal";
 }
 
+function formatTrainerMetric(value, total, percentage) {
+  if (!Number.isInteger(total) || total <= 0) {
+    return "0/0 • 0%";
+  }
+
+  return `${value}/${total} • ${percentage}%`;
+}
+
+function buildTrainerCardSvg(summary = {}) {
+  const background = summary.background || {};
+  const frame = summary.frame || {};
+  const accentColor = frame.accentColor || background.accentColor || "#d6a84f";
+  const username = fitSvgText(summary.username || "Trainer", {
+    maxWidth: 366,
+    preferredFontSize: 40,
+    minFontSize: 24,
+  });
+  const title = fitSvgText(summary.title || "Rookie Tamer", {
+    maxWidth: 330,
+    preferredFontSize: 22,
+    minFontSize: 16,
+  });
+  const favoriteName = summary.favoritePal
+    ? getPalName(summary.favoritePal)
+    : "No Favorite Pal Yet";
+  const favorite = fitSvgText(favoriteName, {
+    maxWidth: 250,
+    preferredFontSize: 28,
+    minFontSize: 18,
+  });
+  const favoriteMeta = summary.favoritePal
+    ? `${capitalize(summary.favoritePal.rarity || "common")} • Level ${summary.favoritePal.level || "?"}`
+    : "Start with /capture";
+  const favoriteMetaFit = fitSvgText(favoriteMeta, {
+    maxWidth: 250,
+    preferredFontSize: 17,
+    minFontSize: 13,
+  });
+  const paldeckLine = formatTrainerMetric(
+    summary.paldeck?.ownedSpeciesCount || 0,
+    summary.paldeck?.totalSpeciesCount || 0,
+    summary.paldeck?.completionPercentage || 0
+  );
+  const journalLine = formatTrainerMetric(
+    summary.journal?.unlockedCount || 0,
+    summary.journal?.totalDefinitions || 0,
+    summary.journal?.completionPercentage || 0
+  );
+
+  return `
+    <svg width="${CARD_WIDTH}" height="${CARD_HEIGHT}" viewBox="0 0 ${CARD_WIDTH} ${CARD_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="trainerBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0d141d"/>
+          <stop offset="50%" stop-color="${background.primaryColor || "#101820"}"/>
+          <stop offset="100%" stop-color="#25313b"/>
+        </linearGradient>
+        <radialGradient id="trainerGlow" cx="78%" cy="44%" r="58%">
+          <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.22"/>
+          <stop offset="62%" stop-color="${accentColor}" stop-opacity="0.08"/>
+          <stop offset="100%" stop-color="${accentColor}" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="28" fill="url(#trainerBg)"/>
+      <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="28" fill="url(#trainerGlow)"/>
+      <rect x="4" y="4" width="${CARD_WIDTH - 8}" height="${CARD_HEIGHT - 8}" rx="24" fill="none" stroke="${accentColor}" stroke-width="4" opacity="0.82"/>
+      <rect x="18" y="18" width="${CARD_WIDTH - 36}" height="${CARD_HEIGHT - 36}" rx="20" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.09"/>
+      <path d="M0 244 C132 210 256 236 386 204 C518 172 612 184 700 148 L700 320 L0 320 Z" fill="#080d14" opacity="0.58"/>
+      <path d="M46 56 H372" stroke="${accentColor}" stroke-width="3" opacity="0.64" stroke-linecap="round"/>
+      <text x="46" y="108" fill="#ffffff" font-size="${username.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(username.text)}</text>
+      <text x="48" y="142" fill="${accentColor}" font-size="${title.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(title.text)}</text>
+      <rect x="48" y="162" width="118" height="42" rx="21" fill="#ffffff" opacity="0.08"/>
+      <text x="70" y="190" fill="#e8eef5" font-size="22" font-family="Arial, Helvetica, sans-serif" font-weight="900">Level ${summary.level || 1}</text>
+      <rect x="48" y="226" width="154" height="52" rx="16" fill="#101820" opacity="0.72"/>
+      <text x="66" y="250" fill="#9facb8" font-size="13" font-family="Arial, Helvetica, sans-serif" font-weight="900">PALDECK</text>
+      <text x="66" y="270" fill="#f4f7fb" font-size="17" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(paldeckLine)}</text>
+      <rect x="218" y="226" width="154" height="52" rx="16" fill="#101820" opacity="0.72"/>
+      <text x="236" y="250" fill="#9facb8" font-size="13" font-family="Arial, Helvetica, sans-serif" font-weight="900">JOURNAL</text>
+      <text x="236" y="270" fill="#f4f7fb" font-size="17" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(journalLine)}</text>
+      <rect x="404" y="28" width="250" height="226" rx="28" fill="#0d1117" opacity="0.74"/>
+      <rect x="420" y="42" width="218" height="196" rx="24" fill="#17212c" opacity="0.76"/>
+      <rect x="420" y="42" width="218" height="196" rx="24" fill="none" stroke="${accentColor}" stroke-width="3" opacity="0.58"/>
+      <text x="529" y="282" text-anchor="middle" fill="#ffffff" font-size="${favorite.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(favorite.text)}</text>
+      <text x="529" y="304" text-anchor="middle" fill="#b9c5ce" font-size="${favoriteMetaFit.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(favoriteMetaFit.text)}</text>
+      <text x="46" y="42" fill="#9facb8" font-size="13" font-family="Arial, Helvetica, sans-serif" font-weight="900">PALMASTER TRAINER CARD</text>
+    </svg>
+  `;
+}
+
 function getResultProgressionLine(result) {
   if (!result?.success) {
     return "";
@@ -951,6 +1040,86 @@ async function buildResultPalImageComposite(imageUrl, options = {}) {
   };
 }
 
+async function buildTrainerFavoriteImageComposite(imageUrl, options = {}) {
+  const width = 218;
+  const height = 196;
+  const left = 420;
+  const top = 42;
+  const accentColor = options.accentColor || rarityColors.common;
+  const palName = options.palName || "Favorite Pal";
+  let imageBuffer = null;
+  let imageContentType = "";
+  let imageStatus = null;
+
+  if (imageUrl) {
+    try {
+      logImageDebug(`trainer fetch start pal="${palName}" url="${imageUrl}"`);
+      const fetchResult = await fetchImageBuffer(imageUrl);
+      imageBuffer = fetchResult.buffer;
+      imageContentType = fetchResult.contentType;
+      imageStatus = fetchResult.status;
+      logImageDebug(
+        `trainer fetch success pal="${palName}" status=${imageStatus} contentType="${imageContentType}" bytes=${imageBuffer.length}`
+      );
+    } catch (error) {
+      console.warn(
+        `[cardRenderer] Pal image unavailable for trainer pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"; using placeholder.`
+      );
+      logImageDebug(
+        `trainer fetch failure pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"`
+      );
+    }
+  }
+
+  if (!imageBuffer) {
+    return buildPlaceholderComposite({
+      width,
+      height,
+      left,
+      top,
+      accentColor,
+      label: "FAVORITE PAL",
+    });
+  }
+
+  let palImage;
+
+  try {
+    const metadata = await sharp(imageBuffer).metadata();
+    logImageDebug(
+      `trainer decode success pal="${palName}" format=${metadata.format || "unknown"} width=${metadata.width || "unknown"} height=${metadata.height || "unknown"}`
+    );
+    palImage = await createPalArtBuffer(imageBuffer, {
+      width,
+      height,
+      radius: 24,
+      phase: "trainer",
+      palName,
+    });
+  } catch (error) {
+    console.warn(
+      `[cardRenderer] Pal image decode failed for trainer pal="${palName}" url="${imageUrl}" reason="${getErrorMessage(error)}"; using placeholder.`
+    );
+    logImageDebug(
+      `trainer decode failure pal="${palName}" url="${imageUrl}" status=${imageStatus || "unknown"} contentType="${imageContentType}" reason="${getErrorMessage(error)}"`
+    );
+    return buildPlaceholderComposite({
+      width,
+      height,
+      left,
+      top,
+      accentColor,
+      label: "FAVORITE PAL",
+    });
+  }
+
+  return {
+    input: palImage,
+    left,
+    top,
+  };
+}
+
 async function renderPalCardBuffer({ pal, level, rarity, isShiny }) {
   const imageUrl =
     pal && typeof pal.imageUrl === "string" && pal.imageUrl.trim()
@@ -1083,6 +1252,28 @@ async function renderCaptureResultCard(result) {
   };
 }
 
+async function renderTrainerCard(summary) {
+  const favoritePal = summary?.favoritePal || null;
+  const imageUrl =
+    favoritePal && typeof favoritePal.imageUrl === "string" && favoritePal.imageUrl.trim()
+      ? favoritePal.imageUrl.trim()
+      : "";
+  const palName = favoritePal ? getPalName(favoritePal) : "Favorite Pal";
+  const filename = `trainer-${Date.now()}-${slugify(summary?.username || "trainer")}.png`;
+  const baseCard = sharp(Buffer.from(buildTrainerCardSvg(summary)));
+  const imageComposite = await buildTrainerFavoriteImageComposite(imageUrl, {
+    accentColor: summary?.frame?.accentColor || summary?.background?.accentColor || "#d6a84f",
+    palName,
+  });
+  const composites = imageComposite ? [imageComposite] : [];
+  const buffer = await baseCard.composite(composites).png().toBuffer();
+
+  return {
+    buffer,
+    filename,
+  };
+}
+
 module.exports = {
   buildPalImagePlaceholderSvg,
   buildCaptureResultCardSvg,
@@ -1091,6 +1282,7 @@ module.exports = {
   buildCaptureThrowCardSvg,
   buildCardSvg,
   buildSphereIconSvg,
+  buildTrainerCardSvg,
   createPalArtBuffer,
   estimateTextWidth,
   fitSvgText,
@@ -1100,4 +1292,5 @@ module.exports = {
   renderCaptureThrowCard,
   renderPalCard,
   renderPalCardBuffer,
+  renderTrainerCard,
 };
