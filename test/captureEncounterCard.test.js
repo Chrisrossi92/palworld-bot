@@ -1,9 +1,12 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const {
   buildEncounterPayload,
   getCapturePresentationSteps,
   getCaptureShakeSteps,
+  buildImmediateCaptureFeedbackPayload,
   buildLightweightShakePayload,
   buildShakePayload,
   buildResolvedPayload,
@@ -477,42 +480,46 @@ test("getCaptureShakeSteps reaches three shakes for success and two for failure"
   );
 });
 
-test("default capture presentation uses single shake mode", () => {
+test("default capture presentation has no post-resolution shake step", () => {
   const successSteps = getCapturePresentationSteps({ success: true });
   const failedSteps = getCapturePresentationSteps({ success: false });
 
-  assert.deepEqual(
-    successSteps.map((step) => step.type),
-    ["lightweight-shake"]
-  );
-  assert.deepEqual(
-    successSteps.map((step) => step.shakeCount),
-    [1]
-  );
-  assert.deepEqual(
-    failedSteps.map((step) => step.type),
-    ["lightweight-shake"]
-  );
-  assert.deepEqual(
-    failedSteps.map((step) => step.shakeCount),
-    [1]
-  );
-  assert.equal(successSteps[0].delayMs, 400);
-  assert.equal(failedSteps[0].delayMs, 400);
-  assert.equal(successSteps.some((step) => step.type === "throw"), false);
-  assert.equal(failedSteps.some((step) => step.type === "throw"), false);
-  assert.equal(successSteps.some((step) => step.type === "shake"), false);
-  assert.equal(failedSteps.some((step) => step.type === "shake"), false);
+  assert.deepEqual(successSteps, []);
+  assert.deepEqual(failedSteps, []);
 });
 
-test("default lightweight shake payload uses no attachment upload", () => {
-  const payload = buildLightweightShakePayload(buildInventory());
+test("immediate capture feedback payload uses no attachment upload", () => {
+  const payload = buildImmediateCaptureFeedbackPayload(buildInventory());
 
-  assert.equal(payload.content, "The sphere shakes...");
+  assert.equal(payload.content, "Sphere thrown...");
   assert.equal(payload.components.length, 2);
   assert.equal(Object.prototype.hasOwnProperty.call(payload, "files"), false);
   assert.equal(Object.prototype.hasOwnProperty.call(payload, "attachments"), false);
   assert.equal(Object.prototype.hasOwnProperty.call(payload, "embeds"), false);
+});
+
+test("legacy lightweight shake payload delegates to immediate feedback", () => {
+  assert.deepEqual(
+    buildLightweightShakePayload(buildInventory()).content,
+    "Sphere thrown..."
+  );
+});
+
+test("capture button handler sends immediate feedback before resolving capture", () => {
+  const captureSource = fs.readFileSync(
+    path.join(__dirname, "../src/commands/capture.js"),
+    "utf8"
+  );
+  const feedbackIndex = captureSource.indexOf(
+    "buildImmediateCaptureFeedbackPayload(immediateInventory)"
+  );
+  const resolveIndex = captureSource.indexOf(
+    "const result = await resolveCaptureEncounter"
+  );
+
+  assert.notEqual(feedbackIndex, -1);
+  assert.notEqual(resolveIndex, -1);
+  assert.ok(feedbackIndex < resolveIndex);
 });
 
 test("throw and shake renderers produce image buffers without Pal image URLs", async () => {

@@ -491,12 +491,7 @@ function getCaptureShakeSteps(result) {
 }
 
 function getCapturePresentationSteps() {
-  return [{
-    type: "lightweight-shake",
-    shakeCount: 1,
-    maxShakes: MAX_SHAKE_COUNT,
-    delayMs: LIGHTWEIGHT_SHAKE_DELAY_MS,
-  }];
+  return [];
 }
 
 async function buildThrowPayload(encounter, sphere, inventory, options = {}) {
@@ -585,11 +580,15 @@ async function buildShakePayload(encounter, sphere, inventory, options = {}) {
   }
 }
 
-function buildLightweightShakePayload(inventory) {
+function buildImmediateCaptureFeedbackPayload(inventory) {
   return {
-    content: "The sphere shakes...",
+    content: "Sphere thrown...",
     components: buildSphereButtons(inventory, true),
   };
+}
+
+function buildLightweightShakePayload(inventory) {
+  return buildImmediateCaptureFeedbackPayload(inventory);
 }
 
 async function buildResolvedPayload(result, remaining, inventory, options = {}) {
@@ -800,6 +799,22 @@ module.exports = {
             return;
           }
 
+          const immediateInventory = await getUserInventory(
+            guildId,
+            interaction.user.id
+          );
+
+          try {
+            await interaction.editReply(
+              buildImmediateCaptureFeedbackPayload(immediateInventory)
+            );
+          } catch (feedbackError) {
+            console.error(
+              "[capture] Failed to send immediate capture feedback:",
+              feedbackError
+            );
+          }
+
           const result = await resolveCaptureEncounter(
             guildId,
             interaction.user.id,
@@ -930,6 +945,7 @@ module.exports = {
   buildResolvedCardEmbed,
   buildResolvedEmbed,
   buildResolvedPayload,
+  buildImmediateCaptureFeedbackPayload,
   buildLightweightShakePayload,
   buildShakeCardEmbed,
   buildShakeEmbed,
