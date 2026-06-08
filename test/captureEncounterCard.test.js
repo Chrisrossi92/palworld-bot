@@ -462,40 +462,42 @@ test("getCaptureShakeSteps reaches three shakes for success and two for failure"
   assert.deepEqual(
     successSteps.map((step) => [step.shakeCount, step.maxShakes, step.delayMs]),
     [
-      [1, 3, 350],
-      [2, 3, 400],
-      [3, 3, 450],
+      [1, 3, 600],
+      [2, 3, 600],
+      [3, 3, 600],
     ]
   );
   assert.deepEqual(
     failedSteps.map((step) => [step.shakeCount, step.maxShakes, step.delayMs]),
     [
-      [1, 3, 350],
-      [2, 3, 400],
+      [1, 3, 600],
+      [2, 3, 600],
     ]
   );
 });
 
-test("default capture presentation skips throw stage and starts with shakes", () => {
+test("default capture presentation uses single shake mode", () => {
   const successSteps = getCapturePresentationSteps({ success: true });
   const failedSteps = getCapturePresentationSteps({ success: false });
 
   assert.deepEqual(
     successSteps.map((step) => step.type),
-    ["shake", "shake", "shake"]
+    ["shake"]
   );
   assert.deepEqual(
     successSteps.map((step) => step.shakeCount),
-    [1, 2, 3]
+    [1]
   );
   assert.deepEqual(
     failedSteps.map((step) => step.type),
-    ["shake", "shake"]
+    ["shake"]
   );
   assert.deepEqual(
     failedSteps.map((step) => step.shakeCount),
-    [1, 2]
+    [1]
   );
+  assert.equal(successSteps[0].delayMs, 600);
+  assert.equal(failedSteps[0].delayMs, 600);
   assert.equal(successSteps.some((step) => step.type === "throw"), false);
   assert.equal(failedSteps.some((step) => step.type === "throw"), false);
 });

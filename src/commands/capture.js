@@ -21,7 +21,7 @@ const {
 } = require("../systems/captureSystem");
 
 const CAPTURE_COOLDOWN_MS = 10_000;
-const SHAKE_CARD_DELAYS_MS = [350, 400, 450];
+const SINGLE_SHAKE_DELAY_MS = 600;
 const SUCCESS_SHAKE_COUNT = 3;
 const FAILED_SHAKE_COUNT = 2;
 const MAX_SHAKE_COUNT = 3;
@@ -486,17 +486,17 @@ function getCaptureShakeSteps(result) {
   return Array.from({ length: shakeCount }, (_, index) => ({
     shakeCount: index + 1,
     maxShakes: MAX_SHAKE_COUNT,
-    delayMs:
-      SHAKE_CARD_DELAYS_MS[index] ||
-      SHAKE_CARD_DELAYS_MS[SHAKE_CARD_DELAYS_MS.length - 1],
+    delayMs: SINGLE_SHAKE_DELAY_MS,
   }));
 }
 
-function getCapturePresentationSteps(result) {
-  return getCaptureShakeSteps(result).map((step) => ({
+function getCapturePresentationSteps() {
+  return [{
     type: "shake",
-    ...step,
-  }));
+    shakeCount: 1,
+    maxShakes: MAX_SHAKE_COUNT,
+    delayMs: SINGLE_SHAKE_DELAY_MS,
+  }];
 }
 
 async function buildThrowPayload(encounter, sphere, inventory, options = {}) {
