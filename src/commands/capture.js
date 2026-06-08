@@ -21,8 +21,8 @@ const {
 } = require("../systems/captureSystem");
 
 const CAPTURE_COOLDOWN_MS = 10_000;
-const THROW_CARD_DELAY_MS = 500;
-const SHAKE_CARD_DELAYS_MS = [550, 600, 650];
+const THROW_CARD_DELAY_MS = 250;
+const SHAKE_CARD_DELAYS_MS = [350, 400, 450];
 const SUCCESS_SHAKE_COUNT = 3;
 const FAILED_SHAKE_COUNT = 2;
 const MAX_SHAKE_COUNT = 3;

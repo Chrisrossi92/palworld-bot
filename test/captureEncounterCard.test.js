@@ -461,16 +461,16 @@ test("getCaptureShakeSteps reaches three shakes for success and two for failure"
   assert.deepEqual(
     successSteps.map((step) => [step.shakeCount, step.maxShakes, step.delayMs]),
     [
-      [1, 3, 550],
-      [2, 3, 600],
-      [3, 3, 650],
+      [1, 3, 350],
+      [2, 3, 400],
+      [3, 3, 450],
     ]
   );
   assert.deepEqual(
     failedSteps.map((step) => [step.shakeCount, step.maxShakes, step.delayMs]),
     [
-      [1, 3, 550],
-      [2, 3, 600],
+      [1, 3, 350],
+      [2, 3, 400],
     ]
   );
 });
