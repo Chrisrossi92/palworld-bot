@@ -175,9 +175,9 @@ test("fitSvgText keeps long Pal names inside encounter card text bounds", () => 
 
 test("normal Pal names keep preferred encounter card font size", () => {
   const fitted = fitSvgText("Lamball", {
-    maxWidth: 270,
-    preferredFontSize: 52,
-    minFontSize: 28,
+    maxWidth: 520,
+    preferredFontSize: 40,
+    minFontSize: 24,
   });
   const svg = buildCardSvg({
     pal: buildEncounter(),
@@ -187,28 +187,29 @@ test("normal Pal names keep preferred encounter card font size", () => {
   });
 
   assert.equal(fitted.text, "Lamball");
-  assert.equal(fitted.fontSize, 52);
+  assert.equal(fitted.fontSize, 40);
   assert.equal(fitted.truncated, false);
-  assert.match(svg, /font-size="42"[^>]*>Lamball<\/text>/);
+  assert.match(svg, /text-anchor="middle"[^>]+font-size="40"[^>]*>Lamball<\/text>/);
 });
 
-test("buildCardSvg applies fitted long Pal name before the art frame", () => {
+test("buildCardSvg fits long Pal names in the top title", () => {
   const svg = buildCardSvg({
-    pal: buildEncounter({ name: "Broncherry Aqua Nocturnal" }),
+    pal: buildEncounter({
+      name: "Broncherry Aqua Nocturnal Experimental Variant",
+    }),
     level: 42,
     rarity: "rare",
     isShiny: false,
   });
   const nameMatch = svg.match(
-    /<text x="52" y="166"[^>]+font-size="(\d+)"[^>]*>([^<]+)<\/text>/
+    /<text x="350" y="58"[^>]+font-size="(\d+)"[^>]*>([^<]+)<\/text>/
   );
 
   assert.ok(nameMatch);
-  assert.ok(Number(nameMatch[1]) <= 54);
+  assert.ok(Number(nameMatch[1]) <= 40);
   assert.ok(
-    estimateTextWidth(nameMatch[2], Number(nameMatch[1])) <= 300
+    estimateTextWidth(nameMatch[2], Number(nameMatch[1])) <= 520
   );
-  assert.doesNotMatch(nameMatch[2], /Nocturnal/);
 });
 
 test("encounter Pal name font size is capped below oversized V1.5 text", () => {
@@ -219,11 +220,11 @@ test("encounter Pal name font size is capped below oversized V1.5 text", () => {
     isShiny: false,
   });
   const nameMatch = svg.match(
-    /<text x="52" y="166"[^>]+font-size="(\d+)"[^>]*>Lamball<\/text>/
+    /<text x="350" y="58"[^>]+font-size="(\d+)"[^>]*>Lamball<\/text>/
   );
 
   assert.ok(nameMatch);
-  assert.ok(Number(nameMatch[1]) <= 42);
+  assert.ok(Number(nameMatch[1]) <= 40);
 });
 
 test("missing Pal image placeholder renders intentional field sketch", () => {
@@ -238,7 +239,7 @@ test("missing Pal image placeholder renders intentional field sketch", () => {
   assert.match(svg, /circle/);
 });
 
-test("encounter card stays focused on encounter identity only", () => {
+test("encounter card uses a premium centered art-stage layout", () => {
   const svg = buildCardSvg({
     pal: buildEncounter({ isShiny: true }),
     level: 7,
@@ -248,9 +249,12 @@ test("encounter card stays focused on encounter identity only", () => {
 
   assert.match(svg, /Lamball/);
   assert.match(svg, /Level 7/);
-  assert.match(svg, /COMMON/);
+  assert.match(svg, /Common • Level 7/);
   assert.match(svg, /LUCKY/);
-  assert.match(svg, /WILD PAL/);
+  assert.match(svg, /width="444" height="186"/);
+  assert.doesNotMatch(svg, /WILD PAL/);
+  assert.doesNotMatch(svg, /Field encounter/);
+  assert.doesNotMatch(svg, /<text x="52" y="88"[^>]*>/);
   assert.doesNotMatch(svg, /Basic|Mega|Giga|Hyper|Ultra|Legendary/);
   assert.doesNotMatch(svg, /XP|coins|Journal|Research|Server Goal/);
 });

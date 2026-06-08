@@ -37,6 +37,16 @@ function slugify(value) {
   return slug || "pal";
 }
 
+function capitalize(value) {
+  const text = String(value || "").trim();
+
+  if (!text) {
+    return "";
+  }
+
+  return `${text.charAt(0).toUpperCase()}${text.slice(1).toLowerCase()}`;
+}
+
 function estimateTextWidth(value, fontSize) {
   const text = String(value ?? "");
   let widthUnits = 0;
@@ -228,29 +238,21 @@ function buildCardSvg({ pal, level, rarity, isShiny }) {
   const palName = typeof pal?.name === "string" ? pal.name : "Unknown Pal";
   const levelText = level ? `Level ${level}` : "Level ?";
   const rarityText = rarity || "common";
+  const metadataText = `${capitalize(rarityText)} • ${levelText}`;
   const fittedName = fitSvgText(palName, {
-    maxWidth: 270,
-    preferredFontSize: 42,
+    maxWidth: 520,
+    preferredFontSize: 40,
     minFontSize: 24,
   });
-  const fittedRarity = fitSvgText(rarityText.toUpperCase(), {
-    maxWidth: 136,
-    preferredFontSize: 22,
-    minFontSize: 18,
-  });
-  const rarityBadgeWidth = Math.min(
-    176,
-    Math.max(150, fittedRarity.estimatedWidth + 42)
-  );
-  const fittedLevel = fitSvgText(levelText, {
-    maxWidth: 160,
-    preferredFontSize: 25,
-    minFontSize: 20,
+  const fittedMetadata = fitSvgText(metadataText, {
+    maxWidth: 330,
+    preferredFontSize: 20,
+    minFontSize: 16,
   });
   const fittedLucky = fitSvgText("LUCKY", {
     maxWidth: 84,
-    preferredFontSize: 20,
-    minFontSize: 16,
+    preferredFontSize: 18,
+    minFontSize: 15,
   });
 
   return `
@@ -266,28 +268,28 @@ function buildCardSvg({ pal, level, rarity, isShiny }) {
           <stop offset="58%" stop-color="${accentColor}" stop-opacity="0.08"/>
           <stop offset="100%" stop-color="${accentColor}" stop-opacity="0"/>
         </radialGradient>
+        <linearGradient id="stageGlow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#243241" stop-opacity="0.72"/>
+          <stop offset="100%" stop-color="#111820" stop-opacity="0.92"/>
+        </linearGradient>
       </defs>
       <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="28" fill="url(#bg)"/>
       <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="28" fill="url(#fieldGlow)"/>
-      <path d="M0 232 C132 204 252 232 382 196 C506 162 596 174 700 136 L700 320 L0 320 Z" fill="#0c1118" opacity="0.58"/>
-      <path d="M0 258 C142 220 266 244 410 206 C526 176 618 190 700 154" fill="none" stroke="${accentColor}" stroke-width="2" opacity="0.3"/>
-      <rect x="0" y="0" width="14" height="${CARD_HEIGHT}" fill="${accentColor}"/>
-      <circle cx="62" cy="54" r="14" fill="${accentColor}" opacity="0.95"/>
-      <text x="52" y="88" fill="#d6dee8" font-size="19" font-family="Arial, Helvetica, sans-serif" font-weight="800">WILD PAL</text>
-      <text x="52" y="118" fill="#8fa0ad" font-size="15" font-family="Arial, Helvetica, sans-serif" font-weight="700">Field encounter</text>
-      <text x="52" y="166" fill="#ffffff" font-size="${fittedName.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(fittedName.text)}</text>
-      <text x="52" y="205" fill="#d9e1ea" font-size="${fittedLevel.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedLevel.text)}</text>
-      <rect x="52" y="226" width="${rarityBadgeWidth}" height="42" rx="21" fill="${accentColor}" opacity="0.2"/>
-      <text x="74" y="255" fill="${accentColor}" font-size="${fittedRarity.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(fittedRarity.text)}</text>
+      <rect x="4" y="4" width="${CARD_WIDTH - 8}" height="${CARD_HEIGHT - 8}" rx="24" fill="none" stroke="${accentColor}" stroke-width="4" opacity="0.86"/>
+      <rect x="18" y="18" width="${CARD_WIDTH - 36}" height="${CARD_HEIGHT - 36}" rx="20" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.08"/>
+      <path d="M0 242 C118 208 248 236 386 198 C514 162 606 178 700 138 L700 320 L0 320 Z" fill="#0c1118" opacity="0.58"/>
+      <path d="M0 266 C142 224 266 246 410 207 C528 176 618 190 700 154" fill="none" stroke="${accentColor}" stroke-width="2" opacity="0.32"/>
+      <ellipse cx="350" cy="254" rx="218" ry="34" fill="#05080c" opacity="0.38"/>
+      <rect x="128" y="98" width="444" height="186" rx="36" fill="url(#stageGlow)" opacity="0.48"/>
+      <rect x="128" y="98" width="444" height="186" rx="36" fill="none" stroke="${accentColor}" stroke-width="2" opacity="0.28"/>
+      <text x="350" y="58" text-anchor="middle" fill="#ffffff" font-size="${fittedName.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(fittedName.text)}</text>
+      <text x="350" y="87" text-anchor="middle" fill="#d9e1ea" font-size="${fittedMetadata.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedMetadata.text)}</text>
       ${
         isShiny
-          ? `<rect x="52" y="276" width="128" height="32" rx="16" fill="#f1c40f" opacity="0.24"/>
-             <text x="75" y="298" fill="#f7d95c" font-size="${fittedLucky.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${fittedLucky.text}</text>`
+          ? `<rect x="552" y="28" width="104" height="32" rx="16" fill="#f1c40f" opacity="0.24"/>
+             <text x="604" y="50" text-anchor="middle" fill="#f7d95c" font-size="${fittedLucky.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${fittedLucky.text}</text>`
           : ""
       }
-      <rect x="316" y="14" width="364" height="292" rx="30" fill="#0d1117" opacity="0.68"/>
-      <rect x="334" y="30" width="328" height="260" rx="24" fill="#17212c" opacity="0.72"/>
-      <rect x="334" y="30" width="328" height="260" rx="24" fill="none" stroke="${accentColor}" stroke-width="3" opacity="0.62"/>
     </svg>
   `;
 }
@@ -485,10 +487,10 @@ function buildCaptureResultCardSvg(result) {
 }
 
 async function buildPalImageComposite(imageUrl, options = {}) {
-  const width = 328;
-  const height = 260;
-  const left = 334;
-  const top = 30;
+  const width = 448;
+  const height = 206;
+  const left = 126;
+  const top = 100;
   const accentColor = options.accentColor || rarityColors.common;
   const palName = options.palName || "Unknown Pal";
   let imageBuffer = null;
