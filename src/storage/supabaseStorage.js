@@ -173,6 +173,22 @@ function dailyResearchRowToEntry(row) {
   };
 }
 
+function weeklyServerGoalRowToEntry(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    weekStartDate: typeof row.week_start_date === "string"
+      ? row.week_start_date.slice(0, 10)
+      : String(row.week_start_date || ""),
+    goalKey: row.goal_key,
+    progress: row.progress,
+    target: row.target,
+    completedAt: row.completed_at || null,
+  };
+}
+
 // Future Supabase runtime backend. This adapter intentionally mirrors
 // jsonStorage's synchronous interface so command modules do not need to change
 // when runtime storage is cut over later.
@@ -232,6 +248,14 @@ function createSupabaseStorage({
       insert into public.discord_users (discord_user_id)
       values (${sqlText(userId)})
       on conflict (discord_user_id) do nothing;
+    `);
+  }
+
+  function ensureGuild(guildId) {
+    runPsql(`
+      insert into public.discord_guilds (discord_guild_id)
+      values (${sqlText(guildId)})
+      on conflict (discord_guild_id) do update set removed_at = null;
     `);
   }
 
@@ -712,6 +736,71 @@ function createSupabaseStorage({
     return result === undefined ? nextState : result;
   }
 
+  function getWeeklyServerGoalState(guildId, weekStartDate, goalKey) {
+    const rows = readJson(`
+      select coalesce(jsonb_agg(to_jsonb(goal_rows)), '[]'::jsonb)::text
+      from (
+        select
+          goals.week_start_date::text,
+          goals.goal_key,
+          goals.progress,
+          goals.target,
+          goals.completed_at
+        from public.guild_weekly_goals goals
+        join public.discord_guilds guilds on guilds.id = goals.guild_id
+        where guilds.discord_guild_id = ${sqlText(guildId)}
+          and goals.week_start_date = ${sqlDate(weekStartDate)}
+          and goals.goal_key = ${sqlText(goalKey)}
+        limit 1
+      ) goal_rows;
+    `, []);
+
+    return rows.length > 0 ? weeklyServerGoalRowToEntry(rows[0]) : null;
+  }
+
+  function writeWeeklyServerGoalState(guildId, weeklyGoal) {
+    if (!weeklyGoal || !weeklyGoal.weekStartDate || !weeklyGoal.goalKey) {
+      return;
+    }
+
+    ensureGuild(guildId);
+
+    runPsql(`
+      insert into public.guild_weekly_goals (
+        guild_id,
+        week_start_date,
+        goal_key,
+        progress,
+        target,
+        completed_at
+      )
+      select
+        guilds.id,
+        ${sqlDate(weeklyGoal.weekStartDate)},
+        ${sqlText(weeklyGoal.goalKey)},
+        ${sqlInt(weeklyGoal.progress, 0)},
+        ${sqlInt(weeklyGoal.target, 100)},
+        ${sqlTimestamp(weeklyGoal.completedAt)}
+      from public.discord_guilds guilds
+      where guilds.discord_guild_id = ${sqlText(guildId)}
+        and ${sqlDate(weeklyGoal.weekStartDate)} is not null
+      on conflict (guild_id, week_start_date, goal_key) do update set
+        progress = excluded.progress,
+        target = excluded.target,
+        completed_at = coalesce(public.guild_weekly_goals.completed_at, excluded.completed_at);
+    `);
+  }
+
+  function updateWeeklyServerGoalState(guildId, weekStartDate, goalKey, updater) {
+    const weeklyGoal = getWeeklyServerGoalState(guildId, weekStartDate, goalKey);
+    const result = updater(weeklyGoal);
+    const nextState = result && result.state ? result.state : result;
+
+    writeWeeklyServerGoalState(guildId, nextState);
+
+    return result === undefined ? nextState : result;
+  }
+
   function readGuildOwnedPals(guildId) {
     const rows = readJson(`
       select coalesce(jsonb_agg(to_jsonb(pal_rows)), '[]'::jsonb)::text
@@ -880,6 +969,7 @@ function createSupabaseStorage({
   return {
     getDailyQuestState,
     getDailyResearchState,
+    getWeeklyServerGoalState,
     getGuildOwnedPals,
     getGuildPlayerRecord,
     getSphereInventory,
@@ -890,6 +980,7 @@ function createSupabaseStorage({
     readUsers,
     updateDailyQuestState,
     updateDailyResearchState,
+    updateWeeklyServerGoalState,
     updateGuildOwnedPals,
     updateGuildPlayerRecord,
     updateSphereInventory,

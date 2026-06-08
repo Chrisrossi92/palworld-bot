@@ -5,6 +5,7 @@ const {
 } = require("discord.js");
 const {
   getJournalSummary,
+  getPaldeckSummary,
   readUsers,
   readUserPals,
 } = require("../systems/captureSystem");
@@ -143,6 +144,31 @@ function formatJournalSummary(summary) {
   return `${progressLine}\n${recent}\n${nextMilestones}`;
 }
 
+function formatPaldeckSummary(summary, journalSummary) {
+  if (!summary || summary.totalSpeciesCount <= 0) {
+    return "Paldeck Completion: Catalog unavailable\nRecent Species: None yet";
+  }
+
+  const recentSpecies = Array.isArray(summary.recentSpecies) &&
+    summary.recentSpecies.length > 0
+    ? summary.recentSpecies.map((pal) => pal.name).join(", ")
+    : "None yet";
+  const nextCollectionMilestone = Array.isArray(journalSummary?.nextMilestones)
+    ? journalSummary.nextMilestones.find((milestone) => milestone.metric === "uniqueSpecies")
+    : null;
+  const nextLine = nextCollectionMilestone
+    ? `Next Collection Milestone: ${nextCollectionMilestone.title} ` +
+      `(${nextCollectionMilestone.value}/${nextCollectionMilestone.target})`
+    : "Next Collection Milestone: All current Collector entries complete";
+
+  return [
+    `Paldeck Completion: ${summary.ownedSpeciesCount}/${summary.totalSpeciesCount} ` +
+      `(${summary.completionPercentage}%)`,
+    `Recent Species: ${recentSpecies}`,
+    nextLine,
+  ].join("\n");
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("profile")
@@ -186,6 +212,17 @@ module.exports = {
       interaction.user.id,
       userPals
     );
+    let paldeckSummary = null;
+
+    try {
+      paldeckSummary = await getPaldeckSummary(
+        interaction.guildId,
+        interaction.user.id,
+        userPals
+      );
+    } catch (error) {
+      console.error("[profile] Failed to build Paldeck summary:", error);
+    }
 
     const embed = new EmbedBuilder()
       .setTitle(`${interaction.user.username}'s Profile`)
@@ -222,6 +259,10 @@ module.exports = {
         {
           name: "Recent Capture",
           value: formatCapture(recentCapture),
+        },
+        {
+          name: "Paldeck",
+          value: formatPaldeckSummary(paldeckSummary, journalSummary),
         },
         {
           name: "Journal",

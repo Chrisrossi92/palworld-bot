@@ -3,9 +3,54 @@ const dailyResearchDefinitions = [
     key: "field-research-3-captures",
     title: "Complete today's field research",
     description: "Try 3 captures.",
+    progressEvent: "capture_attempt",
     target: 3,
     rewards: {
       coins: 75,
+      xp: 35,
+    },
+  },
+  {
+    key: "field-research-5-captures",
+    title: "Run an extended field survey",
+    description: "Try 5 captures.",
+    progressEvent: "capture_attempt",
+    target: 5,
+    rewards: {
+      coins: 110,
+      xp: 50,
+    },
+  },
+  {
+    key: "field-research-catch-1-pal",
+    title: "Log a successful capture",
+    description: "Catch 1 Pal.",
+    progressEvent: "capture_success",
+    target: 1,
+    rewards: {
+      coins: 85,
+      xp: 40,
+    },
+  },
+  {
+    key: "field-research-catch-2-pals",
+    title: "Confirm local Pal activity",
+    description: "Catch 2 Pals.",
+    progressEvent: "capture_success",
+    target: 2,
+    rewards: {
+      coins: 125,
+      xp: 60,
+    },
+  },
+  {
+    key: "field-research-3-attempts",
+    title: "Test capture readiness",
+    description: "Use 3 capture attempts.",
+    progressEvent: "capture_attempt",
+    target: 3,
+    rewards: {
+      coins: 70,
       xp: 35,
     },
   },
@@ -22,6 +67,27 @@ function getDailyResearchDefinition(assignmentKey) {
     defaultAssignment;
 }
 
+function hashAssignmentSeed(seed) {
+  let hash = 0;
+
+  for (const char of String(seed)) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+
+  return hash;
+}
+
+function chooseDailyResearchDefinition({ guildId = "", userId = "", date }) {
+  if (!guildId && !userId) {
+    return defaultAssignment;
+  }
+
+  const seed = `${guildId}:${userId}:${date}`;
+  const index = hashAssignmentSeed(seed) % dailyResearchDefinitions.length;
+
+  return dailyResearchDefinitions[index] || defaultAssignment;
+}
+
 function normalizeDailyResearchState(existingState, options = {}) {
   const date = options.date || getTodayKey(options.now);
   const definition = getDailyResearchDefinition(existingState?.assignmentKey);
@@ -31,11 +97,17 @@ function normalizeDailyResearchState(existingState, options = {}) {
     typeof existingState !== "object" ||
     existingState.date !== date
   ) {
+    const assignment = chooseDailyResearchDefinition({
+      guildId: options.guildId,
+      userId: options.userId,
+      date,
+    });
+
     return {
       date,
-      assignmentKey: defaultAssignment.key,
+      assignmentKey: assignment.key,
       progress: 0,
-      target: defaultAssignment.target,
+      target: assignment.target,
       claimed: false,
       claimedAt: null,
     };
@@ -65,6 +137,16 @@ function normalizeDailyResearchState(existingState, options = {}) {
 
 function incrementDailyResearchProgress(existingState, amount = 1, options = {}) {
   const state = normalizeDailyResearchState(existingState, options);
+  const definition = getDailyResearchDefinition(state.assignmentKey);
+  const eventType = options.eventType || definition.progressEvent;
+  const matchesEvent =
+    eventType === definition.progressEvent ||
+    (eventType === "capture_success" && definition.progressEvent === "capture_attempt");
+
+  if (!matchesEvent) {
+    return state;
+  }
+
   const increment = Number.isInteger(amount) && amount > 0 ? amount : 1;
 
   return {
@@ -118,6 +200,7 @@ function getDailyResearchStatus(existingState, options = {}) {
       key: definition.key,
       title: definition.title,
       description: definition.description,
+      progressEvent: definition.progressEvent,
       target: definition.target,
     },
     rewards: { ...definition.rewards },
@@ -132,6 +215,7 @@ module.exports = {
   getDailyResearchDefinition,
   getDailyResearchStatus,
   getTodayKey,
+  chooseDailyResearchDefinition,
   incrementDailyResearchProgress,
   isDailyResearchComplete,
   normalizeDailyResearchState,

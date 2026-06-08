@@ -12,6 +12,7 @@ const {
   claimDailyQuestReward,
   getDailyResearchStatus,
   getDailyQuestStatus,
+  getWeeklyServerGoalStatus,
 } = require("../systems/captureSystem");
 
 const claimButtonId = "quests:claim";
@@ -40,6 +41,24 @@ function formatResearchRewards(rewards) {
   return `${rewards.coins} coins\n${rewards.xp} XP`;
 }
 
+function formatServerGoal(serverGoalStatus) {
+  if (!serverGoalStatus) {
+    return "Server goal unavailable.";
+  }
+
+  return [
+    serverGoalStatus.definition.title,
+    formatQuestLine(
+      serverGoalStatus.definition.description,
+      serverGoalStatus.state.progress,
+      serverGoalStatus.state.target
+    ),
+    `Completion: ${serverGoalStatus.completionPercentage}%`,
+    `Reset: ${serverGoalStatus.resetLabel}`,
+    `Status: ${serverGoalStatus.complete ? "✅ Complete" : "⏳ In Progress"}`,
+  ].join("\n");
+}
+
 function formatLevelUp(progression) {
   return (
     `Level ${progression.oldLevel} → ${progression.level}\n` +
@@ -50,7 +69,12 @@ function formatLevelUp(progression) {
   );
 }
 
-function buildQuestsEmbed(status, researchStatus, claimResult = null) {
+function buildQuestsEmbed(
+  status,
+  researchStatus,
+  serverGoalStatus,
+  claimResult = null
+) {
   const { dailyQuests, goals, rewards, complete } = status;
   const claimed = dailyQuests.claimed;
   const statusLabel = claimed
@@ -103,6 +127,10 @@ function buildQuestsEmbed(status, researchStatus, claimResult = null) {
                 : "⏳ In Progress"
           }`,
         ].join("\n"),
+      },
+      {
+        name: "Server Goal",
+        value: formatServerGoal(serverGoalStatus),
       }
     )
     .setFooter({ text: `Quest date: ${dailyQuests.date}` })
@@ -176,12 +204,13 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const [status, researchStatus] = await Promise.all([
+    const [status, researchStatus, serverGoalStatus] = await Promise.all([
       getDailyQuestStatus(interaction.guildId, interaction.user.id),
       getDailyResearchStatus(interaction.guildId, interaction.user.id),
+      getWeeklyServerGoalStatus(interaction.guildId),
     ]);
     const message = await interaction.editReply({
-      embeds: [buildQuestsEmbed(status, researchStatus)],
+      embeds: [buildQuestsEmbed(status, researchStatus, serverGoalStatus)],
       components: buildClaimComponents(status, researchStatus),
     });
 
@@ -218,13 +247,21 @@ module.exports = {
       const claimResult = buttonInteraction.customId === claimButtonId
         ? await claimDailyQuestReward(interaction.guildId, interaction.user.id)
         : await claimDailyResearchReward(interaction.guildId, interaction.user.id);
-      const [updatedStatus, updatedResearchStatus] = await Promise.all([
+      const [updatedStatus, updatedResearchStatus, updatedServerGoalStatus] = await Promise.all([
         getDailyQuestStatus(interaction.guildId, interaction.user.id),
         getDailyResearchStatus(interaction.guildId, interaction.user.id),
+        getWeeklyServerGoalStatus(interaction.guildId),
       ]);
 
       await interaction.editReply({
-        embeds: [buildQuestsEmbed(updatedStatus, updatedResearchStatus, claimResult)],
+        embeds: [
+          buildQuestsEmbed(
+            updatedStatus,
+            updatedResearchStatus,
+            updatedServerGoalStatus,
+            claimResult
+          ),
+        ],
         components: buildClaimComponents(updatedStatus, updatedResearchStatus),
       });
 
@@ -242,12 +279,19 @@ module.exports = {
       }
 
       try {
-        const [updatedStatus, updatedResearchStatus] = await Promise.all([
+        const [updatedStatus, updatedResearchStatus, updatedServerGoalStatus] = await Promise.all([
           getDailyQuestStatus(interaction.guildId, interaction.user.id),
           getDailyResearchStatus(interaction.guildId, interaction.user.id),
+          getWeeklyServerGoalStatus(interaction.guildId),
         ]);
         await interaction.editReply({
-          embeds: [buildQuestsEmbed(updatedStatus, updatedResearchStatus)],
+          embeds: [
+            buildQuestsEmbed(
+              updatedStatus,
+              updatedResearchStatus,
+              updatedServerGoalStatus
+            ),
+          ],
           components: [],
         });
       } catch (error) {

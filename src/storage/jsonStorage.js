@@ -4,6 +4,10 @@ const path = require("path");
 const PALS_DATA_PATH = path.join(__dirname, "../../data/pals.json");
 const USER_PALS_DATA_PATH = path.join(__dirname, "../../data/user-pals.json");
 const USERS_DATA_PATH = path.join(__dirname, "../../data/users.json");
+const GUILD_WEEKLY_GOALS_DATA_PATH = path.join(
+  __dirname,
+  "../../data/guild-weekly-goals.json"
+);
 const DEFAULT_LEGACY_GUILD_ID = process.env.DISCORD_GUILD_ID || "__legacy__";
 
 function ensureJsonFile(filePath) {
@@ -177,6 +181,14 @@ function createJsonStorage({
     writeJsonFile(USER_PALS_DATA_PATH, normalizeUserPalsData(data));
   }
 
+  function readWeeklyGoals() {
+    return readJsonFile(GUILD_WEEKLY_GOALS_DATA_PATH, "guild weekly goals");
+  }
+
+  function writeWeeklyGoals(data) {
+    writeJsonFile(GUILD_WEEKLY_GOALS_DATA_PATH, data && typeof data === "object" ? data : {});
+  }
+
   function getGuildUsers(users, guildId) {
     const normalizedGuildId = normalizeGuildId(guildId, legacyGuildId);
 
@@ -274,6 +286,42 @@ function createJsonStorage({
     });
   }
 
+  function getWeeklyServerGoalState(guildId, weekStartDate, goalKey) {
+    const weeklyGoals = readWeeklyGoals();
+    const guildGoals = weeklyGoals[normalizeGuildId(guildId, legacyGuildId)] || {};
+    const key = `${weekStartDate}:${goalKey}`;
+
+    return guildGoals[key] && typeof guildGoals[key] === "object"
+      ? { ...guildGoals[key] }
+      : null;
+  }
+
+  function updateWeeklyServerGoalState(guildId, weekStartDate, goalKey, updater) {
+    const weeklyGoals = readWeeklyGoals();
+    const normalizedGuildId = normalizeGuildId(guildId, legacyGuildId);
+    const key = `${weekStartDate}:${goalKey}`;
+
+    if (!weeklyGoals[normalizedGuildId] || typeof weeklyGoals[normalizedGuildId] !== "object") {
+      weeklyGoals[normalizedGuildId] = {};
+    }
+
+    const currentState =
+      weeklyGoals[normalizedGuildId][key] &&
+      typeof weeklyGoals[normalizedGuildId][key] === "object"
+        ? { ...weeklyGoals[normalizedGuildId][key] }
+        : null;
+    const result = updater(currentState);
+    const nextState = result && result.state ? result.state : result;
+
+    if (nextState) {
+      weeklyGoals[normalizedGuildId][key] = nextState;
+    }
+
+    writeWeeklyGoals(weeklyGoals);
+
+    return result === undefined ? nextState : result;
+  }
+
   function updateGuildOwnedPals(guildId, userId, updater) {
     const userPals = readUserPals();
     const guildUserPals = getGuildUserPals(userPals, guildId);
@@ -291,6 +339,7 @@ function createJsonStorage({
   return {
     getDailyResearchState,
     getDailyQuestState,
+    getWeeklyServerGoalState,
     getGuildOwnedPals,
     getGuildPlayerRecord,
     getSphereInventory,
@@ -301,6 +350,7 @@ function createJsonStorage({
     readUsers,
     updateDailyResearchState,
     updateDailyQuestState,
+    updateWeeklyServerGoalState,
     updateGuildOwnedPals,
     updateGuildPlayerRecord,
     updateSphereInventory,

@@ -77,6 +77,22 @@ function dailyResearchRowToEntry(row) {
   };
 }
 
+function weeklyServerGoalRowToEntry(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    weekStartDate: row.week_start_date instanceof Date
+      ? row.week_start_date.toISOString().slice(0, 10)
+      : String(row.week_start_date || ""),
+    goalKey: row.goal_key,
+    progress: row.progress,
+    target: row.target,
+    completedAt: toIsoString(row.completed_at),
+  };
+}
+
 function slugify(value) {
   return String(value)
     .trim()
@@ -506,6 +522,14 @@ function createSupabaseStorageV2({
     `, [userId], client);
   }
 
+  async function ensureGuild(client, guildId) {
+    await query(`
+      insert into public.discord_guilds (discord_guild_id)
+      values ($1)
+      on conflict (discord_guild_id) do update set removed_at = null;
+    `, [guildId], client);
+  }
+
   async function writeSphereInventoryWithClient(client, guildId, userId, spheres) {
     for (const [sphereType, quantity] of Object.entries(spheres || {})) {
       await query(`
@@ -870,6 +894,95 @@ function createSupabaseStorageV2({
     });
   }
 
+  async function readWeeklyServerGoalStateWithClient(
+    client,
+    guildId,
+    weekStartDate,
+    goalKey
+  ) {
+    const result = await query(`
+      select
+        goals.week_start_date,
+        goals.goal_key,
+        goals.progress,
+        goals.target,
+        goals.completed_at
+      from public.guild_weekly_goals goals
+      join public.discord_guilds guilds on guilds.id = goals.guild_id
+      where guilds.discord_guild_id = $1
+        and goals.week_start_date = $2::date
+        and goals.goal_key = $3
+      limit 1;
+    `, [guildId, weekStartDate, goalKey], client);
+
+    return result.rows.length > 0 ? weeklyServerGoalRowToEntry(result.rows[0]) : null;
+  }
+
+  async function getWeeklyServerGoalState(guildId, weekStartDate, goalKey) {
+    return readWeeklyServerGoalStateWithClient(
+      managedPool,
+      guildId,
+      weekStartDate,
+      goalKey
+    );
+  }
+
+  async function writeWeeklyServerGoalStateWithClient(client, guildId, weeklyGoal) {
+    if (!weeklyGoal || !weeklyGoal.weekStartDate || !weeklyGoal.goalKey) {
+      return;
+    }
+
+    await ensureGuild(client, guildId);
+    await query(`
+      insert into public.guild_weekly_goals (
+        guild_id,
+        week_start_date,
+        goal_key,
+        progress,
+        target,
+        completed_at
+      )
+      select
+        guilds.id,
+        $2::date,
+        $3,
+        $4,
+        $5,
+        $6::timestamptz
+      from public.discord_guilds guilds
+      where guilds.discord_guild_id = $1
+      on conflict (guild_id, week_start_date, goal_key) do update set
+        progress = excluded.progress,
+        target = excluded.target,
+        completed_at = coalesce(public.guild_weekly_goals.completed_at, excluded.completed_at);
+    `, [
+      guildId,
+      weeklyGoal.weekStartDate,
+      weeklyGoal.goalKey,
+      weeklyGoal.progress || 0,
+      weeklyGoal.target || 100,
+      weeklyGoal.completedAt || null,
+    ], client);
+  }
+
+  async function updateWeeklyServerGoalState(guildId, weekStartDate, goalKey, updater) {
+    return withTransaction(async (client) => {
+      await ensureGuild(client, guildId);
+      const weeklyGoal = await readWeeklyServerGoalStateWithClient(
+        client,
+        guildId,
+        weekStartDate,
+        goalKey
+      );
+      const result = updater(weeklyGoal);
+      const nextState = result && result.state ? result.state : result;
+
+      await writeWeeklyServerGoalStateWithClient(client, guildId, nextState);
+
+      return result === undefined ? nextState : result;
+    });
+  }
+
   async function updateGuildOwnedPals(guildId, userId, updater) {
     return withTransaction(async (client) => {
       const guildUserPals = await readGuildOwnedPals(guildId, client);
@@ -885,6 +998,7 @@ function createSupabaseStorageV2({
   const storage = {
     getDailyQuestState,
     getDailyResearchState,
+    getWeeklyServerGoalState,
     getGuildOwnedPals,
     getGuildPlayerRecord,
     getSphereInventory,
@@ -895,6 +1009,7 @@ function createSupabaseStorageV2({
     readUsers,
     updateDailyQuestState,
     updateDailyResearchState,
+    updateWeeklyServerGoalState,
     updateGuildOwnedPals,
     updateGuildPlayerRecord,
     updateSphereInventory,

@@ -521,7 +521,10 @@ module.exports = {
             interaction.user.id,
             encounter,
             sphere,
-            { trackDailyResearch: true }
+            {
+              trackDailyResearch: true,
+              trackWeeklyServerGoal: true,
+            }
           );
 
           console.log(

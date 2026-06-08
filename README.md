@@ -10,8 +10,10 @@ A Discord bot for Palworld-inspired collecting and progression. The bot is curre
 - XP, level, coins, streaks, failed captures, and sphere inventory.
 - Daily rewards and daily quests.
 - Daily Research assignment shown in `/quests`.
+- Weekly server capture goal shown in `/quests`.
 - Per-guild leaderboards.
 - Journal milestones for capture, collection, progression, and rare hunting goals.
+- Derived Paldeck completion visibility in `/profile` and `/mypals`.
 - Pal catalog image support from `data/pals.json`.
 
 ## Commands
@@ -44,18 +46,45 @@ New unlocks are shown in the `/capture` result when they happen. `/profile`
 shows Journal completion, recent unlocks, and the nearest locked milestones.
 Journal unlocks are scoped per Discord guild and player.
 
+## Paldeck Completion
+
+Paldeck completion is derived from the existing Pal catalog and each player's
+owned Pal collection. It does not add new persistence or schema requirements.
+`/profile` shows compact Paldeck completion, recent species, and the nearest
+Collector Journal milestone when one is available. `/mypals` shows Paldeck
+completion alongside Palbox filters and sorting.
+
 ## Daily Research
 
-Daily Research is PalMaster's Alpha 0.3 daily-return loop. Each player gets one
-guild-scoped assignment per UTC date:
+Daily Research is PalMaster's daily-return loop. Each player gets one
+deterministically selected, guild-scoped assignment per UTC date. The current
+assignment pool is:
 
-- Complete today's field research: try 3 captures.
+- Try 3 captures.
+- Try 5 captures.
+- Catch 1 Pal.
+- Catch 2 Pals.
+- Use 3 capture attempts.
 
-Progress increments on each normal `/capture` attempt, whether the Pal is caught
-or escapes. `/quests` shows Daily Research progress, reward, and claim status.
-Daily Research rewards are modest coins and XP only, claimable once per UTC date.
-This is separate from `/daily` and the existing daily quest reward.
+Progress increments through normal `/capture` attempts. Catch assignments only
+advance when a Pal is captured. `/quests` shows Daily Research progress, reward,
+and claim status. Daily Research rewards are modest coins and XP only,
+claimable once per UTC date. This is separate from `/daily` and the existing
+daily quest reward.
 Repeated claim clicks are guarded in-process and by persisted claimed state.
+
+## Weekly Server Goal
+
+Weekly Server Goal is PalMaster's first shared community objective. Each guild
+has one weekly capture goal:
+
+- Together, capture 100 Pals this week.
+
+The goal resets Monday at 00:00 UTC. Progress increments only after successful
+normal `/capture` attempts. Public `/spawn` captures do not advance the weekly
+goal. `/quests` shows server-wide progress, completion percentage, reset copy,
+and completed state. Alpha 0.6 does not grant rewards or add a claim flow for
+weekly goals.
 
 ## Local Setup
 
@@ -208,6 +237,12 @@ Daily Research persistence for Supabase requires applying
 code that reads or writes Daily Research entries with `STORAGE_PROVIDER=supabase`
 or `STORAGE_PROVIDER=supabase-v2`. JSON storage keeps Daily Research state inside
 each guild-scoped player record in `data/users.json`.
+
+Weekly Server Goal persistence for Supabase requires applying
+`supabase/migrations/20260608020000_guild_weekly_goals.sql` before deploying
+code that reads or writes weekly guild goals with `STORAGE_PROVIDER=supabase` or
+`STORAGE_PROVIDER=supabase-v2`. JSON storage keeps weekly guild goal state in
+`data/guild-weekly-goals.json`.
 
 For the Alpha 0.3 deployment sequence, smoke tests, and rollback notes, see
 [docs/ALPHA_0_3_DEPLOYMENT_CHECKLIST.md](docs/ALPHA_0_3_DEPLOYMENT_CHECKLIST.md).

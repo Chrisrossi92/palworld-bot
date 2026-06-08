@@ -10,6 +10,13 @@ const {
   normalizeJournal,
   summarizeJournal,
 } = require("./journalSystem");
+const { buildPaldeckSummary } = require("./paldeckSystem");
+const {
+  getUtcWeekStartDate,
+  getWeeklyServerGoalStatus: buildWeeklyServerGoalStatus,
+  incrementWeeklyServerGoalProgress,
+  weeklyServerGoalDefinition,
+} = require("./weeklyServerGoalSystem");
 
 const MAX_LEVEL = 70;
 
@@ -334,9 +341,10 @@ function getDefaultUserRecord(existingUser) {
     dailyQuests: getDefaultDailyQuests(
       existingUser && existingUser.dailyQuests
     ),
-    dailyResearch: normalizeDailyResearchState(
+    dailyResearch:
       existingUser && existingUser.dailyResearch
-    ),
+        ? normalizeDailyResearchState(existingUser.dailyResearch)
+        : null,
     journal: normalizeJournal(existingUser && existingUser.journal),
     spheres: {
       basic: Number.isInteger(existingSpheres.basic) && existingSpheres.basic >= 0
@@ -530,6 +538,18 @@ async function getJournalSummary(guildId, userId, ownedPals = null) {
   });
 }
 
+async function getPaldeckSummary(guildId, userId, ownedPals = null) {
+  const userPals = Array.isArray(ownedPals)
+    ? ownedPals
+    : await storage.getGuildOwnedPals(guildId, userId);
+  const palCatalog = await readPalCatalog();
+
+  return buildPaldeckSummary({
+    palCatalog,
+    ownedPals: userPals,
+  });
+}
+
 async function consumeSphere(guildId, userId, sphere) {
   const normalizedSphere = Object.prototype.hasOwnProperty.call(sphereBonus, sphere)
     ? sphere
@@ -692,13 +712,33 @@ async function updateUserProgress(guildId, userId, success, isShiny = false) {
   });
 }
 
-async function incrementDailyResearchAttempt(guildId, userId) {
+async function incrementDailyResearchAttempt(guildId, userId, success) {
   try {
     return await storage.updateDailyResearchState(guildId, userId, (dailyResearch) =>
-      incrementDailyResearchProgress(dailyResearch)
+      incrementDailyResearchProgress(dailyResearch, 1, {
+        eventType: success ? "capture_success" : "capture_attempt",
+        guildId,
+        userId,
+      })
     );
   } catch (error) {
     console.error("[captureSystem] Daily Research progress failed:", error);
+    return null;
+  }
+}
+
+async function incrementWeeklyServerGoalCapture(guildId) {
+  try {
+    const weekStartDate = getUtcWeekStartDate();
+
+    return await storage.updateWeeklyServerGoalState(
+      guildId,
+      weekStartDate,
+      weeklyServerGoalDefinition.key,
+      (weeklyGoal) => incrementWeeklyServerGoalProgress(weeklyGoal)
+    );
+  } catch (error) {
+    console.error("[captureSystem] Weekly server goal progress failed:", error);
     return null;
   }
 }
@@ -721,7 +761,21 @@ async function getDailyQuestStatus(guildId, userId) {
 async function getDailyResearchStatus(guildId, userId) {
   const dailyResearch = await storage.getDailyResearchState(guildId, userId);
 
-  return buildDailyResearchStatus(dailyResearch);
+  return buildDailyResearchStatus(dailyResearch, {
+    guildId,
+    userId,
+  });
+}
+
+async function getWeeklyServerGoalStatus(guildId) {
+  const weekStartDate = getUtcWeekStartDate();
+  const weeklyGoal = await storage.getWeeklyServerGoalState(
+    guildId,
+    weekStartDate,
+    weeklyServerGoalDefinition.key
+  );
+
+  return buildWeeklyServerGoalStatus(weeklyGoal);
 }
 
 async function claimDailyQuestReward(guildId, userId) {
@@ -992,7 +1046,10 @@ async function resolveCaptureEncounter(
         Boolean(encounterPal.isShiny)
       );
       const dailyResearch = options.trackDailyResearch
-        ? await incrementDailyResearchAttempt(guildId, userId)
+        ? await incrementDailyResearchAttempt(guildId, userId, success)
+        : null;
+      const weeklyServerGoal = options.trackWeeklyServerGoal
+        ? await incrementWeeklyServerGoalCapture(guildId)
         : null;
       const journal = await evaluateAndPersistJournal(guildId, userId);
 
@@ -1004,6 +1061,7 @@ async function resolveCaptureEncounter(
         progression,
         collectionUpdate,
         dailyResearch,
+        weeklyServerGoal,
         journal,
       };
     }
@@ -1015,7 +1073,7 @@ async function resolveCaptureEncounter(
       Boolean(encounterPal.isShiny)
     );
     const dailyResearch = options.trackDailyResearch
-      ? await incrementDailyResearchAttempt(guildId, userId)
+      ? await incrementDailyResearchAttempt(guildId, userId, success)
       : null;
     const journal = await evaluateAndPersistJournal(guildId, userId);
 
@@ -1027,6 +1085,7 @@ async function resolveCaptureEncounter(
       progression,
       collectionUpdate: null,
       dailyResearch,
+      weeklyServerGoal: null,
       journal,
     };
   } catch (error) {
@@ -1039,6 +1098,7 @@ async function attemptCapture(guildId, userId, sphere = "basic") {
   const encounter = await createEncounter(guildId, userId);
   return await resolveCaptureEncounter(guildId, userId, encounter, sphere, {
     trackDailyResearch: true,
+    trackWeeklyServerGoal: true,
   });
 }
 
@@ -1057,10 +1117,13 @@ module.exports = {
   getUserInventory,
   getUserRecord,
   getJournalSummary,
+  getPaldeckSummary,
   getDailyResearchStatus,
+  getWeeklyServerGoalStatus,
   getTrainerTitle,
   getDailyQuestStatus,
   MAX_LEVEL,
+  readPalCatalog,
   readUserPals,
   readUsers,
   resolveCaptureEncounter,

@@ -4,6 +4,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const {
   claimDailyResearchState,
+  chooseDailyResearchDefinition,
+  dailyResearchDefinitions,
   getDailyResearchStatus,
   incrementDailyResearchProgress,
   normalizeDailyResearchState,
@@ -43,6 +45,35 @@ test("keeps a stable assignment for the same date", () => {
   assert.equal(second.progress, 2);
 });
 
+test("deterministically selects the same assignment for player, guild, and date", () => {
+  const first = chooseDailyResearchDefinition({
+    guildId: "guild-1",
+    userId: "user-1",
+    date: "2026-06-08",
+  });
+  const second = chooseDailyResearchDefinition({
+    guildId: "guild-1",
+    userId: "user-1",
+    date: "2026-06-08",
+  });
+
+  assert.equal(first.key, second.key);
+  assert.ok(dailyResearchDefinitions.some((definition) => definition.key === first.key));
+});
+
+test("assignment pool includes only capture attempt and catch assignments", () => {
+  assert.deepEqual(
+    dailyResearchDefinitions.map((definition) => definition.key),
+    [
+      "field-research-3-captures",
+      "field-research-5-captures",
+      "field-research-catch-1-pal",
+      "field-research-catch-2-pals",
+      "field-research-3-attempts",
+    ]
+  );
+});
+
 test("resets assignment progress on a new UTC date", () => {
   const state = normalizeDailyResearchState(
     {
@@ -64,6 +95,28 @@ test("resets assignment progress on a new UTC date", () => {
   assert.equal(state.claimedAt, null);
 });
 
+test("preserves an existing same-day assignment instead of rerolling it", () => {
+  const state = normalizeDailyResearchState(
+    {
+      date: "2026-06-08",
+      assignmentKey: "field-research-catch-2-pals",
+      progress: 1,
+      target: 2,
+      claimed: false,
+      claimedAt: null,
+    },
+    {
+      guildId: "guild-1",
+      userId: "user-1",
+      date: "2026-06-08",
+    }
+  );
+
+  assert.equal(state.assignmentKey, "field-research-catch-2-pals");
+  assert.equal(state.progress, 1);
+  assert.equal(state.target, 2);
+});
+
 test("increments progress and caps at target", () => {
   const state = incrementDailyResearchProgress(
     {
@@ -81,6 +134,66 @@ test("increments progress and caps at target", () => {
   );
 
   assert.equal(state.progress, 3);
+});
+
+test("successful captures also advance attempt assignments", () => {
+  const state = incrementDailyResearchProgress(
+    {
+      date: "2026-06-08",
+      assignmentKey: "field-research-5-captures",
+      progress: 1,
+      target: 5,
+      claimed: false,
+      claimedAt: null,
+    },
+    1,
+    {
+      date: "2026-06-08",
+      eventType: "capture_success",
+    }
+  );
+
+  assert.equal(state.progress, 2);
+});
+
+test("failed capture attempts do not advance catch assignments", () => {
+  const state = incrementDailyResearchProgress(
+    {
+      date: "2026-06-08",
+      assignmentKey: "field-research-catch-1-pal",
+      progress: 0,
+      target: 1,
+      claimed: false,
+      claimedAt: null,
+    },
+    1,
+    {
+      date: "2026-06-08",
+      eventType: "capture_attempt",
+    }
+  );
+
+  assert.equal(state.progress, 0);
+});
+
+test("successful captures advance catch assignments", () => {
+  const state = incrementDailyResearchProgress(
+    {
+      date: "2026-06-08",
+      assignmentKey: "field-research-catch-1-pal",
+      progress: 0,
+      target: 1,
+      claimed: false,
+      claimedAt: null,
+    },
+    1,
+    {
+      date: "2026-06-08",
+      eventType: "capture_success",
+    }
+  );
+
+  assert.equal(state.progress, 1);
 });
 
 test("incomplete claim fails without mutating claimed state", () => {

@@ -7,7 +7,10 @@ const {
   ComponentType,
   MessageFlags,
 } = require("discord.js");
-const { readUserPals } = require("../systems/captureSystem");
+const {
+  getPaldeckSummary,
+  readUserPals,
+} = require("../systems/captureSystem");
 
 const pageSize = 10;
 const palboxButtonPrefix = "mypals";
@@ -67,7 +70,6 @@ function getCaughtAtTime(pal) {
 
 function getSummary(userPals) {
   return {
-    totalOwnedSpecies: new Set(userPals.map((pal) => pal.name)).size,
     shinyCount: userPals.filter((pal) => pal.isShiny).length,
     maxedCount: userPals.filter((pal) => (pal.stars ?? 0) >= 4).length,
   };
@@ -148,13 +150,18 @@ function buildPalboxEmbed({
   view,
   sort,
   page,
+  paldeckSummary,
 }) {
   const summary = getSummary(userPals);
   const totalPages = Math.max(1, Math.ceil(filteredPals.length / pageSize));
   const startIndex = page * pageSize;
   const pagePals = filteredPals.slice(startIndex, startIndex + pageSize);
+  const paldeckLine = paldeckSummary && paldeckSummary.totalSpeciesCount > 0
+    ? `Paldeck Completion: ${paldeckSummary.ownedSpeciesCount}/${paldeckSummary.totalSpeciesCount} ` +
+      `(${paldeckSummary.completionPercentage}%)`
+    : "Paldeck Completion: Catalog unavailable";
   const description = [
-    `Total owned species: ${summary.totalOwnedSpecies}`,
+    paldeckLine,
     `Shiny count: ${summary.shinyCount}`,
     `4-star/maxed count: ${summary.maxedCount}`,
   ].join("\n");
@@ -242,12 +249,23 @@ module.exports = {
     const userPals = Array.isArray(guildUserPals[interaction.user.id])
       ? guildUserPals[interaction.user.id]
       : [];
+    let paldeckSummary = null;
 
     if (userPals.length === 0) {
       await interaction.editReply(
         "Your Palbox is empty for now. Use /capture to catch your first Pal."
       );
       return;
+    }
+
+    try {
+      paldeckSummary = await getPaldeckSummary(
+        interaction.guildId,
+        interaction.user.id,
+        userPals
+      );
+    } catch (error) {
+      console.error("[mypals] Failed to build Paldeck summary:", error);
     }
 
     const filteredPals = sortPals(filterPals(userPals, view), sort);
@@ -262,6 +280,7 @@ module.exports = {
             view,
             sort,
             page: 0,
+            paldeckSummary,
           }),
         ],
         components: buildPalboxComponents(interaction.user.id, 0, 1, true),
@@ -280,6 +299,7 @@ module.exports = {
           view,
           sort,
           page,
+          paldeckSummary,
         }),
       ],
       components: buildPalboxComponents(interaction.user.id, page, totalPages),
@@ -323,6 +343,7 @@ module.exports = {
             view,
             sort,
             page,
+            paldeckSummary,
           }),
         ],
         components: buildPalboxComponents(interaction.user.id, page, totalPages),
@@ -340,6 +361,7 @@ module.exports = {
               view,
               sort,
               page,
+              paldeckSummary,
             }),
           ],
           components: buildPalboxComponents(interaction.user.id, page, totalPages, true),
