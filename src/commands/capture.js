@@ -21,7 +21,7 @@ const {
 } = require("../systems/captureSystem");
 
 const CAPTURE_COOLDOWN_MS = 10_000;
-const SINGLE_SHAKE_DELAY_MS = 600;
+const LIGHTWEIGHT_SHAKE_DELAY_MS = 400;
 const SUCCESS_SHAKE_COUNT = 3;
 const FAILED_SHAKE_COUNT = 2;
 const MAX_SHAKE_COUNT = 3;
@@ -486,16 +486,16 @@ function getCaptureShakeSteps(result) {
   return Array.from({ length: shakeCount }, (_, index) => ({
     shakeCount: index + 1,
     maxShakes: MAX_SHAKE_COUNT,
-    delayMs: SINGLE_SHAKE_DELAY_MS,
+    delayMs: LIGHTWEIGHT_SHAKE_DELAY_MS,
   }));
 }
 
 function getCapturePresentationSteps() {
   return [{
-    type: "shake",
+    type: "lightweight-shake",
     shakeCount: 1,
     maxShakes: MAX_SHAKE_COUNT,
-    delayMs: SINGLE_SHAKE_DELAY_MS,
+    delayMs: LIGHTWEIGHT_SHAKE_DELAY_MS,
   }];
 }
 
@@ -583,6 +583,13 @@ async function buildShakePayload(encounter, sphere, inventory, options = {}) {
       attachments: [],
     };
   }
+}
+
+function buildLightweightShakePayload(inventory) {
+  return {
+    content: "The sphere shakes...",
+    components: buildSphereButtons(inventory, true),
+  };
 }
 
 async function buildResolvedPayload(result, remaining, inventory, options = {}) {
@@ -817,12 +824,18 @@ module.exports = {
               interaction.user.id
             );
 
-            await interaction.editReply(
-              await buildShakePayload(encounter, sphere, shakeInventory, {
-                shakeCount: step.shakeCount,
-                maxShakes: step.maxShakes,
-              })
-            );
+            if (step.type === "lightweight-shake") {
+              await interaction.editReply(
+                buildLightweightShakePayload(shakeInventory)
+              );
+            } else {
+              await interaction.editReply(
+                await buildShakePayload(encounter, sphere, shakeInventory, {
+                  shakeCount: step.shakeCount,
+                  maxShakes: step.maxShakes,
+                })
+              );
+            }
 
             await new Promise((res) => setTimeout(res, step.delayMs));
           }
@@ -917,6 +930,7 @@ module.exports = {
   buildResolvedCardEmbed,
   buildResolvedEmbed,
   buildResolvedPayload,
+  buildLightweightShakePayload,
   buildShakeCardEmbed,
   buildShakeEmbed,
   buildShakePayload,

@@ -4,6 +4,7 @@ const {
   buildEncounterPayload,
   getCapturePresentationSteps,
   getCaptureShakeSteps,
+  buildLightweightShakePayload,
   buildShakePayload,
   buildResolvedPayload,
   buildThrowPayload,
@@ -462,16 +463,16 @@ test("getCaptureShakeSteps reaches three shakes for success and two for failure"
   assert.deepEqual(
     successSteps.map((step) => [step.shakeCount, step.maxShakes, step.delayMs]),
     [
-      [1, 3, 600],
-      [2, 3, 600],
-      [3, 3, 600],
+      [1, 3, 400],
+      [2, 3, 400],
+      [3, 3, 400],
     ]
   );
   assert.deepEqual(
     failedSteps.map((step) => [step.shakeCount, step.maxShakes, step.delayMs]),
     [
-      [1, 3, 600],
-      [2, 3, 600],
+      [1, 3, 400],
+      [2, 3, 400],
     ]
   );
 });
@@ -482,7 +483,7 @@ test("default capture presentation uses single shake mode", () => {
 
   assert.deepEqual(
     successSteps.map((step) => step.type),
-    ["shake"]
+    ["lightweight-shake"]
   );
   assert.deepEqual(
     successSteps.map((step) => step.shakeCount),
@@ -490,16 +491,28 @@ test("default capture presentation uses single shake mode", () => {
   );
   assert.deepEqual(
     failedSteps.map((step) => step.type),
-    ["shake"]
+    ["lightweight-shake"]
   );
   assert.deepEqual(
     failedSteps.map((step) => step.shakeCount),
     [1]
   );
-  assert.equal(successSteps[0].delayMs, 600);
-  assert.equal(failedSteps[0].delayMs, 600);
+  assert.equal(successSteps[0].delayMs, 400);
+  assert.equal(failedSteps[0].delayMs, 400);
   assert.equal(successSteps.some((step) => step.type === "throw"), false);
   assert.equal(failedSteps.some((step) => step.type === "throw"), false);
+  assert.equal(successSteps.some((step) => step.type === "shake"), false);
+  assert.equal(failedSteps.some((step) => step.type === "shake"), false);
+});
+
+test("default lightweight shake payload uses no attachment upload", () => {
+  const payload = buildLightweightShakePayload(buildInventory());
+
+  assert.equal(payload.content, "The sphere shakes...");
+  assert.equal(payload.components.length, 2);
+  assert.equal(Object.prototype.hasOwnProperty.call(payload, "files"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(payload, "attachments"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(payload, "embeds"), false);
 });
 
 test("throw and shake renderers produce image buffers without Pal image URLs", async () => {
