@@ -21,6 +21,11 @@ const {
 } = require("../systems/captureSystem");
 
 const CAPTURE_COOLDOWN_MS = 10_000;
+const THROW_CARD_DELAY_MS = 500;
+const SHAKE_CARD_DELAYS_MS = [550, 600, 650];
+const SUCCESS_SHAKE_COUNT = 3;
+const FAILED_SHAKE_COUNT = 2;
+const MAX_SHAKE_COUNT = 3;
 const captureCooldowns = new Map();
 
 const rarityColors = {
@@ -458,13 +463,34 @@ function buildThrowCardEmbed(encounter, sphere, attachmentName) {
     .setTimestamp();
 }
 
-function buildShakeCardEmbed(encounter, attachmentName) {
+function buildShakeCardEmbed(encounter, attachmentName, options = {}) {
+  const shakeCount =
+    Number.isInteger(options.shakeCount) && options.shakeCount > 0
+      ? options.shakeCount
+      : 1;
+  const maxShakes =
+    Number.isInteger(options.maxShakes) && options.maxShakes > 0
+      ? options.maxShakes
+      : MAX_SHAKE_COUNT;
+
   return new EmbedBuilder()
     .setTitle("The Sphere Shakes")
     .setColor(encounter.isShiny ? shinyColor : 0xf39c12)
-    .setDescription("The capture is still undecided.")
+    .setDescription(`Shake ${Math.min(shakeCount, maxShakes)}/${maxShakes}.`)
     .setImage(`attachment://${attachmentName}`)
     .setTimestamp();
+}
+
+function getCaptureShakeSteps(result) {
+  const shakeCount = result?.success ? SUCCESS_SHAKE_COUNT : FAILED_SHAKE_COUNT;
+
+  return Array.from({ length: shakeCount }, (_, index) => ({
+    shakeCount: index + 1,
+    maxShakes: MAX_SHAKE_COUNT,
+    delayMs:
+      SHAKE_CARD_DELAYS_MS[index] ||
+      SHAKE_CARD_DELAYS_MS[SHAKE_CARD_DELAYS_MS.length - 1],
+  }));
 }
 
 async function buildThrowPayload(encounter, sphere, inventory, options = {}) {
@@ -514,6 +540,8 @@ async function buildShakePayload(encounter, sphere, inventory, options = {}) {
     const card = await renderCard({
       pal: encounter,
       sphere,
+      shakeCount: options.shakeCount,
+      maxShakes: options.maxShakes,
     });
     const attachmentName = card.filename || "capture-shake.png";
     const attachmentSource = card.buffer || card.path;
@@ -524,7 +552,10 @@ async function buildShakePayload(encounter, sphere, inventory, options = {}) {
 
     return {
       content: "",
-      embeds: [buildShakeCardEmbed(encounter, attachmentName)],
+      embeds: [buildShakeCardEmbed(encounter, attachmentName, {
+        shakeCount: options.shakeCount,
+        maxShakes: options.maxShakes,
+      })],
       components,
       attachments: [],
       files: [
@@ -538,7 +569,10 @@ async function buildShakePayload(encounter, sphere, inventory, options = {}) {
 
     return {
       content: "",
-      embeds: [buildShakeEmbed(encounter)],
+      embeds: [buildShakeEmbed(encounter, {
+        shakeCount: options.shakeCount,
+        maxShakes: options.maxShakes,
+      })],
       components,
       attachments: [],
     };
@@ -610,12 +644,23 @@ function buildThrowEmbed(encounter, sphere) {
   return embed;
 }
 
-function buildShakeEmbed(encounter) {
+function buildShakeEmbed(encounter, options = {}) {
   const imageUrl = getPalImageUrl(encounter);
+  const shakeCount =
+    Number.isInteger(options.shakeCount) && options.shakeCount > 0
+      ? options.shakeCount
+      : null;
+  const maxShakes =
+    Number.isInteger(options.maxShakes) && options.maxShakes > 0
+      ? options.maxShakes
+      : MAX_SHAKE_COUNT;
+  const shakeLabel = shakeCount
+    ? `Shake ${Math.min(shakeCount, maxShakes)}/${maxShakes}. `
+    : "";
   const embed = new EmbedBuilder()
     .setTitle("...shake...shake...")
     .setColor(encounter.isShiny ? shinyColor : 0xf39c12)
-    .setDescription("The sphere rocks on the ground...")
+    .setDescription(`${shakeLabel}The sphere rocks on the ground...`)
     .setTimestamp();
 
   if (encounter.isShiny) {
@@ -706,6 +751,9 @@ module.exports = {
       });
 
       collector.on("collect", async (buttonInteraction) => {
+        let resolvedResult = null;
+        let resolvedSphereUse = null;
+
         try {
           await buttonInteraction.deferUpdate();
           if (buttonInteraction.user.id !== interaction.user.id) {
@@ -721,6 +769,7 @@ module.exports = {
           );
 
           const sphereUse = await consumeSphere(guildId, interaction.user.id, sphere);
+          resolvedSphereUse = sphereUse;
 
           if (!sphereUse.consumed) {
             const disabledInventory = await getUserInventory(
@@ -747,18 +796,7 @@ module.exports = {
             await buildThrowPayload(encounter, sphere, throwingInventory)
           );
 
-          await new Promise((res) => setTimeout(res, 700));
-
-          const shakeInventory = await getUserInventory(
-            guildId,
-            interaction.user.id
-          );
-
-          await interaction.editReply(
-            await buildShakePayload(encounter, sphere, shakeInventory)
-          );
-
-          await new Promise((res) => setTimeout(res, 900));
+          await new Promise((res) => setTimeout(res, THROW_CARD_DELAY_MS));
 
           const result = await resolveCaptureEncounter(
             guildId,
@@ -770,10 +808,29 @@ module.exports = {
               trackWeeklyServerGoal: true,
             }
           );
+          resolvedResult = result;
 
           console.log(
             `[capture] after capture system result user=${interaction.user.id} success=${result.success} pal=${result.pal.name} level=${result.pal.level} sphere=${result.sphere} chance=${result.captureChance}`
           );
+
+          const shakeSteps = getCaptureShakeSteps(result);
+
+          for (const step of shakeSteps) {
+            const shakeInventory = await getUserInventory(
+              guildId,
+              interaction.user.id
+            );
+
+            await interaction.editReply(
+              await buildShakePayload(encounter, sphere, shakeInventory, {
+                shakeCount: step.shakeCount,
+                maxShakes: step.maxShakes,
+              })
+            );
+
+            await new Promise((res) => setTimeout(res, step.delayMs));
+          }
 
           const resolvedInventory = await getUserInventory(
             guildId,
@@ -791,6 +848,31 @@ module.exports = {
           collector.stop("resolved");
         } catch (error) {
           console.error("[capture] Error resolving encounter button:", error);
+
+          if (resolvedResult) {
+            try {
+              const resolvedInventory = await getUserInventory(
+                guildId,
+                interaction.user.id
+              );
+
+              await interaction.editReply(
+                await buildResolvedPayload(
+                  resolvedResult,
+                  resolvedSphereUse?.remaining ?? 0,
+                  resolvedInventory
+                )
+              );
+
+              collector.stop("resolved");
+              return;
+            } catch (finalError) {
+              console.error(
+                "[capture] Failed to render stable final result after resolved capture:",
+                finalError
+              );
+            }
+          }
 
           const errorInventory = await getUserInventory(
             guildId,
@@ -847,5 +929,6 @@ module.exports = {
   buildThrowCardEmbed,
   buildThrowEmbed,
   buildThrowPayload,
+  getCaptureShakeSteps,
   getWeeklyServerGoalCompletionField,
 };

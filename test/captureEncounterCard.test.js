@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
   buildEncounterPayload,
+  getCaptureShakeSteps,
   buildShakePayload,
   buildResolvedPayload,
   buildThrowPayload,
@@ -15,6 +16,7 @@ const {
   buildPalImagePlaceholderSvg,
   estimateTextWidth,
   fitSvgText,
+  normalizeShakeCount,
   renderCaptureShakeCard,
   renderCaptureResultCard,
   renderCaptureThrowCard,
@@ -320,24 +322,34 @@ test("buildThrowPayload uses generated card attachment and clears stale attachme
 });
 
 test("buildShakePayload uses generated card attachment and clears stale attachments", async () => {
+  let renderedOptions = null;
   const payload = await buildShakePayload(
     buildEncounter(),
     "basic",
     buildInventory(),
     {
-      renderCard: async () => ({
-        filename: "shake-card.png",
-        buffer: Buffer.from("fake-png"),
-      }),
+      shakeCount: 2,
+      maxShakes: 3,
+      renderCard: async (options) => {
+        renderedOptions = options;
+
+        return {
+          filename: "shake-card.png",
+          buffer: Buffer.from("fake-png"),
+        };
+      },
     }
   );
   const embed = payload.embeds[0].toJSON();
 
   assert.equal(embed.title, "The Sphere Shakes");
+  assert.equal(embed.description, "Shake 2/3.");
   assert.equal(embed.image.url, "attachment://shake-card.png");
   assert.deepEqual(payload.attachments, []);
   assert.equal(payload.files.length, 1);
   assert.equal(payload.components.length, 2);
+  assert.equal(renderedOptions.shakeCount, 2);
+  assert.equal(renderedOptions.maxShakes, 3);
 });
 
 test("buildThrowPayload falls back to throw embed when rendering fails", async () => {
@@ -381,6 +393,8 @@ test("buildShakePayload falls back to shake embed when rendering fails", async (
       "basic",
       buildInventory(),
       {
+        shakeCount: 2,
+        maxShakes: 3,
         renderCard: async () => {
           throw new Error("render failed");
         },
@@ -393,12 +407,13 @@ test("buildShakePayload falls back to shake embed when rendering fails", async (
   const embed = payload.embeds[0].toJSON();
 
   assert.equal(embed.title, "...shake...shake...");
+  assert.match(embed.description, /Shake 2\/3/);
   assert.equal(embed.thumbnail.url, "https://example.com/lamball.png");
   assert.equal(payload.files, undefined);
   assert.deepEqual(payload.attachments, []);
 });
 
-test("throw and shake cards keep cinematic sequence text minimal", () => {
+test("throw and shake cards keep cinematic sequence text minimal and outcome-free", () => {
   const throwSvg = buildCaptureThrowCardSvg({
     pal: buildEncounter({
       name: "Broncherry Aqua Nocturnal Experimental Variant",
@@ -408,6 +423,8 @@ test("throw and shake cards keep cinematic sequence text minimal", () => {
   const shakeSvg = buildCaptureShakeCardSvg({
     pal: buildEncounter(),
     sphere: "legendary",
+    shakeCount: 2,
+    maxShakes: 3,
   });
   const throwNameMatch = throwSvg.match(
     /<text x="72" y="160"[^>]+font-size="(\d+)"[^>]*>([^<]+)<\/text>/
@@ -419,7 +436,43 @@ test("throw and shake cards keep cinematic sequence text minimal", () => {
   assert.ok(estimateTextWidth(throwNameMatch[2], Number(throwNameMatch[1])) <= 280);
   assert.match(shakeSvg, /The sphere shakes.../);
   assert.match(shakeSvg, /Legendary Sphere/);
-  assert.doesNotMatch(`${throwSvg}\n${shakeSvg}`, /Inventory|coins|XP|Journal|Research|Server Goal/);
+  assert.match(shakeSvg, /Shake 2\/3/);
+  assert.doesNotMatch(
+    `${throwSvg}\n${shakeSvg}`,
+    /Inventory|coins|XP|Journal|Research|Server Goal|CAPTURED|ESCAPED|Success|Failure/
+  );
+});
+
+test("normalizeShakeCount keeps shake count inside available indicators", () => {
+  assert.deepEqual(normalizeShakeCount(5, 3), {
+    shakeCount: 3,
+    maxShakes: 3,
+  });
+  assert.deepEqual(normalizeShakeCount(0, 0), {
+    shakeCount: 1,
+    maxShakes: 3,
+  });
+});
+
+test("getCaptureShakeSteps reaches three shakes for success and two for failure", () => {
+  const successSteps = getCaptureShakeSteps({ success: true });
+  const failedSteps = getCaptureShakeSteps({ success: false });
+
+  assert.deepEqual(
+    successSteps.map((step) => [step.shakeCount, step.maxShakes, step.delayMs]),
+    [
+      [1, 3, 550],
+      [2, 3, 600],
+      [3, 3, 650],
+    ]
+  );
+  assert.deepEqual(
+    failedSteps.map((step) => [step.shakeCount, step.maxShakes, step.delayMs]),
+    [
+      [1, 3, 550],
+      [2, 3, 600],
+    ]
+  );
 });
 
 test("throw and shake renderers produce image buffers without Pal image URLs", async () => {
@@ -435,7 +488,7 @@ test("throw and shake renderers produce image buffers without Pal image URLs", a
   assert.match(throwCard.filename, /^throw-\d+-lamball\.png$/);
   assert.ok(Buffer.isBuffer(throwCard.buffer));
   assert.ok(throwCard.buffer.length > 0);
-  assert.match(shakeCard.filename, /^shake-\d+-lamball\.png$/);
+  assert.match(shakeCard.filename, /^shake-1-\d+-lamball\.png$/);
   assert.ok(Buffer.isBuffer(shakeCard.buffer));
   assert.ok(shakeCard.buffer.length > 0);
 });

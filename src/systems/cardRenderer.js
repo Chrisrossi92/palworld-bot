@@ -539,10 +539,38 @@ function buildCaptureThrowCardSvg({ pal, sphere }) {
   `;
 }
 
-function buildCaptureShakeCardSvg({ pal, sphere }) {
+function normalizeShakeCount(shakeCount, maxShakes) {
+  const safeMaxShakes =
+    Number.isInteger(maxShakes) && maxShakes > 0 ? maxShakes : 3;
+  const safeShakeCount =
+    Number.isInteger(shakeCount) && shakeCount > 0 ? shakeCount : 1;
+
+  return {
+    shakeCount: Math.min(safeShakeCount, safeMaxShakes),
+    maxShakes: safeMaxShakes,
+  };
+}
+
+function buildShakeIndicators({ shakeCount, maxShakes, accentColor }) {
+  const normalized = normalizeShakeCount(shakeCount, maxShakes);
+  const spacing = 48;
+  const startX = 350 - ((normalized.maxShakes - 1) * spacing) / 2;
+
+  return Array.from({ length: normalized.maxShakes }, (_, index) => {
+    const step = index + 1;
+    const isActive = step <= normalized.shakeCount;
+    const opacity = isActive ? 0.92 : 0.24;
+    const radius = isActive ? 9 : 7;
+
+    return `<circle cx="${startX + index * spacing}" cy="274" r="${radius}" fill="${accentColor}" opacity="${opacity}"/>`;
+  }).join("");
+}
+
+function buildCaptureShakeCardSvg({ pal, sphere, shakeCount = 1, maxShakes = 3 }) {
   const rarity = pal?.rarity || "common";
   const accentColor = pal?.isShiny ? rarityColors.legendary : rarityColors[rarity] || rarityColors.common;
   const sphereName = capitalize(sphere || "basic");
+  const normalizedShakes = normalizeShakeCount(shakeCount, maxShakes);
   const fittedTitle = fitSvgText("The sphere shakes...", {
     maxWidth: 332,
     preferredFontSize: 38,
@@ -580,9 +608,12 @@ function buildCaptureShakeCardSvg({ pal, sphere }) {
       <circle cx="350" cy="154" r="20" fill="${accentColor}" opacity="0.92"/>
       <text x="350" y="68" text-anchor="middle" fill="#ffffff" font-size="${fittedTitle.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(fittedTitle.text)}</text>
       <text x="350" y="242" text-anchor="middle" fill="#d9e1ea" font-size="${fittedSphere.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedSphere.text)}</text>
-      <circle cx="302" cy="274" r="8" fill="${accentColor}" opacity="0.9"/>
-      <circle cx="350" cy="274" r="8" fill="${accentColor}" opacity="0.62"/>
-      <circle cx="398" cy="274" r="8" fill="${accentColor}" opacity="0.34"/>
+      <text x="350" y="102" text-anchor="middle" fill="#9facb8" font-size="16" font-family="Arial, Helvetica, sans-serif" font-weight="800">Shake ${normalizedShakes.shakeCount}/${normalizedShakes.maxShakes}</text>
+      ${buildShakeIndicators({
+        shakeCount: normalizedShakes.shakeCount,
+        maxShakes: normalizedShakes.maxShakes,
+        accentColor,
+      })}
     </svg>
   `;
 }
@@ -925,10 +956,16 @@ async function renderCaptureThrowCard({ pal, sphere }) {
   };
 }
 
-async function renderCaptureShakeCard({ pal, sphere }) {
+async function renderCaptureShakeCard({ pal, sphere, shakeCount, maxShakes }) {
   const palSlug = slugify(pal?.name);
-  const filename = `shake-${Date.now()}-${palSlug}.png`;
-  const baseCard = sharp(Buffer.from(buildCaptureShakeCardSvg({ pal, sphere })));
+  const normalizedShakes = normalizeShakeCount(shakeCount, maxShakes);
+  const filename = `shake-${normalizedShakes.shakeCount}-${Date.now()}-${palSlug}.png`;
+  const baseCard = sharp(Buffer.from(buildCaptureShakeCardSvg({
+    pal,
+    sphere,
+    shakeCount: normalizedShakes.shakeCount,
+    maxShakes: normalizedShakes.maxShakes,
+  })));
   const buffer = await baseCard.png().toBuffer();
 
   return {
@@ -981,6 +1018,7 @@ module.exports = {
   buildCardSvg,
   estimateTextWidth,
   fitSvgText,
+  normalizeShakeCount,
   renderCaptureShakeCard,
   renderCaptureResultCard,
   renderCaptureThrowCard,
