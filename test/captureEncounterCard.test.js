@@ -174,9 +174,9 @@ test("fitSvgText keeps long Pal names inside encounter card text bounds", () => 
 
 test("normal Pal names keep preferred encounter card font size", () => {
   const fitted = fitSvgText("Lamball", {
-    maxWidth: 300,
-    preferredFontSize: 54,
-    minFontSize: 30,
+    maxWidth: 270,
+    preferredFontSize: 52,
+    minFontSize: 28,
   });
   const svg = buildCardSvg({
     pal: buildEncounter(),
@@ -186,9 +186,9 @@ test("normal Pal names keep preferred encounter card font size", () => {
   });
 
   assert.equal(fitted.text, "Lamball");
-  assert.equal(fitted.fontSize, 54);
+  assert.equal(fitted.fontSize, 52);
   assert.equal(fitted.truncated, false);
-  assert.match(svg, /font-size="54"[^>]*>Lamball<\/text>/);
+  assert.match(svg, /font-size="52"[^>]*>Lamball<\/text>/);
 });
 
 test("buildCardSvg applies fitted long Pal name before the art frame", () => {
@@ -199,7 +199,7 @@ test("buildCardSvg applies fitted long Pal name before the art frame", () => {
     isShiny: false,
   });
   const nameMatch = svg.match(
-    /<text x="76" y="174"[^>]+font-size="(\d+)"[^>]*>([^<]+)<\/text>/
+    /<text x="52" y="164"[^>]+font-size="(\d+)"[^>]*>([^<]+)<\/text>/
   );
 
   assert.ok(nameMatch);
@@ -208,6 +208,22 @@ test("buildCardSvg applies fitted long Pal name before the art frame", () => {
     estimateTextWidth(nameMatch[2], Number(nameMatch[1])) <= 300
   );
   assert.doesNotMatch(nameMatch[2], /Nocturnal/);
+});
+
+test("encounter card stays focused on encounter identity only", () => {
+  const svg = buildCardSvg({
+    pal: buildEncounter({ isShiny: true }),
+    level: 7,
+    rarity: "common",
+    isShiny: true,
+  });
+
+  assert.match(svg, /Lamball/);
+  assert.match(svg, /Level 7/);
+  assert.match(svg, /COMMON/);
+  assert.match(svg, /LUCKY/);
+  assert.doesNotMatch(svg, /Basic|Mega|Giga|Hyper|Ultra|Legendary/);
+  assert.doesNotMatch(svg, /XP|coins|Journal|Research|Server Goal/);
 });
 
 test("buildCardSvg labels shiny encounters as Lucky", () => {
@@ -317,6 +333,67 @@ test("buildCaptureResultHighlights caps Journal unlocks with +N more", () => {
   assert.ok(!highlights.some((line) => /Collector/.test(line)));
 });
 
+test("captured result card focuses on outcome and earned rewards", () => {
+  const svg = buildCaptureResultCardSvg(buildCaptureResult({
+    progression: {
+      xpGained: 20,
+      coinsGained: 40,
+      leveledUp: true,
+      oldLevel: 4,
+      level: 5,
+    },
+    journal: {
+      newlyUnlocked: [
+        { title: "First Capture" },
+        { title: "Ten Captures" },
+        { title: "Collector" },
+      ],
+    },
+  }));
+
+  assert.match(svg, /CAPTURED!/);
+  assert.match(svg, /\+20 XP/);
+  assert.match(svg, /\+40 coins/);
+  assert.match(svg, /Level Up: 4 -&gt; 5/);
+  assert.match(svg, /Journal: First Capture, Ten Captures \+1 more/);
+  assert.match(svg, /Research: 2\/3/);
+  assert.match(svg, /Server Goal: 44\/100/);
+  assert.doesNotMatch(svg, /Total XP|Total Coins|Streak|Stars|Essence|Duplicate|Condensed/);
+});
+
+test("escaped result card remains minimal", () => {
+  const svg = buildCaptureResultCardSvg(buildCaptureResult({
+    success: false,
+    progression: {
+      xpGained: 5,
+      coinsGained: 10,
+      leveledUp: false,
+      oldLevel: 1,
+      level: 1,
+    },
+    journal: {
+      newlyUnlocked: [
+        { title: "First Capture" },
+      ],
+    },
+    dailyResearch: {
+      progress: 3,
+      target: 3,
+    },
+    weeklyServerGoal: {
+      state: {
+        progress: 99,
+        target: 100,
+      },
+      progress: 99,
+    },
+  }));
+
+  assert.match(svg, /ESCAPED!/);
+  assert.match(svg, /Sphere: basic/);
+  assert.doesNotMatch(svg, /XP|coins|Journal|Research|Server Goal|Level Up/);
+});
+
 test("buildCaptureResultCardSvg uses Lucky treatment for Lucky captures", () => {
   const svg = buildCaptureResultCardSvg(buildCaptureResult({
     pal: {
@@ -343,7 +420,7 @@ test("buildCaptureResultCardSvg fits long Pal names safely", () => {
     },
   }));
   const nameMatch = svg.match(
-    /<text x="76" y="170"[^>]+font-size="(\d+)"[^>]*>([^<]+)<\/text>/
+    /<text x="76" y="178"[^>]+font-size="(\d+)"[^>]*>([^<]+)<\/text>/
   );
 
   assert.ok(nameMatch);

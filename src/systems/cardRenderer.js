@@ -151,23 +151,22 @@ function buildCardSvg({ pal, level, rarity, isShiny }) {
   const levelText = level ? `Level ${level}` : "Level ?";
   const rarityText = rarity || "common";
   const fittedName = fitSvgText(palName, {
-    maxWidth: 300,
-    preferredFontSize: 54,
-    minFontSize: 30,
+    maxWidth: 270,
+    preferredFontSize: 52,
+    minFontSize: 28,
   });
   const fittedRarity = fitSvgText(rarityText.toUpperCase(), {
-    maxWidth: 142,
-    preferredFontSize: 23,
+    maxWidth: 136,
+    preferredFontSize: 22,
     minFontSize: 18,
   });
   const rarityBadgeWidth = Math.min(
-    184,
-    Math.max(160, fittedRarity.estimatedWidth + 44)
+    176,
+    Math.max(150, fittedRarity.estimatedWidth + 42)
   );
-  const levelX = 76 + rarityBadgeWidth + 16;
   const fittedLevel = fitSvgText(levelText, {
-    maxWidth: Math.max(80, 380 - levelX),
-    preferredFontSize: 28,
+    maxWidth: 160,
+    preferredFontSize: 30,
     minFontSize: 22,
   });
   const fittedLucky = fitSvgText("LUCKY", {
@@ -192,24 +191,24 @@ function buildCardSvg({ pal, level, rarity, isShiny }) {
       </defs>
       <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="28" fill="url(#bg)"/>
       <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="28" fill="url(#fieldGlow)"/>
-      <path d="M0 236 C140 198 252 228 388 192 C506 160 590 176 700 136 L700 320 L0 320 Z" fill="#0c1118" opacity="0.52"/>
-      <path d="M0 256 C142 220 264 244 414 210 C528 184 618 196 700 162" fill="none" stroke="${accentColor}" stroke-width="2" opacity="0.26"/>
+      <path d="M0 232 C132 204 252 232 382 196 C506 162 596 174 700 136 L700 320 L0 320 Z" fill="#0c1118" opacity="0.58"/>
+      <path d="M0 258 C142 220 266 244 410 206 C526 176 618 190 700 154" fill="none" stroke="${accentColor}" stroke-width="2" opacity="0.3"/>
       <rect x="0" y="0" width="14" height="${CARD_HEIGHT}" fill="${accentColor}"/>
-      <circle cx="86" cy="76" r="16" fill="${accentColor}" opacity="0.95"/>
-      <text x="76" y="116" fill="#d6dee8" font-size="22" font-family="Arial, Helvetica, sans-serif" font-weight="700">FIELD ENCOUNTER</text>
-      <text x="76" y="174" fill="#ffffff" font-size="${fittedName.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedName.text)}</text>
-      <rect x="76" y="208" width="${rarityBadgeWidth}" height="42" rx="21" fill="${accentColor}" opacity="0.18"/>
-      <text x="98" y="237" fill="${accentColor}" font-size="${fittedRarity.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedRarity.text)}</text>
-      <text x="${levelX}" y="238" fill="#d9e1ea" font-size="${fittedLevel.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedLevel.text)}</text>
+      <circle cx="62" cy="54" r="14" fill="${accentColor}" opacity="0.95"/>
+      <text x="52" y="95" fill="#d6dee8" font-size="19" font-family="Arial, Helvetica, sans-serif" font-weight="800">FIELD ENCOUNTER</text>
+      <text x="52" y="164" fill="#ffffff" font-size="${fittedName.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(fittedName.text)}</text>
+      <text x="52" y="207" fill="#d9e1ea" font-size="${fittedLevel.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedLevel.text)}</text>
+      <rect x="52" y="226" width="${rarityBadgeWidth}" height="42" rx="21" fill="${accentColor}" opacity="0.2"/>
+      <text x="74" y="255" fill="${accentColor}" font-size="${fittedRarity.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(fittedRarity.text)}</text>
       ${
         isShiny
-          ? `<rect x="76" y="260" width="128" height="36" rx="18" fill="#f1c40f" opacity="0.22"/>
-             <text x="99" y="284" fill="#f7d95c" font-size="${fittedLucky.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${fittedLucky.text}</text>`
+          ? `<rect x="52" y="276" width="128" height="32" rx="16" fill="#f1c40f" opacity="0.24"/>
+             <text x="75" y="298" fill="#f7d95c" font-size="${fittedLucky.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${fittedLucky.text}</text>`
           : ""
       }
-      <rect x="394" y="24" width="276" height="272" rx="28" fill="#0d1117" opacity="0.76"/>
-      <rect x="410" y="40" width="244" height="240" rx="22" fill="#17212c" opacity="0.82"/>
-      <rect x="410" y="40" width="244" height="240" rx="22" fill="none" stroke="${accentColor}" stroke-width="3" opacity="0.58"/>
+      <rect x="316" y="14" width="364" height="292" rx="30" fill="#0d1117" opacity="0.68"/>
+      <rect x="334" y="30" width="328" height="260" rx="24" fill="#17212c" opacity="0.72"/>
+      <rect x="334" y="30" width="328" height="260" rx="24" fill="none" stroke="${accentColor}" stroke-width="3" opacity="0.62"/>
     </svg>
   `;
 }
@@ -291,6 +290,10 @@ function getResultWeeklyGoalLine(result) {
 }
 
 function buildCaptureResultHighlights(result) {
+  if (!result?.success) {
+    return [];
+  }
+
   return [
     getResultProgressionLine(result),
     result?.progression?.leveledUp
@@ -305,8 +308,8 @@ function buildCaptureResultHighlights(result) {
 function fitResultLine(line) {
   return fitSvgText(line, {
     maxWidth: 314,
-    preferredFontSize: 17,
-    minFontSize: 13,
+    preferredFontSize: 15,
+    minFontSize: 11,
   });
 }
 
@@ -324,8 +327,8 @@ function buildCaptureResultCardSvg(result) {
     ? "Collection updated"
     : "It broke free";
   const fittedName = fitSvgText(getPalName(pal), {
-    maxWidth: 314,
-    preferredFontSize: 48,
+    maxWidth: 300,
+    preferredFontSize: 46,
     minFontSize: 28,
   });
   const fittedRarity = fitSvgText(String(rarity).toUpperCase(), {
@@ -350,7 +353,7 @@ function buildCaptureResultCardSvg(result) {
     minFontSize: 15,
   });
   const highlights = buildCaptureResultHighlights(result)
-    .slice(0, 4)
+    .slice(0, 5)
     .map(fitResultLine);
   const luckyBadge = pal.isShiny
     ? fitSvgText(result.success ? "LUCKY CAPTURE" : "LUCKY ENCOUNTER", {
@@ -376,18 +379,18 @@ function buildCaptureResultCardSvg(result) {
       </defs>
       <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="28" fill="url(#resultBg)"/>
       <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="28" fill="url(#resultGlow)"/>
-      <path d="M0 238 C136 204 250 232 394 198 C514 170 600 180 700 148 L700 320 L0 320 Z" fill="#0c1118" opacity="0.56"/>
+      <path d="M0 238 C136 204 250 232 394 198 C514 170 600 180 700 148 L700 320 L0 320 Z" fill="#0c1118" opacity="0.58"/>
       <rect x="0" y="0" width="14" height="${CARD_HEIGHT}" fill="${accentColor}"/>
       <circle cx="86" cy="66" r="15" fill="${accentColor}" opacity="0.96"/>
-      <text x="76" y="102" fill="${accentColor}" font-size="25" font-family="Arial, Helvetica, sans-serif" font-weight="900">${statusText}</text>
-      <text x="76" y="126" fill="#c8d2dc" font-size="17" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeSvgText(subStatusText)}</text>
-      <text x="76" y="170" fill="#ffffff" font-size="${fittedName.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedName.text)}</text>
-      <rect x="76" y="194" width="${rarityBadgeWidth}" height="38" rx="19" fill="${rarityAccent}" opacity="0.18"/>
-      <text x="97" y="220" fill="${rarityAccent}" font-size="${fittedRarity.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedRarity.text)}</text>
-      <text x="${levelX}" y="220" fill="#d9e1ea" font-size="${fittedLevel.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedLevel.text)}</text>
-      <text x="76" y="249" fill="#d7e0e8" font-size="${sphereLine.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeSvgText(sphereLine.text)}</text>
+      <text x="76" y="110" fill="${accentColor}" font-size="38" font-family="Arial, Helvetica, sans-serif" font-weight="900">${statusText}!</text>
+      <text x="76" y="135" fill="#c8d2dc" font-size="17" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeSvgText(subStatusText)}</text>
+      <text x="76" y="178" fill="#ffffff" font-size="${fittedName.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(fittedName.text)}</text>
+      <rect x="76" y="200" width="${rarityBadgeWidth}" height="38" rx="19" fill="${rarityAccent}" opacity="0.18"/>
+      <text x="97" y="226" fill="${rarityAccent}" font-size="${fittedRarity.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedRarity.text)}</text>
+      <text x="${levelX}" y="226" fill="#d9e1ea" font-size="${fittedLevel.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="800">${escapeSvgText(fittedLevel.text)}</text>
+      <text x="76" y="247" fill="#d7e0e8" font-size="${sphereLine.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeSvgText(sphereLine.text)}</text>
       ${highlights.map((line, index) =>
-        `<text x="76" y="${269 + index * 16}" fill="#aebbc7" font-size="${line.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeSvgText(line.text)}</text>`
+        `<text x="76" y="${263 + index * 13}" fill="#aebbc7" font-size="${line.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="700">${escapeSvgText(line.text)}</text>`
       ).join("")}
       ${
         luckyBadge
@@ -395,9 +398,9 @@ function buildCaptureResultCardSvg(result) {
              <text x="94" y="46" fill="#f7d95c" font-size="${luckyBadge.fontSize}" font-family="Arial, Helvetica, sans-serif" font-weight="900">${escapeSvgText(luckyBadge.text)}</text>`
           : ""
       }
-      <rect x="404" y="24" width="266" height="272" rx="28" fill="#0d1117" opacity="0.76"/>
-      <rect x="420" y="40" width="234" height="240" rx="22" fill="#17212c" opacity="0.82"/>
-      <rect x="420" y="40" width="234" height="240" rx="22" fill="none" stroke="${accentColor}" stroke-width="3" opacity="0.58"/>
+      <rect x="380" y="18" width="300" height="288" rx="30" fill="#0d1117" opacity="0.72"/>
+      <rect x="398" y="34" width="264" height="256" rx="24" fill="#17212c" opacity="0.78"/>
+      <rect x="398" y="34" width="264" height="256" rx="24" fill="none" stroke="${accentColor}" stroke-width="3" opacity="0.62"/>
     </svg>
   `;
 }
@@ -410,12 +413,12 @@ async function buildPalImageComposite(imageUrl) {
   }
 
   const roundedMask = Buffer.from(`
-    <svg width="244" height="240" viewBox="0 0 244 240" xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="0" width="244" height="240" rx="22" fill="#fff"/>
+    <svg width="328" height="260" viewBox="0 0 328 260" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="328" height="260" rx="24" fill="#fff"/>
     </svg>
   `);
   const palImage = await sharp(imageBuffer)
-    .resize(244, 240, {
+    .resize(328, 260, {
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
@@ -425,8 +428,8 @@ async function buildPalImageComposite(imageUrl) {
 
   return {
     input: palImage,
-    left: 410,
-    top: 40,
+    left: 334,
+    top: 30,
   };
 }
 
@@ -438,12 +441,12 @@ async function buildResultPalImageComposite(imageUrl) {
   }
 
   const roundedMask = Buffer.from(`
-    <svg width="234" height="240" viewBox="0 0 234 240" xmlns="http://www.w3.org/2000/svg">
-      <rect x="0" y="0" width="234" height="240" rx="22" fill="#fff"/>
+    <svg width="264" height="256" viewBox="0 0 264 256" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="264" height="256" rx="24" fill="#fff"/>
     </svg>
   `);
   const palImage = await sharp(imageBuffer)
-    .resize(234, 240, {
+    .resize(264, 256, {
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
@@ -453,8 +456,8 @@ async function buildResultPalImageComposite(imageUrl) {
 
   return {
     input: palImage,
-    left: 420,
-    top: 40,
+    left: 398,
+    top: 34,
   };
 }
 
