@@ -21,9 +21,6 @@ const {
 } = require("../systems/captureSystem");
 
 const CAPTURE_COOLDOWN_MS = 10_000;
-const LIGHTWEIGHT_SHAKE_DELAY_MS = 400;
-const SUCCESS_SHAKE_COUNT = 3;
-const FAILED_SHAKE_COUNT = 2;
 const MAX_SHAKE_COUNT = 3;
 const captureCooldowns = new Map();
 
@@ -480,20 +477,6 @@ function buildShakeCardEmbed(encounter, attachmentName, options = {}) {
     .setTimestamp();
 }
 
-function getCaptureShakeSteps(result) {
-  const shakeCount = result?.success ? SUCCESS_SHAKE_COUNT : FAILED_SHAKE_COUNT;
-
-  return Array.from({ length: shakeCount }, (_, index) => ({
-    shakeCount: index + 1,
-    maxShakes: MAX_SHAKE_COUNT,
-    delayMs: LIGHTWEIGHT_SHAKE_DELAY_MS,
-  }));
-}
-
-function getCapturePresentationSteps() {
-  return [];
-}
-
 async function buildThrowPayload(encounter, sphere, inventory, options = {}) {
   const renderCard = options.renderCard || renderCaptureThrowCard;
   const components = buildSphereButtons(inventory, true);
@@ -831,30 +814,6 @@ module.exports = {
             `[capture] after capture system result user=${interaction.user.id} success=${result.success} pal=${result.pal.name} level=${result.pal.level} sphere=${result.sphere} chance=${result.captureChance}`
           );
 
-          const presentationSteps = getCapturePresentationSteps(result);
-
-          for (const step of presentationSteps) {
-            const shakeInventory = await getUserInventory(
-              guildId,
-              interaction.user.id
-            );
-
-            if (step.type === "lightweight-shake") {
-              await interaction.editReply(
-                buildLightweightShakePayload(shakeInventory)
-              );
-            } else {
-              await interaction.editReply(
-                await buildShakePayload(encounter, sphere, shakeInventory, {
-                  shakeCount: step.shakeCount,
-                  maxShakes: step.maxShakes,
-                })
-              );
-            }
-
-            await new Promise((res) => setTimeout(res, step.delayMs));
-          }
-
           const resolvedInventory = await getUserInventory(
             guildId,
             interaction.user.id
@@ -954,7 +913,5 @@ module.exports = {
   buildThrowCardEmbed,
   buildThrowEmbed,
   buildThrowPayload,
-  getCapturePresentationSteps,
-  getCaptureShakeSteps,
   getWeeklyServerGoalCompletionField,
 };

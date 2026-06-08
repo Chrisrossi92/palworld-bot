@@ -4,8 +4,6 @@ const fs = require("node:fs");
 const path = require("node:path");
 const {
   buildEncounterPayload,
-  getCapturePresentationSteps,
-  getCaptureShakeSteps,
   buildImmediateCaptureFeedbackPayload,
   buildLightweightShakePayload,
   buildShakePayload,
@@ -457,35 +455,6 @@ test("normalizeShakeCount keeps shake count inside available indicators", () => 
     shakeCount: 1,
     maxShakes: 3,
   });
-});
-
-test("getCaptureShakeSteps reaches three shakes for success and two for failure", () => {
-  const successSteps = getCaptureShakeSteps({ success: true });
-  const failedSteps = getCaptureShakeSteps({ success: false });
-
-  assert.deepEqual(
-    successSteps.map((step) => [step.shakeCount, step.maxShakes, step.delayMs]),
-    [
-      [1, 3, 400],
-      [2, 3, 400],
-      [3, 3, 400],
-    ]
-  );
-  assert.deepEqual(
-    failedSteps.map((step) => [step.shakeCount, step.maxShakes, step.delayMs]),
-    [
-      [1, 3, 400],
-      [2, 3, 400],
-    ]
-  );
-});
-
-test("default capture presentation has no post-resolution shake step", () => {
-  const successSteps = getCapturePresentationSteps({ success: true });
-  const failedSteps = getCapturePresentationSteps({ success: false });
-
-  assert.deepEqual(successSteps, []);
-  assert.deepEqual(failedSteps, []);
 });
 
 test("immediate capture feedback payload uses no attachment upload", () => {
