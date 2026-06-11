@@ -1,5 +1,11 @@
 function setText(id, value) {
-  document.querySelector(`#${id}`).textContent = String(value);
+  const element = document.querySelector(`#${id}`);
+
+  if (!element) {
+    return;
+  }
+
+  element.textContent = String(value);
 }
 
 const DEFAULT_ACTIVITY_LIMIT = 5;
@@ -137,12 +143,22 @@ async function sendJson(path, payload) {
 
 function setStatus(id, text, isError = false) {
   const element = document.querySelector(`#${id}`);
+
+  if (!element) {
+    return;
+  }
+
   element.textContent = text;
   element.classList.toggle("status-error", isError);
 }
 
 function renderEmptyList(id, text) {
   const element = document.querySelector(`#${id}`);
+
+  if (!element) {
+    return;
+  }
+
   element.innerHTML = "";
 
   const item = document.createElement("li");
@@ -153,6 +169,11 @@ function renderEmptyList(id, text) {
 
 function renderRankedList(id, rows, emptyText, formatter) {
   const element = document.querySelector(`#${id}`);
+
+  if (!element) {
+    return;
+  }
+
   element.innerHTML = "";
 
   if (!Array.isArray(rows) || rows.length === 0) {
@@ -174,6 +195,11 @@ function renderRankedList(id, rows, emptyText, formatter) {
 
 function renderActivityList(id, rows, emptyText, formatter) {
   const element = document.querySelector(`#${id}`);
+
+  if (!element) {
+    return;
+  }
+
   element.innerHTML = "";
 
   if (!Array.isArray(rows) || rows.length === 0) {
@@ -292,6 +318,20 @@ async function loadTopCollectors(guildId) {
       "No player level data yet.",
       (row) => `Level ${formatNumber(row.level)}`
     );
+    const topCollector = Array.isArray(topCollectors.topCaptures)
+      ? topCollectors.topCaptures[0]
+      : null;
+
+    setText(
+      "topCollectorName",
+      topCollector?.displayName || topCollector?.userId || "No collector yet"
+    );
+    setText(
+      "topCollectorDetail",
+      topCollector
+        ? `${formatNumber(topCollector.captures)} ${pluralize(topCollector.captures, "capture")} recorded.`
+        : "Waiting for the first capture."
+    );
     setText("shinyCollectorsCount", formatNumber(topCollectors.shinyCollectorsCount));
     setStatus(
       "collectorsStatus",
@@ -302,6 +342,8 @@ async function loadTopCollectors(guildId) {
     setStatus("collectorsStatus", error.message, true);
     renderEmptyList("topCapturesList", "Unable to load captures leaderboard.");
     renderEmptyList("highestLevelList", "Unable to load level leaderboard.");
+    setText("topCollectorName", "Unavailable");
+    setText("topCollectorDetail", "Unable to load collector data.");
     return {};
   }
 }
@@ -319,7 +361,11 @@ async function loadPaldeckHealth(guildId) {
       `${formatNumber(paldeckHealth.uniqueSpeciesOwned)} / ${formatNumber(paldeckHealth.catalogSize)}`
     );
     setText("completionPercentage", formatPercent(completion));
-    document.querySelector("#paldeckProgressBar").style.width = `${Math.max(0, Math.min(100, completion))}%`;
+    const progressBar = document.querySelector("#paldeckProgressBar");
+
+    if (progressBar) {
+      progressBar.style.width = `${Math.max(0, Math.min(100, completion))}%`;
+    }
     setStatus(
       "paldeckStatus",
       payload.hasSupabaseConnection ? "Paldeck health loaded." : "No Supabase connection."
@@ -331,7 +377,11 @@ async function loadPaldeckHealth(guildId) {
     setText("catalogSize", "0");
     setText("uniqueSpeciesOwned", "0");
     setText("completionPercentage", "0%");
-    document.querySelector("#paldeckProgressBar").style.width = "0%";
+    const progressBar = document.querySelector("#paldeckProgressBar");
+
+    if (progressBar) {
+      progressBar.style.width = "0%";
+    }
     return {};
   }
 }
@@ -422,7 +472,11 @@ async function loadRecentActivity(guildId) {
     setStatus("activityStatus", error.message, true);
     fullActivityFeedRows = [];
     renderEmptyList("serverActivityFeed", "Unable to load server activity.");
-    document.querySelector("#showMoreActivity").hidden = true;
+    const showMoreButton = document.querySelector("#showMoreActivity");
+
+    if (showMoreButton) {
+      showMoreButton.hidden = true;
+    }
     setText("latestCaptureSummary", "Unavailable");
     setText("recentPlayerSummary", "Unavailable");
     setText("activityCaptureCount", "0");
@@ -524,6 +578,10 @@ function renderActivityFeed(showAll) {
   const button = document.querySelector("#showMoreActivity");
   const element = document.querySelector("#serverActivityFeed");
 
+  if (!element) {
+    return;
+  }
+
   element.innerHTML = "";
 
   if (rows.length === 0) {
@@ -552,6 +610,10 @@ function renderActivityFeed(showAll) {
 
       element.append(item);
     }
+  }
+
+  if (!button) {
+    return;
   }
 
   if (fullActivityFeedRows.length > DEFAULT_ACTIVITY_LIMIT) {
@@ -616,6 +678,10 @@ function renderBestRecentCatch(recentActivity) {
   const catchRow = selectBestRecentCatch(recentActivity);
   const imageSlot = document.querySelector("#bestCatchImage");
 
+  if (!imageSlot) {
+    return;
+  }
+
   imageSlot.innerHTML = "";
 
   if (!catchRow) {
@@ -654,7 +720,13 @@ function getSpawnSettingsForm() {
 }
 
 function setSpawnSettingsFormDisabled(disabled) {
-  for (const element of getSpawnSettingsForm().elements) {
+  const form = getSpawnSettingsForm();
+
+  if (!form) {
+    return;
+  }
+
+  for (const element of form.elements) {
     element.disabled = disabled;
   }
 }
@@ -716,6 +788,10 @@ async function loadSpawnSettings(guildId) {
 
 function bindSpawnSettingsForm(guildId) {
   const form = getSpawnSettingsForm();
+
+  if (!form) {
+    return;
+  }
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -794,8 +870,13 @@ function getOnboardingState({ engagement, recentActivity }) {
 function renderOnboardingPanel({ engagement, recentActivity }) {
   const panel = document.querySelector("#onboardingPanel");
   const state = getOnboardingState({ engagement, recentActivity });
+  const alwaysVisible = panel?.dataset.alwaysVisible === "true";
 
-  if (!state.hasNoActivity && !state.isLowActivity) {
+  if (!panel) {
+    return;
+  }
+
+  if (!alwaysVisible && !state.hasNoActivity && !state.isLowActivity) {
     panel.classList.add("is-hidden");
     return;
   }
