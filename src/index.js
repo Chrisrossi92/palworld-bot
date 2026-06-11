@@ -1,22 +1,8 @@
 require("dotenv").config();
 
 const { Client, GatewayIntentBits, Collection } = require("discord.js");
-const pingCommand = require("./commands/ping");
-const captureCommand = require("./commands/capture");
-const myPalsCommand = require("./commands/mypals");
-const leaderboardCommand = require("./commands/leaderboard");
-const profileCommand = require("./commands/profile");
-const trainerCommand = require("./commands/trainer");
-const journalCommand = require("./commands/journal");
-const paldeckCommand = require("./commands/paldeck");
-const dailyCommand = require("./commands/daily");
-const spawnCommand = require("./commands/spawn");
-const inspectCommand = require("./commands/inspect");
-const shopCommand = require("./commands/shop");
-const buyCommand = require("./commands/buy");
-const helpCommand = require("./commands/help");
-const startCommand = require("./commands/start");
-const questsCommand = require("./commands/quests");
+const { commandModules } = require("./commands");
+const { registerGuildCommands } = require("./commandRegistration");
 const { startSpawnSystem } = require("./systems/spawnSystem");
 
 const UNKNOWN_INTERACTION_CODE = 10062;
@@ -37,22 +23,9 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-client.commands.set(pingCommand.data.name, pingCommand);
-client.commands.set(captureCommand.data.name, captureCommand);
-client.commands.set(myPalsCommand.data.name, myPalsCommand);
-client.commands.set(leaderboardCommand.data.name, leaderboardCommand);
-client.commands.set(profileCommand.data.name, profileCommand);
-client.commands.set(trainerCommand.data.name, trainerCommand);
-client.commands.set(journalCommand.data.name, journalCommand);
-client.commands.set(paldeckCommand.data.name, paldeckCommand);
-client.commands.set(dailyCommand.data.name, dailyCommand);
-client.commands.set(spawnCommand.data.name, spawnCommand);
-client.commands.set(inspectCommand.data.name, inspectCommand);
-client.commands.set(shopCommand.data.name, shopCommand);
-client.commands.set(buyCommand.data.name, buyCommand);
-client.commands.set(helpCommand.data.name, helpCommand);
-client.commands.set(startCommand.data.name, startCommand);
-client.commands.set(questsCommand.data.name, questsCommand);
+for (const command of commandModules) {
+  client.commands.set(command.data.name, command);
+}
 
 client.once("ready", () => {
   console.log(`✅ Palworld Bot online as ${client.user.tag}`);
@@ -63,10 +36,19 @@ client.once("ready", () => {
   startSpawnSystem(client);
 });
 
-client.on("guildCreate", (guild) => {
+client.on("guildCreate", async (guild) => {
   console.log(
     `[guildCreate] Added to guild id=${guild.id} name="${guild.name}" members=${guild.memberCount ?? "unknown"}`
   );
+
+  try {
+    await registerGuildCommands(guild.id);
+  } catch (error) {
+    console.error(
+      `[guildCreate] Failed to register slash commands for guild id=${guild.id} name="${guild.name}" code=${error?.code || "none"}`,
+      error
+    );
+  }
 });
 
 client.on("guildDelete", (guild) => {
