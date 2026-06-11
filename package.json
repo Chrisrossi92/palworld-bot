@@ -8,7 +8,7 @@
     "test": "node --test",
     "dashboard": "node dashboard/server.js",
     "dashboard:start": "node dashboard/server.js",
-    "dashboard:check": "node --check dashboard/server.js && node --check dashboard/auth/session.js && node --check dashboard/auth/discordOAuth.js && node --check dashboard/services/supabaseMetricsService.js && node --check dashboard/public/servers.js && node --check dashboard/public/dashboard.js",
+    "dashboard:check": "node --check dashboard/server.js && node --check dashboard/installUrl.js && node --check dashboard/auth/session.js && node --check dashboard/auth/discordOAuth.js && node --check dashboard/services/supabaseMetricsService.js && node --check dashboard/public/servers.js && node --check dashboard/public/dashboard.js",
     "register": "node src/register-commands.js",
     "audit:pal-images": "node scripts/auditPalImages.js",
     "backfill:pal-image-urls": "node scripts/backfillPalCatalogImageUrls.js",

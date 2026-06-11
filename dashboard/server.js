@@ -34,6 +34,7 @@ const {
   readOAuthState,
   readSession,
 } = require("./auth/session");
+const { getDiscordInstallUrl } = require("./installUrl");
 
 const PUBLIC_DIR = path.join(__dirname, "public");
 const PORT = Number(process.env.DASHBOARD_PORT || 3000);
@@ -328,8 +329,10 @@ function sendLaunchPlaceholder(response, {
 }
 
 function handleInstall(response) {
-  if (process.env.DISCORD_BOT_INVITE_URL) {
-    redirect(response, process.env.DISCORD_BOT_INVITE_URL);
+  const installUrl = getDiscordInstallUrl();
+
+  if (installUrl) {
+    redirect(response, installUrl);
     return;
   }
 
