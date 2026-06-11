@@ -14,6 +14,7 @@
         <span>PalMaster</span>
       </a>
       <nav class="landing-links" aria-label="Primary navigation">
+        <a href="#how-it-works">How It Works</a>
         <a href="#owner-value">Owner Value</a>
         <a href="#in-action">In Action</a>
         <a href="#dashboard-preview">Dashboard</a>
@@ -64,6 +65,50 @@
               <figcaption>Build a visible collector profile.</figcaption>
             </figure>
           </div>
+        </div>
+      </section>
+
+      <section id="how-it-works" class="landing-section how-it-works-section">
+        <div class="section-intro">
+          <p class="eyebrow">How PalMaster works</p>
+          <h2>Install the bot, open your dashboard, then choose where public spawns happen.</h2>
+          <p>
+            PalMaster keeps bot installation and dashboard login separate. After adding the bot,
+            server owners and admins log in with Discord to select their installed server and configure
+            public spawn settings.
+          </p>
+        </div>
+        <div class="how-it-works-grid">
+          <article class="how-step">
+            <span>1</span>
+            <h3>Add PalMaster to Discord</h3>
+            <p>Install the bot into the server where players will catch, collect, and compete.</p>
+          </article>
+          <article class="how-step">
+            <span>2</span>
+            <h3>Log in with Discord</h3>
+            <p>Use Discord login so PalMaster can confirm which installed servers you own or manage.</p>
+          </article>
+          <article class="how-step">
+            <span>3</span>
+            <h3>Select your server dashboard</h3>
+            <p>Only servers where PalMaster is installed and you have owner/admin access are shown.</p>
+          </article>
+          <article class="how-step">
+            <span>4</span>
+            <h3>Choose a public spawn channel</h3>
+            <p>Open Public Spawns, enter a Discord channel ID, choose an interval, and save.</p>
+          </article>
+          <article class="how-step">
+            <span>5</span>
+            <h3>Players catch, collect, and compete</h3>
+            <p>Players use /capture, chase public spawns, build profiles, and climb leaderboards.</p>
+          </article>
+        </div>
+        <div class="cta-row">
+          <a class="button" href="/install">Add PalMaster to Discord</a>
+          <a class="button button-secondary" href="/login.html">Log in with Discord</a>
+          <a class="button button-ghost" href="/support">Join Community</a>
         </div>
       </section>
 
@@ -158,7 +203,8 @@
           <h2>An owner command center for community health</h2>
           <p>
             PalMaster gives pilot server owners a quick read on what happened recently, which
-            players are driving activity, and how far the community has progressed through the Paldeck.
+            players are driving activity, how far the community has progressed through the Paldeck,
+            and whether Public Spawns are configured for the selected server.
           </p>
         </div>
         <div class="dashboard-preview-card">
@@ -246,7 +292,7 @@
           </details>
           <details>
             <summary>Does the dashboard require Discord login?</summary>
-            <p>Yes. Discord OAuth verifies which installed servers you own or can manage.</p>
+            <p>Yes. Dashboard access is available to server owners and admins with Discord permissions.</p>
           </details>
           <details>
             <summary>Does installing the bot automatically grant dashboard access?</summary>
@@ -254,7 +300,7 @@
           </details>
           <details>
             <summary>What happens after install?</summary>
-            <p>Run /start, try /capture, claim /daily, check /quests, then return to the dashboard once players interact.</p>
+            <p>Log in with Discord, select your installed server dashboard, configure Public Spawns, then try /capture and invite players into the loop.</p>
           </details>
           <details>
             <summary>How do I get help?</summary>
@@ -276,6 +322,7 @@
         <div class="cta-row">
           <a class="button" href="/install">Add PalMaster to Discord</a>
           <a class="button button-secondary" href="/login.html">Open Dashboard</a>
+          <a class="button button-ghost" href="/support">Join Community</a>
         </div>
       </section>
     </main>
