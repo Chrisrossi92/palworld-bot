@@ -376,6 +376,7 @@ async function getRecentActivity(guildId, pool = createPool()) {
           owned.rarity,
           owned.level,
           owned.is_shiny,
+          owned.image_url,
           owned.last_caught_at
         from public.player_owned_pals owned
         join public.guild_players players on players.id = owned.player_id
@@ -417,6 +418,7 @@ async function getRecentActivity(guildId, pool = createPool()) {
       rarity: row.rarity,
       level: Number(row.level || 1),
       isShiny: Boolean(row.is_shiny),
+      imageUrl: row.image_url || "",
       caughtAt: row.last_caught_at ? row.last_caught_at.toISOString() : null,
     })),
     latestPlayerActivity: latestPlayerActivityResult.rows.map((row) => ({

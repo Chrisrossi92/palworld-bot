@@ -201,6 +201,39 @@ function renderActivityList(id, rows, emptyText, formatter) {
   }
 }
 
+function getPalInitial(palName) {
+  const trimmed = String(palName || "").trim();
+
+  return trimmed ? trimmed.charAt(0).toUpperCase() : "?";
+}
+
+function createPalThumb(row, className = "") {
+  const thumb = document.createElement("div");
+  const imageUrl = typeof row.imageUrl === "string" ? row.imageUrl.trim() : "";
+
+  thumb.className = `pal-thumb ${className}`.trim();
+  thumb.setAttribute("aria-hidden", "true");
+
+  if (imageUrl) {
+    const image = document.createElement("img");
+
+    image.src = imageUrl;
+    image.alt = "";
+    image.loading = "lazy";
+    image.addEventListener("error", () => {
+      thumb.innerHTML = "";
+      thumb.textContent = getPalInitial(row.palName);
+      thumb.classList.add("pal-thumb-fallback");
+    });
+    thumb.append(image);
+    return thumb;
+  }
+
+  thumb.textContent = getPalInitial(row.palName);
+  thumb.classList.add("pal-thumb-fallback");
+  return thumb;
+}
+
 async function loadGuildIdentity(guildId) {
   const meta = document.querySelector("#guildIdentityMeta");
 
@@ -430,7 +463,14 @@ function buildActivityFeed(recentActivity) {
 
       return {
         ...eventType,
+        type: "capture",
         timestamp: row.caughtAt,
+        imageUrl: row.imageUrl || "",
+        palName: row.palName || "Unknown Pal",
+        rarity: row.rarity || "unknown",
+        level: Number(row.level || 1),
+        isShiny: Boolean(row.isShiny),
+        playerName: row.displayName || row.userId || "Unknown player",
         primary: `${row.displayName || row.userId || "Unknown player"} caught ${row.palName || "a Pal"}`,
         secondary: `${row.isShiny ? "Shiny " : ""}${row.rarity || "unknown"} • Level ${formatNumber(row.level)} • ${formatRelativeTime(row.caughtAt)}`,
       };
@@ -453,22 +493,66 @@ function buildActivityFeed(recentActivity) {
     .slice(0, 12);
 }
 
+function renderCaptureActivityItem(item, row) {
+  const thumb = createPalThumb(row);
+  const body = document.createElement("div");
+  const topLine = document.createElement("div");
+  const palName = document.createElement("span");
+  const meta = document.createElement("span");
+  const secondary = document.createElement("div");
+
+  item.classList.add("capture-activity-row");
+  body.className = "capture-activity-body";
+  topLine.className = "capture-activity-topline";
+  palName.className = "activity-primary";
+  meta.className = "capture-meta";
+  secondary.className = "activity-secondary";
+
+  palName.textContent = row.palName;
+  meta.textContent = `${row.isShiny ? "Shiny " : ""}${row.rarity} • Lv. ${formatNumber(row.level)}`;
+  secondary.textContent = `${row.playerName} • ${formatRelativeTime(row.timestamp)}`;
+
+  topLine.append(palName, meta);
+  body.append(topLine, secondary);
+  item.append(thumb, body);
+}
+
 function renderActivityFeed(showAll) {
   const rows = showAll
     ? fullActivityFeedRows
     : fullActivityFeedRows.slice(0, DEFAULT_ACTIVITY_LIMIT);
   const button = document.querySelector("#showMoreActivity");
+  const element = document.querySelector("#serverActivityFeed");
 
-  renderActivityList(
-    "serverActivityFeed",
-    rows,
-    "No recent server activity yet.",
-    (row) => ({
-      badge: row.badge,
-      primary: row.primary,
-      secondary: row.secondary,
-    })
-  );
+  element.innerHTML = "";
+
+  if (rows.length === 0) {
+    renderEmptyList("serverActivityFeed", "No recent server activity yet.");
+  } else {
+    for (const row of rows) {
+      const item = document.createElement("li");
+
+      item.className = `timeline-item ${row.highlightClass || ""}`.trim();
+
+      if (row.type === "capture") {
+        renderCaptureActivityItem(item, row);
+      } else {
+        const badge = document.createElement("span");
+        const primary = document.createElement("div");
+        const secondary = document.createElement("div");
+
+        badge.className = `event-badge ${row.badgeClass || ""}`.trim();
+        primary.className = "activity-primary";
+        secondary.className = "activity-secondary";
+        badge.textContent = row.badge;
+        primary.textContent = row.primary;
+        secondary.textContent = row.secondary;
+        item.append(badge, primary, secondary);
+      }
+
+      element.append(item);
+    }
+  }
 
   if (fullActivityFeedRows.length > DEFAULT_ACTIVITY_LIMIT) {
     button.hidden = false;
@@ -502,6 +586,57 @@ function renderActivitySummary(recentActivity) {
     "activityCaptureCount",
     formatNumber(Array.isArray(recentActivity.latestCaptures) ? recentActivity.latestCaptures.length : 0)
   );
+}
+
+function selectBestRecentCatch(recentActivity) {
+  const captures = Array.isArray(recentActivity.latestCaptures)
+    ? [...recentActivity.latestCaptures]
+    : [];
+
+  return captures
+    .filter((row) => row && row.caughtAt)
+    .sort((first, second) => {
+      const shinyDelta = Number(Boolean(second.isShiny)) - Number(Boolean(first.isShiny));
+
+      if (shinyDelta !== 0) {
+        return shinyDelta;
+      }
+
+      const rarityDelta = getRarityRank(second.rarity) - getRarityRank(first.rarity);
+
+      if (rarityDelta !== 0) {
+        return rarityDelta;
+      }
+
+      return new Date(second.caughtAt).getTime() - new Date(first.caughtAt).getTime();
+    })[0] || null;
+}
+
+function renderBestRecentCatch(recentActivity) {
+  const catchRow = selectBestRecentCatch(recentActivity);
+  const imageSlot = document.querySelector("#bestCatchImage");
+
+  imageSlot.innerHTML = "";
+
+  if (!catchRow) {
+    imageSlot.textContent = "?";
+    imageSlot.className = "pal-thumb pal-thumb-large pal-thumb-fallback";
+    setText("bestCatchName", "No captures yet");
+    setText("bestCatchMeta", "Waiting for the first catch.");
+    setText("bestCatchPlayer", "");
+    return;
+  }
+
+  const thumb = createPalThumb(catchRow, "pal-thumb-large");
+
+  imageSlot.replaceWith(thumb);
+  thumb.id = "bestCatchImage";
+  setText("bestCatchName", catchRow.isShiny ? `Shiny ${catchRow.palName || "Unknown Pal"}` : catchRow.palName || "Unknown Pal");
+  setText(
+    "bestCatchMeta",
+    `${catchRow.rarity || "unknown"} • Lv. ${formatNumber(catchRow.level)} • ${formatRelativeTime(catchRow.caughtAt)}`
+  );
+  setText("bestCatchPlayer", `Caught by ${catchRow.displayName || catchRow.userId || "Unknown player"}`);
 }
 
 function renderHeroSummary({ engagement, paldeckHealth }) {
@@ -690,6 +825,8 @@ function renderOwnerInsights({ engagement, topCollectors, paldeckHealth, recentA
   const totalPlayers = Number(engagement.totalPlayers || 0);
   const recentCapturesCount = Number(engagement.recentCapturesCount || 0);
   const dailyQuestActivity = Number(engagement.dailyQuestActivity || 0);
+
+  renderBestRecentCatch(recentActivity);
 
   setText(
     "mostActiveInsight",
