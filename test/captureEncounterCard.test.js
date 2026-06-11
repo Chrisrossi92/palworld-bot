@@ -6,8 +6,6 @@ const sharp = require("sharp");
 const {
   buildEncounterCardPayload,
   buildEncounterPayload,
-  buildImmediateCaptureFeedbackPayload,
-  buildLightweightShakePayload,
   buildResolvedCardPayload,
   buildShakeCardPayload,
   buildShakePayload,
@@ -656,38 +654,44 @@ test("normalizeShakeCount keeps shake count inside available indicators", () => 
   });
 });
 
-test("immediate capture feedback payload uses no attachment upload", () => {
-  const payload = buildImmediateCaptureFeedbackPayload(buildInventory());
-
-  assert.equal(payload.content, "Sphere thrown...");
-  assert.equal(payload.components.length, 2);
-  assert.equal(Object.prototype.hasOwnProperty.call(payload, "files"), false);
-  assert.equal(Object.prototype.hasOwnProperty.call(payload, "attachments"), false);
-  assert.equal(Object.prototype.hasOwnProperty.call(payload, "embeds"), false);
-});
-
-test("legacy lightweight shake payload delegates to immediate feedback", () => {
-  assert.deepEqual(
-    buildLightweightShakePayload(buildInventory()).content,
-    "Sphere thrown..."
-  );
-});
-
-test("capture button handler sends immediate feedback before resolving capture", () => {
+test("capture button handler resolves without required intermediate feedback", () => {
   const captureSource = fs.readFileSync(
     path.join(__dirname, "../src/commands/capture.js"),
     "utf8"
   );
-  const feedbackIndex = captureSource.indexOf(
-    "buildImmediateCaptureFeedbackPayload(immediateInventory)"
+  const consumeIndex = captureSource.indexOf(
+    "const sphereUse = await consumeSphere"
   );
   const resolveIndex = captureSource.indexOf(
     "const result = await resolveCaptureEncounter"
   );
+  const intermediateFeedbackIndex = captureSource.indexOf(
+    "buildImmediateCaptureFeedbackPayload"
+  );
+  const thrownTextIndex = captureSource.indexOf("Sphere thrown...");
 
-  assert.notEqual(feedbackIndex, -1);
+  assert.notEqual(consumeIndex, -1);
   assert.notEqual(resolveIndex, -1);
-  assert.ok(feedbackIndex < resolveIndex);
+  assert.ok(consumeIndex < resolveIndex);
+  assert.equal(intermediateFeedbackIndex, -1);
+  assert.equal(thrownTextIndex, -1);
+});
+
+test("capture button handler stops collector before resolving result", () => {
+  const captureSource = fs.readFileSync(
+    path.join(__dirname, "../src/commands/capture.js"),
+    "utf8"
+  );
+  const stopIndex = captureSource.indexOf('collector.stop("resolving")');
+  const resolveIndex = captureSource.indexOf(
+    "const result = await resolveCaptureEncounter"
+  );
+  const resolvingEndGuardIndex = captureSource.indexOf('reason === "resolving"');
+
+  assert.notEqual(stopIndex, -1);
+  assert.notEqual(resolveIndex, -1);
+  assert.notEqual(resolvingEndGuardIndex, -1);
+  assert.ok(stopIndex < resolveIndex);
 });
 
 test("throw and shake renderers produce image buffers without Pal image URLs", async () => {

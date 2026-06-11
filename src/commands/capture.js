@@ -596,17 +596,6 @@ async function buildShakeCardPayload(encounter, sphere, inventory, options = {})
   }
 }
 
-function buildImmediateCaptureFeedbackPayload(inventory) {
-  return {
-    content: "Sphere thrown...",
-    components: buildSphereButtons(inventory, true),
-  };
-}
-
-function buildLightweightShakePayload(inventory) {
-  return buildImmediateCaptureFeedbackPayload(inventory);
-}
-
 async function buildResolvedPayload(result, remaining, inventory, options = {}) {
   return {
     content: "",
@@ -824,21 +813,7 @@ module.exports = {
             return;
           }
 
-          const immediateInventory = await getUserInventory(
-            guildId,
-            interaction.user.id
-          );
-
-          try {
-            await interaction.editReply(
-              buildImmediateCaptureFeedbackPayload(immediateInventory)
-            );
-          } catch (feedbackError) {
-            console.error(
-              "[capture] Failed to send immediate capture feedback:",
-              feedbackError
-            );
-          }
+          collector.stop("resolving");
 
           const result = await resolveCaptureEncounter(
             guildId,
@@ -915,7 +890,7 @@ module.exports = {
       });
 
       collector.on("end", async (collected, reason) => {
-        if (reason === "resolved" || reason === "error") {
+        if (reason === "resolved" || reason === "resolving" || reason === "error") {
           return;
         }
 
@@ -948,8 +923,6 @@ module.exports = {
   buildResolvedCardPayload,
   buildResolvedEmbed,
   buildResolvedPayload,
-  buildImmediateCaptureFeedbackPayload,
-  buildLightweightShakePayload,
   buildShakeCardEmbed,
   buildShakeCardPayload,
   buildShakeEmbed,
