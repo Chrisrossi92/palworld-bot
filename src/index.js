@@ -3,7 +3,10 @@ require("dotenv").config();
 const { Client, GatewayIntentBits, Collection } = require("discord.js");
 const { commandModules } = require("./commands");
 const { registerGuildCommands } = require("./commandRegistration");
-const { startSpawnSystem } = require("./systems/spawnSystem");
+const {
+  ensureDefaultSpawnSettingsForGuild,
+  startSpawnSystem,
+} = require("./systems/spawnSystem");
 
 const UNKNOWN_INTERACTION_CODE = 10062;
 const INTERACTION_ALREADY_ACKNOWLEDGED_CODE = 40060;
@@ -49,6 +52,8 @@ client.on("guildCreate", async (guild) => {
       error
     );
   }
+
+  await ensureDefaultSpawnSettingsForGuild(guild);
 });
 
 client.on("guildDelete", (guild) => {

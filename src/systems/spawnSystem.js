@@ -1,8 +1,12 @@
 const spawnCommand = require("../commands/spawn");
+const { createSpawnSettingsService } = require("../services/spawnSettingsService");
 
 const MINUTE_MS = 60_000;
+const SPAWN_SETTINGS_POLL_MS = 60_000;
 
 let spawnTimer = null;
+let spawnSettingsTimer = null;
+let spawnSettingsService = null;
 
 function getNextSpawnTime(now = new Date()) {
   const nextHour = new Date(now);
@@ -19,6 +23,85 @@ function formatTime(date) {
   return `${hours}:${minutes}`;
 }
 
+async function processLegacySpawn(client, logger = console) {
+  const channelId = process.env.SPAWN_CHANNEL_ID;
+
+  if (!channelId) {
+    return;
+  }
+
+  const channel = await client.channels.fetch(channelId);
+
+  if (!channel || typeof channel.send !== "function") {
+    logger.warn(`[spawnSystem] Legacy spawn channel ${channelId} is not sendable.`);
+    return;
+  }
+
+  const result = await spawnCommand.startPublicSpawn(channel);
+
+  if (!result.started) {
+    if (result.reason === "active_spawn") {
+      logger.log("Spawn skipped (active spawn exists)");
+    }
+  } else {
+    logger.log("Spawn triggered");
+  }
+}
+
+async function processDueSpawnSettings(client, service, {
+  now = new Date(),
+  logger = console,
+  startPublicSpawn = spawnCommand.startPublicSpawn,
+} = {}) {
+  if (!service || !service.isConfigured()) {
+    return 0;
+  }
+
+  const dueSettings = await service.listDueSpawnSettings(now);
+  let processedCount = 0;
+
+  for (const settings of dueSettings) {
+    try {
+      logger.log(
+        `[spawnSystem] Processing scheduled spawn guild=${settings.guildId} channel=${settings.channelId}`
+      );
+
+      const channel = await client.channels.fetch(settings.channelId);
+
+      if (!channel || typeof channel.send !== "function") {
+        logger.warn(
+          `[spawnSystem] Scheduled spawn channel is not sendable guild=${settings.guildId} channel=${settings.channelId}`
+        );
+        await service.recordSpawnAttempt(settings.guildId, now);
+        processedCount += 1;
+        continue;
+      }
+
+      const result = await startPublicSpawn(channel);
+
+      if (!result.started) {
+        if (result.reason === "active_spawn") {
+          logger.log(`[spawnSystem] Scheduled spawn skipped; active spawn exists guild=${settings.guildId}`);
+        } else {
+          logger.log(`[spawnSystem] Scheduled spawn skipped guild=${settings.guildId} reason=${result.reason || "unknown"}`);
+        }
+      } else {
+        logger.log(`[spawnSystem] Scheduled spawn triggered guild=${settings.guildId} channel=${settings.channelId}`);
+      }
+
+      await service.recordSpawnAttempt(settings.guildId, now);
+      processedCount += 1;
+    } catch (error) {
+      logger.error(
+        `[spawnSystem] Failed to process scheduled spawn guild=${settings.guildId} channel=${settings.channelId}:`,
+        error?.stack || error
+      );
+    }
+  }
+
+  return processedCount;
+}
+
 function scheduleNextSpawn(client) {
   const nextSpawnTime = getNextSpawnTime();
   const delay = Math.max(0, nextSpawnTime.getTime() - Date.now());
@@ -27,27 +110,7 @@ function scheduleNextSpawn(client) {
 
   spawnTimer = setTimeout(async () => {
     try {
-      const channelId = process.env.SPAWN_CHANNEL_ID;
-
-      if (!channelId) {
-        return;
-      }
-
-      const channel = await client.channels.fetch(channelId);
-
-      if (!channel || typeof channel.send !== "function") {
-        return;
-      }
-
-      const result = await spawnCommand.startPublicSpawn(channel);
-
-      if (!result.started) {
-        if (result.reason === "active_spawn") {
-          console.log("Spawn skipped (active spawn exists)");
-        }
-      } else {
-        console.log("Spawn triggered");
-      }
+      await processLegacySpawn(client);
     } catch (error) {
       console.error("[spawnSystem] Failed to process auto spawn:", error?.stack || error);
     } finally {
@@ -56,17 +119,70 @@ function scheduleNextSpawn(client) {
   }, delay);
 }
 
-function startSpawnSystem(client) {
+function startSpawnSettingsPoller(client, service = spawnSettingsService) {
+  if (!service || !service.isConfigured()) {
+    console.log("[spawnSystem] Per-guild spawn settings disabled; SUPABASE_DB_URL is not configured.");
+    return;
+  }
+
+  const runTick = async () => {
+    try {
+      await processDueSpawnSettings(client, service);
+    } catch (error) {
+      console.error("[spawnSystem] Failed to poll per-guild spawn settings:", error?.stack || error);
+    }
+  };
+
+  if (spawnSettingsTimer) {
+    clearInterval(spawnSettingsTimer);
+  }
+
+  spawnSettingsTimer = setInterval(runTick, SPAWN_SETTINGS_POLL_MS);
+  void runTick();
+
+  console.log("[spawnSystem] Per-guild spawn settings poller started.");
+}
+
+async function ensureDefaultSpawnSettingsForGuild(guild, service = spawnSettingsService) {
+  if (!service || !service.isConfigured()) {
+    return null;
+  }
+
+  try {
+    return await service.ensureDefaultSpawnSettings(guild);
+  } catch (error) {
+    console.error(
+      `[spawnSystem] Failed to ensure disabled spawn settings for guild id=${guild.id}:`,
+      error?.stack || error
+    );
+    return null;
+  }
+}
+
+function startSpawnSystem(client, {
+  service = createSpawnSettingsService(),
+} = {}) {
   if (spawnTimer) {
     clearTimeout(spawnTimer);
   }
 
-  console.log(
-    "[spawnSystem] Auto spawn system started. One spawn attempt will run each hour."
-  );
-  scheduleNextSpawn(client);
+  spawnSettingsService = service;
+
+  startSpawnSettingsPoller(client, service);
+
+  if (process.env.SPAWN_CHANNEL_ID) {
+    console.log(
+      "[spawnSystem] Legacy single-channel auto spawn fallback started. One spawn attempt will run each hour."
+    );
+    scheduleNextSpawn(client);
+  } else {
+    console.log("[spawnSystem] Legacy single-channel auto spawn fallback disabled; SPAWN_CHANNEL_ID is not configured.");
+  }
 }
 
 module.exports = {
+  ensureDefaultSpawnSettingsForGuild,
+  getNextSpawnTime,
+  processDueSpawnSettings,
   startSpawnSystem,
 };
