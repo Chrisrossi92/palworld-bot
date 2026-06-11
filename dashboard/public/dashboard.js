@@ -2,6 +2,9 @@ function setText(id, value) {
   document.querySelector(`#${id}`).textContent = String(value);
 }
 
+const DEFAULT_ACTIVITY_LIMIT = 5;
+let fullActivityFeedRows = [];
+
 function formatNumber(value) {
   return Number(value || 0).toLocaleString();
 }
@@ -274,10 +277,16 @@ async function loadPaldeckHealth(guildId) {
   try {
     const payload = await fetchJson(`/api/guilds/${encodeURIComponent(guildId)}/paldeck-health`);
     const paldeckHealth = payload.paldeckHealth || {};
+    const completion = Number(paldeckHealth.completionPercentage || 0);
 
     setText("catalogSize", formatNumber(paldeckHealth.catalogSize));
     setText("uniqueSpeciesOwned", formatNumber(paldeckHealth.uniqueSpeciesOwned));
-    setText("completionPercentage", formatPercent(paldeckHealth.completionPercentage));
+    setText(
+      "paldeckSpeciesRatio",
+      `${formatNumber(paldeckHealth.uniqueSpeciesOwned)} / ${formatNumber(paldeckHealth.catalogSize)}`
+    );
+    setText("completionPercentage", formatPercent(completion));
+    document.querySelector("#paldeckProgressBar").style.width = `${Math.max(0, Math.min(100, completion))}%`;
     setStatus(
       "paldeckStatus",
       payload.hasSupabaseConnection ? "Paldeck health loaded." : "No Supabase connection."
@@ -285,6 +294,11 @@ async function loadPaldeckHealth(guildId) {
     return paldeckHealth;
   } catch (error) {
     setStatus("paldeckStatus", error.message, true);
+    setText("paldeckSpeciesRatio", "0 / 0");
+    setText("catalogSize", "0");
+    setText("uniqueSpeciesOwned", "0");
+    setText("completionPercentage", "0%");
+    document.querySelector("#paldeckProgressBar").style.width = "0%";
     return {};
   }
 }
@@ -362,18 +376,10 @@ async function loadRecentActivity(guildId) {
   try {
     const payload = await fetchJson(`/api/guilds/${encodeURIComponent(guildId)}/recent-activity`);
     const recentActivity = payload.recentActivity || {};
+    fullActivityFeedRows = buildActivityFeed(recentActivity);
 
     renderActivitySummary(recentActivity);
-    renderActivityList(
-      "serverActivityFeed",
-      buildActivityFeed(recentActivity),
-      "No recent server activity yet.",
-      (row) => ({
-        badge: row.badge,
-        primary: row.primary,
-        secondary: row.secondary,
-      })
-    );
+    renderActivityFeed(false);
     setStatus(
       "activityStatus",
       payload.hasSupabaseConnection ? "Recent activity loaded." : "No Supabase connection."
@@ -381,7 +387,9 @@ async function loadRecentActivity(guildId) {
     return recentActivity;
   } catch (error) {
     setStatus("activityStatus", error.message, true);
+    fullActivityFeedRows = [];
     renderEmptyList("serverActivityFeed", "Unable to load server activity.");
+    document.querySelector("#showMoreActivity").hidden = true;
     setText("latestCaptureSummary", "Unavailable");
     setText("recentPlayerSummary", "Unavailable");
     setText("activityCaptureCount", "0");
@@ -443,6 +451,31 @@ function buildActivityFeed(recentActivity) {
     .filter((row) => row.timestamp)
     .sort((first, second) => new Date(second.timestamp).getTime() - new Date(first.timestamp).getTime())
     .slice(0, 12);
+}
+
+function renderActivityFeed(showAll) {
+  const rows = showAll
+    ? fullActivityFeedRows
+    : fullActivityFeedRows.slice(0, DEFAULT_ACTIVITY_LIMIT);
+  const button = document.querySelector("#showMoreActivity");
+
+  renderActivityList(
+    "serverActivityFeed",
+    rows,
+    "No recent server activity yet.",
+    (row) => ({
+      badge: row.badge,
+      primary: row.primary,
+      secondary: row.secondary,
+    })
+  );
+
+  if (fullActivityFeedRows.length > DEFAULT_ACTIVITY_LIMIT) {
+    button.hidden = false;
+    button.textContent = showAll ? "Show less" : "Show more";
+  } else {
+    button.hidden = true;
+  }
 }
 
 function renderActivitySummary(recentActivity) {
@@ -705,6 +738,11 @@ async function loadDashboard() {
   document.querySelector("#guildName").textContent = "Loading server...";
   status.textContent = "Loading owner overview...";
   bindSpawnSettingsForm(guildId);
+  document.querySelector("#showMoreActivity").addEventListener("click", (event) => {
+    const showAll = event.currentTarget.textContent === "Show more";
+
+    renderActivityFeed(showAll);
+  });
 
   const [, engagement, topCollectors, paldeckHealth, recentActivity] = await Promise.all([
     loadGuildIdentity(guildId),

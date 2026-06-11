@@ -19,6 +19,22 @@ function rowToSpawnSettings(row) {
   });
 }
 
+function getDefaultSpawnSettings(guildId) {
+  return normalizeSpawnSettings({
+    guildId,
+    enabled: false,
+    intervalMinutes: DEFAULT_SPAWN_INTERVAL_MINUTES,
+  });
+}
+
+function isMissingSpawnSettingsSchemaError(error) {
+  return error && (
+    error.code === "42P01" ||
+    error.code === "42703" ||
+    /guild_spawn_settings|column .* does not exist|relation .* does not exist/i.test(error.message || "")
+  );
+}
+
 function createSpawnSettingsService({
   pool,
   env = process.env,
@@ -93,37 +109,40 @@ function createSpawnSettingsService({
 
   async function getSpawnSettings(guildId) {
     if (!isConfigured()) {
-      return normalizeSpawnSettings({
-        guildId,
-        enabled: false,
-        intervalMinutes: DEFAULT_SPAWN_INTERVAL_MINUTES,
-      });
+      return getDefaultSpawnSettings(guildId);
     }
 
-    await ensureDefaultSpawnSettings(guildId);
+    try {
+      await ensureDefaultSpawnSettings(guildId);
 
-    const result = await query(`
-      select
-        guilds.discord_guild_id,
-        settings.enabled,
-        settings.channel_id,
-        settings.interval_minutes,
-        settings.last_spawn_at,
-        settings.next_spawn_at,
-        settings.created_at,
-        settings.updated_at
-      from public.guild_spawn_settings settings
-      join public.discord_guilds guilds on guilds.id = settings.guild_id
-      where guilds.discord_guild_id = $1;
-    `, [guildId]);
+      const result = await query(`
+        select
+          guilds.discord_guild_id,
+          settings.enabled,
+          settings.channel_id,
+          settings.interval_minutes,
+          settings.last_spawn_at,
+          settings.next_spawn_at,
+          settings.created_at,
+          settings.updated_at
+        from public.guild_spawn_settings settings
+        join public.discord_guilds guilds on guilds.id = settings.guild_id
+        where guilds.discord_guild_id = $1;
+      `, [guildId]);
 
-    return result.rows[0]
-      ? rowToSpawnSettings(result.rows[0])
-      : normalizeSpawnSettings({
-        guildId,
-        enabled: false,
-        intervalMinutes: DEFAULT_SPAWN_INTERVAL_MINUTES,
-      });
+      return result.rows[0]
+        ? rowToSpawnSettings(result.rows[0])
+        : getDefaultSpawnSettings(guildId);
+    } catch (error) {
+      if (isMissingSpawnSettingsSchemaError(error)) {
+        logger.warn(
+          `[spawnSettings] Spawn settings schema missing; returning disabled defaults for guild ${guildId}.`
+        );
+        return getDefaultSpawnSettings(guildId);
+      }
+
+      throw error;
+    }
   }
 
   async function updateSpawnSettings(guildId, updates, now = new Date()) {
@@ -131,7 +150,19 @@ function createSpawnSettingsService({
       throw new Error("Spawn settings require SUPABASE_DB_URL.");
     }
 
-    const current = await getSpawnSettings(guildId);
+    let current;
+
+    try {
+      current = await getSpawnSettings(guildId);
+    } catch (error) {
+      if (isMissingSpawnSettingsSchemaError(error)) {
+        const missingSchemaError = new Error("Spawn settings migration is not applied.");
+        missingSchemaError.statusCode = 503;
+        throw missingSchemaError;
+      }
+
+      throw error;
+    }
     const nextSettings = normalizeSpawnSettings({
       ...current,
       guildId,
@@ -157,32 +188,44 @@ function createSpawnSettingsService({
       nextSpawnAt = getNextSpawnAt(now, nextSettings.intervalMinutes);
     }
 
-    const result = await query(`
-      update public.guild_spawn_settings settings
-      set
-        enabled = $2,
-        channel_id = $3,
-        interval_minutes = $4,
-        next_spawn_at = $5
-      from public.discord_guilds guilds
-      where settings.guild_id = guilds.id
-        and guilds.discord_guild_id = $1
-      returning
-        guilds.discord_guild_id,
-        settings.enabled,
-        settings.channel_id,
-        settings.interval_minutes,
-        settings.last_spawn_at,
-        settings.next_spawn_at,
-        settings.created_at,
-        settings.updated_at;
-    `, [
-      guildId,
-      nextSettings.enabled,
-      nextSettings.channelId || null,
-      nextSettings.intervalMinutes,
-      nextSpawnAt ? nextSpawnAt.toISOString() : null,
-    ]);
+    let result;
+
+    try {
+      result = await query(`
+        update public.guild_spawn_settings settings
+        set
+          enabled = $2,
+          channel_id = $3,
+          interval_minutes = $4,
+          next_spawn_at = $5
+        from public.discord_guilds guilds
+        where settings.guild_id = guilds.id
+          and guilds.discord_guild_id = $1
+        returning
+          guilds.discord_guild_id,
+          settings.enabled,
+          settings.channel_id,
+          settings.interval_minutes,
+          settings.last_spawn_at,
+          settings.next_spawn_at,
+          settings.created_at,
+          settings.updated_at;
+      `, [
+        guildId,
+        nextSettings.enabled,
+        nextSettings.channelId || null,
+        nextSettings.intervalMinutes,
+        nextSpawnAt ? nextSpawnAt.toISOString() : null,
+      ]);
+    } catch (error) {
+      if (isMissingSpawnSettingsSchemaError(error)) {
+        const missingSchemaError = new Error("Spawn settings migration is not applied.");
+        missingSchemaError.statusCode = 503;
+        throw missingSchemaError;
+      }
+
+      throw error;
+    }
 
     return result.rows[0] ? rowToSpawnSettings(result.rows[0]) : getSpawnSettings(guildId);
   }
@@ -273,5 +316,7 @@ function createSpawnSettingsService({
 
 module.exports = {
   createSpawnSettingsService,
+  getDefaultSpawnSettings,
+  isMissingSpawnSettingsSchemaError,
   rowToSpawnSettings,
 };

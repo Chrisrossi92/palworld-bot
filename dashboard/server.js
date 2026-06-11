@@ -275,11 +275,19 @@ async function handleApi(request, response, url) {
     }
 
     if (request.method === "GET") {
-      sendJson(response, 200, {
-        guildId,
-        settings: await spawnSettingsService.getSpawnSettings(guildId),
-        hasSupabaseConnection: spawnSettingsService.isConfigured(),
-      });
+      try {
+        sendJson(response, 200, {
+          guildId,
+          settings: await spawnSettingsService.getSpawnSettings(guildId),
+          hasSupabaseConnection: spawnSettingsService.isConfigured(),
+        });
+      } catch (error) {
+        console.error(
+          `[dashboard:spawn-settings] load failed guild=${guildId} code=${error?.code || "none"}`,
+          error
+        );
+        throw error;
+      }
       return;
     }
 
@@ -289,8 +297,18 @@ async function handleApi(request, response, url) {
         return;
       }
 
-      const body = await readJsonBody(request);
-      const settings = await spawnSettingsService.updateSpawnSettings(guildId, body);
+      let settings;
+
+      try {
+        const body = await readJsonBody(request);
+        settings = await spawnSettingsService.updateSpawnSettings(guildId, body);
+      } catch (error) {
+        console.error(
+          `[dashboard:spawn-settings] save failed guild=${guildId} code=${error?.code || "none"} status=${error?.statusCode || 500}`,
+          error
+        );
+        throw error;
+      }
 
       sendJson(response, 200, {
         guildId,

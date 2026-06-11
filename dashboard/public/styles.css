@@ -919,7 +919,26 @@ p {
 
 .dashboard-stack {
   display: grid;
-  gap: 32px;
+  gap: 18px;
+}
+
+.dashboard-group-label {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+  padding-top: 18px;
+  text-transform: uppercase;
+}
+
+.dashboard-group-label:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.dashboard-group-label + .dashboard-section {
+  margin-top: -4px;
 }
 
 .dashboard-section {
@@ -996,6 +1015,11 @@ p {
   padding: 20px;
 }
 
+.setup-section .settings-form {
+  background: linear-gradient(135deg, #ffffff 0%, var(--accent-soft) 100%);
+  border-color: rgba(37, 99, 235, 0.22);
+}
+
 .toggle-row {
   align-items: flex-start;
   display: flex;
@@ -1062,6 +1086,42 @@ p {
   line-height: 1.4;
 }
 
+.paldeck-compact-card {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+}
+
+.paldeck-compact-value {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.paldeck-compact-value strong {
+  font-size: 28px;
+}
+
+.paldeck-compact-value span {
+  color: var(--accent-dark);
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.progress-track {
+  background: #e7edf6;
+  border-radius: 999px;
+  height: 12px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background: linear-gradient(90deg, var(--accent), var(--adventure));
+  height: 100%;
+  width: 0%;
+}
+
 .metric {
   background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
   border: 1px solid var(--line);
@@ -1125,6 +1185,10 @@ p {
 
 .activity-feed-panel {
   min-height: 0;
+}
+
+.activity-more-button {
+  margin-top: 14px;
 }
 
 .ranked-list,

@@ -103,3 +103,70 @@ test("updating enabled spawn settings rejects missing channel id", async () => {
     /channel_id is required when enabled is true/
   );
 });
+
+test("reading spawn settings returns disabled defaults when schema is missing", async () => {
+  const warnings = [];
+  const pool = createMockPool([
+    {
+      rows: [],
+    },
+  ]);
+
+  pool.query = async (sql, params) => {
+    pool.calls.push({ sql, params });
+    const error = new Error('relation "public.guild_spawn_settings" does not exist');
+    error.code = "42P01";
+    throw error;
+  };
+
+  const service = createSpawnSettingsService({
+    pool,
+    logger: {
+      log() {},
+      warn(message) {
+        warnings.push(message);
+      },
+    },
+  });
+
+  const settings = await service.getSpawnSettings("guild-1");
+
+  assert.equal(settings.guildId, "guild-1");
+  assert.equal(settings.enabled, false);
+  assert.equal(settings.channelId, null);
+  assert.equal(settings.intervalMinutes, 60);
+  assert.equal(warnings.length, 1);
+});
+
+test("saving spawn settings reports missing migration clearly", async () => {
+  const pool = createMockPool([]);
+
+  pool.query = async (sql, params) => {
+    pool.calls.push({ sql, params });
+    const error = new Error('relation "public.guild_spawn_settings" does not exist');
+    error.code = "42P01";
+    throw error;
+  };
+
+  const service = createSpawnSettingsService({
+    pool,
+    logger: { log() {}, warn() {} },
+  });
+
+  await assert.rejects(
+    () => service.updateSpawnSettings(
+      "guild-1",
+      {
+        enabled: true,
+        channelId: "channel-1",
+        intervalMinutes: 60,
+      },
+      new Date("2026-06-11T12:00:00.000Z")
+    ),
+    (error) => {
+      assert.equal(error.statusCode, 503);
+      assert.equal(error.message, "Spawn settings migration is not applied.");
+      return true;
+    }
+  );
+});

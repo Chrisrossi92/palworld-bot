@@ -52,6 +52,9 @@
         </div>
       </section>
       <div class="dashboard-stack">
+        <div class="dashboard-group-label">
+          <span>Getting Started</span>
+        </div>
         <section id="onboardingPanel" class="dashboard-section onboarding-panel is-hidden" aria-labelledby="onboardingHeading">
           <div class="section-heading">
             <div>
@@ -94,40 +97,15 @@
           </div>
         </section>
 
-        <section class="dashboard-section" aria-labelledby="insightsHeading">
+        <div class="dashboard-group-label">
+          <span>Setup / Automation</span>
+        </div>
+        <section class="dashboard-section setup-section" aria-labelledby="spawnSettingsHeading">
           <div class="section-heading">
             <div>
-              <div class="eyebrow">Recommended attention</div>
-              <h2 id="insightsHeading">Owner Insights</h2>
-            </div>
-            <div id="insightsStatus" class="status">Loading...</div>
-          </div>
-          <div class="insight-grid" aria-label="Owner insight cards">
-            <article class="insight-card">
-              <div class="metric-label">MVP Collector</div>
-              <div id="mostActiveInsight" class="insight-value">Loading...</div>
-            </article>
-            <article class="insight-card">
-              <div class="metric-label">Paldeck Progress</div>
-              <div id="completionInsight" class="insight-value">Loading...</div>
-            </article>
-            <article class="insight-card">
-              <div class="metric-label">Suggested Action</div>
-              <div id="opportunityInsight" class="insight-value">Loading...</div>
-            </article>
-            <article class="insight-card">
-              <div class="metric-label">Rarest Recent Capture</div>
-              <div id="rarestCaptureInsight" class="insight-value">Loading...</div>
-            </article>
-          </div>
-        </section>
-
-        <section class="dashboard-section" aria-labelledby="spawnSettingsHeading">
-          <div class="section-heading">
-            <div>
-              <div class="eyebrow">Automation</div>
+              <div class="eyebrow">Primary setup action</div>
               <h2 id="spawnSettingsHeading">Public Spawns</h2>
-              <p class="section-copy">Configure random public Pal encounters for this Discord server.</p>
+              <p class="section-copy">Choose the Discord channel where random public Pal encounters should appear.</p>
             </div>
             <div id="spawnSettingsStatus" class="status">Loading...</div>
           </div>
@@ -161,6 +139,40 @@
           </form>
         </section>
 
+        <div class="dashboard-group-label">
+          <span>Insights</span>
+        </div>
+        <section class="dashboard-section" aria-labelledby="insightsHeading">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Recommended attention</div>
+              <h2 id="insightsHeading">Owner Insights</h2>
+            </div>
+            <div id="insightsStatus" class="status">Loading...</div>
+          </div>
+          <div class="insight-grid" aria-label="Owner insight cards">
+            <article class="insight-card">
+              <div class="metric-label">MVP Collector</div>
+              <div id="mostActiveInsight" class="insight-value">Loading...</div>
+            </article>
+            <article class="insight-card">
+              <div class="metric-label">Paldeck Progress</div>
+              <div id="completionInsight" class="insight-value">Loading...</div>
+            </article>
+            <article class="insight-card">
+              <div class="metric-label">Suggested Action</div>
+              <div id="opportunityInsight" class="insight-value">Loading...</div>
+            </article>
+            <article class="insight-card">
+              <div class="metric-label">Rarest Recent Capture</div>
+              <div id="rarestCaptureInsight" class="insight-value">Loading...</div>
+            </article>
+          </div>
+        </section>
+
+        <div class="dashboard-group-label">
+          <span>Overview</span>
+        </div>
         <section class="dashboard-section" aria-labelledby="retentionHeading">
           <div class="section-heading">
             <div>
@@ -194,6 +206,9 @@
           </div>
         </section>
 
+        <div class="dashboard-group-label">
+          <span>Players</span>
+        </div>
         <section class="dashboard-section" aria-labelledby="engagementHeading">
           <div class="section-heading">
             <div>
@@ -254,6 +269,9 @@
           </div>
         </section>
 
+        <div class="dashboard-group-label">
+          <span>Collection</span>
+        </div>
         <section class="dashboard-section" aria-labelledby="paldeckHeading">
           <div class="section-heading">
             <div>
@@ -262,22 +280,27 @@
             </div>
             <div id="paldeckStatus" class="status">Loading...</div>
           </div>
-          <div class="grid three-grid" aria-label="Paldeck health metrics">
-            <article class="metric">
-              <div class="metric-label">Catalog Size</div>
-              <div id="catalogSize" class="metric-value">0</div>
-            </article>
-            <article class="metric">
-              <div class="metric-label">Unique Species Owned</div>
-              <div id="uniqueSpeciesOwned" class="metric-value">0</div>
-            </article>
-            <article class="metric">
-              <div class="metric-label">Completion</div>
-              <div id="completionPercentage" class="metric-value">0%</div>
-            </article>
-          </div>
+          <article class="panel paldeck-compact-card">
+            <div>
+              <div class="metric-label">Species Owned</div>
+              <div class="paldeck-compact-value">
+                <strong id="paldeckSpeciesRatio">0 / 0</strong>
+                <span id="completionPercentage">0%</span>
+              </div>
+            </div>
+            <div class="progress-track" aria-label="Paldeck completion">
+              <div id="paldeckProgressBar" class="progress-fill"></div>
+            </div>
+            <div class="metric-detail">
+              <span id="uniqueSpeciesOwned">0</span> unique species owned from
+              <span id="catalogSize">0</span> catalog species.
+            </div>
+          </article>
         </section>
 
+        <div class="dashboard-group-label">
+          <span>Activity</span>
+        </div>
         <section class="dashboard-section" aria-labelledby="activityHeading">
           <div class="section-heading">
             <div>
@@ -305,6 +328,7 @@
             <ul id="serverActivityFeed" class="activity-list timeline-list">
               <li class="muted">Loading...</li>
             </ul>
+            <button id="showMoreActivity" class="button button-ghost activity-more-button" type="button" hidden>Show more</button>
           </article>
         </section>
       </div>
