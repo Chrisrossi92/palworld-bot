@@ -184,6 +184,18 @@ async function buildEncounterPayload(encounter, inventory, options = {}) {
     inventory,
     options.buttonsDisabled === true
   );
+
+  return {
+    embeds: [buildEncounterEmbed(encounter, inventory)],
+    components,
+  };
+}
+
+async function buildEncounterCardPayload(encounter, inventory, options = {}) {
+  const components = buildSphereButtons(
+    inventory,
+    options.buttonsDisabled === true
+  );
   const renderCard = options.renderCard || renderPalCardBuffer;
   const imageUrl =
     encounter && typeof encounter.imageUrl === "string"
@@ -478,6 +490,15 @@ function buildShakeCardEmbed(encounter, attachmentName, options = {}) {
 }
 
 async function buildThrowPayload(encounter, sphere, inventory, options = {}) {
+  return {
+    content: "",
+    embeds: [buildThrowEmbed(encounter, sphere)],
+    components: buildSphereButtons(inventory, true),
+    attachments: [],
+  };
+}
+
+async function buildThrowCardPayload(encounter, sphere, inventory, options = {}) {
   const renderCard = options.renderCard || renderCaptureThrowCard;
   const components = buildSphereButtons(inventory, true);
 
@@ -517,6 +538,18 @@ async function buildThrowPayload(encounter, sphere, inventory, options = {}) {
 }
 
 async function buildShakePayload(encounter, sphere, inventory, options = {}) {
+  return {
+    content: "",
+    embeds: [buildShakeEmbed(encounter, {
+      shakeCount: options.shakeCount,
+      maxShakes: options.maxShakes,
+    })],
+    components: buildSphereButtons(inventory, true),
+    attachments: [],
+  };
+}
+
+async function buildShakeCardPayload(encounter, sphere, inventory, options = {}) {
   const renderCard = options.renderCard || renderCaptureShakeCard;
   const components = buildSphereButtons(inventory, true);
 
@@ -575,6 +608,15 @@ function buildLightweightShakePayload(inventory) {
 }
 
 async function buildResolvedPayload(result, remaining, inventory, options = {}) {
+  return {
+    content: "",
+    embeds: [buildResolvedEmbed(result, remaining)],
+    components: buildSphereButtons(inventory, true),
+    attachments: [],
+  };
+}
+
+async function buildResolvedCardPayload(result, remaining, inventory, options = {}) {
   const components = buildSphereButtons(inventory, true);
   const renderCard = options.renderCard || renderCaptureResultCard;
 
@@ -899,18 +941,22 @@ module.exports = {
     }
   },
   buildEncounterCardEmbed,
+  buildEncounterCardPayload,
   buildEncounterEmbed,
   buildEncounterPayload,
   buildResolvedCardEmbed,
+  buildResolvedCardPayload,
   buildResolvedEmbed,
   buildResolvedPayload,
   buildImmediateCaptureFeedbackPayload,
   buildLightweightShakePayload,
   buildShakeCardEmbed,
+  buildShakeCardPayload,
   buildShakeEmbed,
   buildShakePayload,
   buildSphereButtons,
   buildThrowCardEmbed,
+  buildThrowCardPayload,
   buildThrowEmbed,
   buildThrowPayload,
   getWeeklyServerGoalCompletionField,

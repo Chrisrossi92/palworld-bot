@@ -4,12 +4,16 @@ const fs = require("node:fs");
 const path = require("node:path");
 const sharp = require("sharp");
 const {
+  buildEncounterCardPayload,
   buildEncounterPayload,
   buildImmediateCaptureFeedbackPayload,
   buildLightweightShakePayload,
+  buildResolvedCardPayload,
+  buildShakeCardPayload,
   buildShakePayload,
   buildResolvedPayload,
   buildSphereButtons,
+  buildThrowCardPayload,
   buildThrowPayload,
 } = require("../src/commands/capture");
 const {
@@ -126,8 +130,27 @@ async function getAlphaBounds(buffer) {
   };
 }
 
-test("buildEncounterPayload uses generated card attachment when rendering succeeds", async () => {
+test("buildEncounterPayload defaults to lightweight embed without rendering", async () => {
   const payload = await buildEncounterPayload(
+    buildEncounter(),
+    buildInventory(),
+    {
+      renderCard: async () => {
+        throw new Error("default capture flow should not render cards");
+      },
+    }
+  );
+  const embed = payload.embeds[0].toJSON();
+
+  assert.equal(embed.title, "Wild Pal Encounter");
+  assert.equal(embed.fields.find((field) => field.name === "Wild Pal").value, "⚪ Lamball (Lv. 7, common)");
+  assert.equal(embed.image, undefined);
+  assert.equal(payload.files, undefined);
+  assert.equal(payload.components.length, 2);
+});
+
+test("buildEncounterCardPayload keeps legacy card rendering available", async () => {
+  const payload = await buildEncounterCardPayload(
     buildEncounter(),
     buildInventory(),
     {
@@ -170,16 +193,16 @@ test("buildEncounterPayload shows Lucky encounter title for shiny encounters", a
     buildEncounter({ isShiny: true }),
     buildInventory(),
     {
-      renderCard: async () => ({
-        filename: "lucky-card.png",
-        buffer: Buffer.from("fake-png"),
-      }),
+      renderCard: async () => {
+        throw new Error("default capture flow should not render cards");
+      },
     }
   );
   const embed = payload.embeds[0].toJSON();
 
-  assert.equal(embed.title, "Lucky Pal Encounter");
-  assert.equal(embed.image.url, "attachment://lucky-card.png");
+  assert.equal(embed.title, "✨ A SHINY Pal Appeared!");
+  assert.equal(embed.image, undefined);
+  assert.equal(payload.files, undefined);
 });
 
 test("buildEncounterPayload falls back to thumbnail embed when rendering fails", async () => {
@@ -395,8 +418,28 @@ test("buildCardSvg labels shiny encounters as Lucky", () => {
   assert.doesNotMatch(svg, /SHINY/);
 });
 
-test("buildResolvedPayload uses generated card attachment for captured results", async () => {
+test("buildResolvedPayload defaults to lightweight embed without rendering", async () => {
   const payload = await buildResolvedPayload(
+    buildCaptureResult(),
+    2,
+    buildInventory(),
+    {
+      renderCard: async () => {
+        throw new Error("default capture flow should not render cards");
+      },
+    }
+  );
+  const embed = payload.embeds[0].toJSON();
+
+  assert.equal(embed.title, "✅ Pal Captured!");
+  assert.equal(embed.image, undefined);
+  assert.deepEqual(payload.attachments, []);
+  assert.equal(payload.files, undefined);
+  assert.equal(payload.components.length, 2);
+});
+
+test("buildResolvedCardPayload keeps legacy result card rendering available", async () => {
+  const payload = await buildResolvedCardPayload(
     buildCaptureResult(),
     2,
     buildInventory(),
@@ -416,8 +459,28 @@ test("buildResolvedPayload uses generated card attachment for captured results",
   assert.equal(payload.components.length, 2);
 });
 
-test("buildThrowPayload uses generated card attachment and clears stale attachments", async () => {
+test("buildThrowPayload defaults to lightweight embed and clears stale attachments", async () => {
   const payload = await buildThrowPayload(
+    buildEncounter(),
+    "basic",
+    buildInventory(),
+    {
+      renderCard: async () => {
+        throw new Error("default capture flow should not render cards");
+      },
+    }
+  );
+  const embed = payload.embeds[0].toJSON();
+
+  assert.match(embed.title, /Throwing basic Sphere/);
+  assert.equal(embed.image, undefined);
+  assert.deepEqual(payload.attachments, []);
+  assert.equal(payload.files, undefined);
+  assert.equal(payload.components.length, 2);
+});
+
+test("buildThrowCardPayload keeps legacy throw card rendering available", async () => {
+  const payload = await buildThrowCardPayload(
     buildEncounter(),
     "basic",
     buildInventory(),
@@ -437,9 +500,32 @@ test("buildThrowPayload uses generated card attachment and clears stale attachme
   assert.equal(payload.components.length, 2);
 });
 
-test("buildShakePayload uses generated card attachment and clears stale attachments", async () => {
-  let renderedOptions = null;
+test("buildShakePayload defaults to lightweight embed and clears stale attachments", async () => {
   const payload = await buildShakePayload(
+    buildEncounter(),
+    "basic",
+    buildInventory(),
+    {
+      shakeCount: 2,
+      maxShakes: 3,
+      renderCard: async () => {
+        throw new Error("default capture flow should not render cards");
+      },
+    }
+  );
+  const embed = payload.embeds[0].toJSON();
+
+  assert.equal(embed.title, "...shake...shake...");
+  assert.match(embed.description, /Shake 2\/3/);
+  assert.equal(embed.image, undefined);
+  assert.deepEqual(payload.attachments, []);
+  assert.equal(payload.files, undefined);
+  assert.equal(payload.components.length, 2);
+});
+
+test("buildShakeCardPayload keeps legacy shake card rendering available", async () => {
+  let renderedOptions = null;
+  const payload = await buildShakeCardPayload(
     buildEncounter(),
     "basic",
     buildInventory(),
@@ -622,8 +708,8 @@ test("throw and shake renderers produce image buffers without Pal image URLs", a
   assert.ok(shakeCard.buffer.length > 0);
 });
 
-test("buildResolvedPayload uses generated card attachment for escaped results", async () => {
-  const payload = await buildResolvedPayload(
+test("buildResolvedCardPayload keeps legacy card rendering available for escaped results", async () => {
+  const payload = await buildResolvedCardPayload(
     buildCaptureResult({
       success: false,
       progression: {
