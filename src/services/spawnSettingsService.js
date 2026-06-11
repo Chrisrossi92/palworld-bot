@@ -3,6 +3,7 @@ const {
   DEFAULT_SPAWN_INTERVAL_MINUTES,
   getNextSpawnAt,
   normalizeSpawnSettings,
+  validateSpawnSettings,
 } = require("../systems/spawnSettings");
 
 function rowToSpawnSettings(row) {
@@ -90,6 +91,102 @@ function createSpawnSettingsService({
     return null;
   }
 
+  async function getSpawnSettings(guildId) {
+    if (!isConfigured()) {
+      return normalizeSpawnSettings({
+        guildId,
+        enabled: false,
+        intervalMinutes: DEFAULT_SPAWN_INTERVAL_MINUTES,
+      });
+    }
+
+    await ensureDefaultSpawnSettings(guildId);
+
+    const result = await query(`
+      select
+        guilds.discord_guild_id,
+        settings.enabled,
+        settings.channel_id,
+        settings.interval_minutes,
+        settings.last_spawn_at,
+        settings.next_spawn_at,
+        settings.created_at,
+        settings.updated_at
+      from public.guild_spawn_settings settings
+      join public.discord_guilds guilds on guilds.id = settings.guild_id
+      where guilds.discord_guild_id = $1;
+    `, [guildId]);
+
+    return result.rows[0]
+      ? rowToSpawnSettings(result.rows[0])
+      : normalizeSpawnSettings({
+        guildId,
+        enabled: false,
+        intervalMinutes: DEFAULT_SPAWN_INTERVAL_MINUTES,
+      });
+  }
+
+  async function updateSpawnSettings(guildId, updates, now = new Date()) {
+    if (!isConfigured()) {
+      throw new Error("Spawn settings require SUPABASE_DB_URL.");
+    }
+
+    const current = await getSpawnSettings(guildId);
+    const nextSettings = normalizeSpawnSettings({
+      ...current,
+      guildId,
+      enabled: updates.enabled,
+      channelId: updates.channelId ?? updates.channel_id ?? null,
+      intervalMinutes: updates.intervalMinutes ?? updates.interval_minutes,
+    });
+    const validation = validateSpawnSettings(nextSettings);
+
+    if (!validation.valid) {
+      const error = new Error(validation.errors.join(" "));
+      error.statusCode = 400;
+      error.validationErrors = validation.errors;
+      throw error;
+    }
+
+    let nextSpawnAt = nextSettings.nextSpawnAt;
+
+    if (
+      nextSettings.enabled &&
+      (!nextSpawnAt || nextSpawnAt.getTime() <= now.getTime())
+    ) {
+      nextSpawnAt = getNextSpawnAt(now, nextSettings.intervalMinutes);
+    }
+
+    const result = await query(`
+      update public.guild_spawn_settings settings
+      set
+        enabled = $2,
+        channel_id = $3,
+        interval_minutes = $4,
+        next_spawn_at = $5
+      from public.discord_guilds guilds
+      where settings.guild_id = guilds.id
+        and guilds.discord_guild_id = $1
+      returning
+        guilds.discord_guild_id,
+        settings.enabled,
+        settings.channel_id,
+        settings.interval_minutes,
+        settings.last_spawn_at,
+        settings.next_spawn_at,
+        settings.created_at,
+        settings.updated_at;
+    `, [
+      guildId,
+      nextSettings.enabled,
+      nextSettings.channelId || null,
+      nextSettings.intervalMinutes,
+      nextSpawnAt ? nextSpawnAt.toISOString() : null,
+    ]);
+
+    return result.rows[0] ? rowToSpawnSettings(result.rows[0]) : getSpawnSettings(guildId);
+  }
+
   async function listDueSpawnSettings(now = new Date()) {
     if (!isConfigured()) {
       return [];
@@ -166,9 +263,11 @@ function createSpawnSettingsService({
   return {
     close,
     ensureDefaultSpawnSettings,
+    getSpawnSettings,
     isConfigured,
     listDueSpawnSettings,
     recordSpawnAttempt,
+    updateSpawnSettings,
   };
 }
 

@@ -35,9 +35,12 @@ const {
   readSession,
 } = require("./auth/session");
 const { getDiscordInstallUrl } = require("./installUrl");
+const { createSpawnSettingsService } = require("../src/services/spawnSettingsService");
 
 const PUBLIC_DIR = path.join(__dirname, "public");
 const PORT = Number(process.env.DASHBOARD_PORT || 3000);
+const MAX_JSON_BODY_BYTES = 16_384;
+const spawnSettingsService = createSpawnSettingsService();
 const PROTECTED_HTML_ROUTES = new Set(["/servers.html", "/dashboard.html"]);
 const STATIC_ROUTE_ALIASES = new Map([
   ["/privacy", "privacy.html"],
@@ -74,6 +77,40 @@ function redirect(response, location, headers = {}) {
 
 function sendUnauthorized(response) {
   sendJson(response, 401, { error: "Authentication required." });
+}
+
+function readJsonBody(request) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+
+    request.on("data", (chunk) => {
+      body += chunk;
+
+      if (Buffer.byteLength(body) > MAX_JSON_BODY_BYTES) {
+        const error = new Error("Request body is too large.");
+        error.statusCode = 413;
+        reject(error);
+        request.destroy();
+      }
+    });
+
+    request.on("end", () => {
+      if (!body.trim()) {
+        resolve({});
+        return;
+      }
+
+      try {
+        resolve(JSON.parse(body));
+      } catch {
+        const error = new Error("Request body must be valid JSON.");
+        error.statusCode = 400;
+        reject(error);
+      }
+    });
+
+    request.on("error", reject);
+  });
 }
 
 function getAuthorizedGuildIds(session) {
@@ -225,6 +262,46 @@ async function handleApi(request, response, url) {
       retention: await getRetentionSnapshot(guildId),
       hasSupabaseConnection: Boolean(process.env.SUPABASE_DB_URL),
     });
+    return;
+  }
+
+  const spawnSettingsMatch = url.pathname.match(/^\/api\/guilds\/([^/]+)\/spawn-settings$/);
+  if (spawnSettingsMatch) {
+    const guildId = decodeURIComponent(spawnSettingsMatch[1]);
+
+    if (!canAccessGuild(session, guildId)) {
+      sendJson(response, 403, { error: "Guild access denied." });
+      return;
+    }
+
+    if (request.method === "GET") {
+      sendJson(response, 200, {
+        guildId,
+        settings: await spawnSettingsService.getSpawnSettings(guildId),
+        hasSupabaseConnection: spawnSettingsService.isConfigured(),
+      });
+      return;
+    }
+
+    if (request.method === "PUT") {
+      if (!spawnSettingsService.isConfigured()) {
+        sendJson(response, 503, { error: "Spawn settings require Supabase." });
+        return;
+      }
+
+      const body = await readJsonBody(request);
+      const settings = await spawnSettingsService.updateSpawnSettings(guildId, body);
+
+      sendJson(response, 200, {
+        guildId,
+        settings,
+        hasSupabaseConnection: true,
+      });
+      return;
+    }
+
+    response.writeHead(405, { allow: "GET, PUT" });
+    response.end("Method not allowed");
     return;
   }
 
@@ -414,7 +491,10 @@ const server = http.createServer(async (request, response) => {
     sendStatic(response, url.pathname);
   } catch (error) {
     console.error("[dashboard] request failed:", error);
-    sendJson(response, 500, { error: "Dashboard request failed." });
+    sendJson(response, error.statusCode || 500, {
+      error: error.statusCode ? error.message : "Dashboard request failed.",
+      validationErrors: error.validationErrors,
+    });
   }
 });
 

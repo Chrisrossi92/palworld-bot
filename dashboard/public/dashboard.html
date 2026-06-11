@@ -122,6 +122,45 @@
           </div>
         </section>
 
+        <section class="dashboard-section" aria-labelledby="spawnSettingsHeading">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Automation</div>
+              <h2 id="spawnSettingsHeading">Public Spawns</h2>
+              <p class="section-copy">Configure random public Pal encounters for this Discord server.</p>
+            </div>
+            <div id="spawnSettingsStatus" class="status">Loading...</div>
+          </div>
+          <form id="spawnSettingsForm" class="settings-form">
+            <label class="toggle-row" for="spawnEnabled">
+              <input id="spawnEnabled" name="enabled" type="checkbox">
+              <span>
+                <strong>Enable random public spawns</strong>
+                <small>Disabled by default. Enabling requires a Discord channel ID.</small>
+              </span>
+            </label>
+            <div class="settings-grid">
+              <label class="field">
+                <span>Channel ID</span>
+                <input id="spawnChannelId" name="channelId" type="text" inputmode="numeric" autocomplete="off" placeholder="Discord channel ID">
+              </label>
+              <label class="field">
+                <span>Interval</span>
+                <select id="spawnIntervalMinutes" name="intervalMinutes">
+                  <option value="30">30 minutes</option>
+                  <option value="60">60 minutes</option>
+                  <option value="120">2 hours</option>
+                  <option value="240">4 hours</option>
+                </select>
+              </label>
+            </div>
+            <div class="settings-actions">
+              <button class="button" type="submit">Save</button>
+              <div id="spawnSettingsDetail" class="settings-detail">Loading current settings...</div>
+            </div>
+          </form>
+        </section>
+
         <section class="dashboard-section" aria-labelledby="retentionHeading">
           <div class="section-heading">
             <div>

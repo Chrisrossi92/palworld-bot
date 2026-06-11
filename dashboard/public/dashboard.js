@@ -115,6 +115,23 @@ async function fetchJson(path) {
   return payload;
 }
 
+async function sendJson(path, payload) {
+  const response = await fetch(path, {
+    method: "PUT",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const responsePayload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(responsePayload.error || "Dashboard API request failed.");
+  }
+
+  return responsePayload;
+}
+
 function setStatus(id, text, isError = false) {
   const element = document.querySelector(`#${id}`);
   element.textContent = text;
@@ -464,6 +481,103 @@ function renderHeroSummary({ engagement, paldeckHealth }) {
   setText("heroRecentCaptures", formatNumber(engagement.recentCapturesCount));
 }
 
+function getSpawnSettingsForm() {
+  return document.querySelector("#spawnSettingsForm");
+}
+
+function setSpawnSettingsFormDisabled(disabled) {
+  for (const element of getSpawnSettingsForm().elements) {
+    element.disabled = disabled;
+  }
+}
+
+function getSpawnSettingsPayload() {
+  return {
+    enabled: document.querySelector("#spawnEnabled").checked,
+    channelId: document.querySelector("#spawnChannelId").value.trim() || null,
+    intervalMinutes: Number(document.querySelector("#spawnIntervalMinutes").value),
+  };
+}
+
+function validateSpawnSettingsPayload(payload) {
+  const errors = [];
+
+  if (payload.enabled && !payload.channelId) {
+    errors.push("Channel ID is required when public spawns are enabled.");
+  }
+
+  if (!Number.isInteger(payload.intervalMinutes) || payload.intervalMinutes < 30) {
+    errors.push("Interval must be at least 30 minutes.");
+  }
+
+  return errors;
+}
+
+function renderSpawnSettings(settings = {}, hasSupabaseConnection = false) {
+  document.querySelector("#spawnEnabled").checked = Boolean(settings.enabled);
+  document.querySelector("#spawnChannelId").value = settings.channelId || "";
+  document.querySelector("#spawnIntervalMinutes").value = String(settings.intervalMinutes || 60);
+
+  setText(
+    "spawnSettingsDetail",
+    settings.enabled
+      ? `Next spawn ${formatShortDateTime(settings.nextSpawnAt)}. Last spawn ${formatShortDateTime(settings.lastSpawnAt)}.`
+      : "Public random spawns are disabled."
+  );
+  setStatus(
+    "spawnSettingsStatus",
+    hasSupabaseConnection ? "Settings loaded." : "Supabase is required to save settings.",
+    !hasSupabaseConnection
+  );
+  setSpawnSettingsFormDisabled(!hasSupabaseConnection);
+}
+
+async function loadSpawnSettings(guildId) {
+  try {
+    const payload = await fetchJson(`/api/guilds/${encodeURIComponent(guildId)}/spawn-settings`);
+
+    renderSpawnSettings(payload.settings || {}, payload.hasSupabaseConnection);
+    return payload.settings || {};
+  } catch (error) {
+    setStatus("spawnSettingsStatus", error.message, true);
+    setText("spawnSettingsDetail", "Unable to load public spawn settings.");
+    setSpawnSettingsFormDisabled(true);
+    return {};
+  }
+}
+
+function bindSpawnSettingsForm(guildId) {
+  const form = getSpawnSettingsForm();
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const payload = getSpawnSettingsPayload();
+    const errors = validateSpawnSettingsPayload(payload);
+
+    if (errors.length > 0) {
+      setStatus("spawnSettingsStatus", errors.join(" "), true);
+      return;
+    }
+
+    setStatus("spawnSettingsStatus", "Saving...");
+    setSpawnSettingsFormDisabled(true);
+
+    try {
+      const response = await sendJson(
+        `/api/guilds/${encodeURIComponent(guildId)}/spawn-settings`,
+        payload
+      );
+
+      renderSpawnSettings(response.settings || {}, response.hasSupabaseConnection);
+      setStatus("spawnSettingsStatus", "Settings saved.");
+    } catch (error) {
+      setStatus("spawnSettingsStatus", error.message, true);
+      setSpawnSettingsFormDisabled(false);
+    }
+  });
+}
+
 function getOnboardingState({ engagement, recentActivity }) {
   const totalPlayers = Number(engagement.totalPlayers || 0);
   const totalCaptures = Number(engagement.totalCaptures || 0);
@@ -590,6 +704,7 @@ async function loadDashboard() {
 
   document.querySelector("#guildName").textContent = "Loading server...";
   status.textContent = "Loading owner overview...";
+  bindSpawnSettingsForm(guildId);
 
   const [, engagement, topCollectors, paldeckHealth, recentActivity] = await Promise.all([
     loadGuildIdentity(guildId),
@@ -598,6 +713,7 @@ async function loadDashboard() {
     loadPaldeckHealth(guildId),
     loadRecentActivity(guildId),
     loadRetention(guildId),
+    loadSpawnSettings(guildId),
   ]);
 
   renderOwnerInsights({
