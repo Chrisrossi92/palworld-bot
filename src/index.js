@@ -32,7 +32,7 @@ for (const command of commandModules) {
   client.commands.set(command.data.name, command);
 }
 
-client.once("ready", () => {
+client.once("clientReady", () => {
   console.log(`✅ PalMaster online as ${client.user.tag}`);
   console.log(`Connected to ${client.guilds.cache.size} guild(s).`);
   console.log(
