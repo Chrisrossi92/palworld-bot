@@ -55,6 +55,10 @@ function createSpawnSettingsService({
     return Boolean(managedPool);
   }
 
+  function getSettingsSource() {
+    return isConfigured() ? "supabase:guild_spawn_settings" : "default";
+  }
+
   async function ensureDefaultSpawnSettings(guild) {
     if (!isConfigured()) {
       return null;
@@ -306,6 +310,7 @@ function createSpawnSettingsService({
   return {
     close,
     ensureDefaultSpawnSettings,
+    getSettingsSource,
     getSpawnSettings,
     isConfigured,
     listDueSpawnSettings,

@@ -37,6 +37,10 @@ async function processLegacySpawn(client, logger = console) {
     return;
   }
 
+  logger.log(
+    `[spawnSystem] Processing legacy scheduled spawn guild=legacy channel=${channelId} interval=random-hourly source=env:SPAWN_CHANNEL_ID`
+  );
+
   const result = await spawnCommand.startPublicSpawn(channel);
 
   if (!result.started) {
@@ -58,12 +62,38 @@ async function processDueSpawnSettings(client, service, {
   }
 
   const dueSettings = await service.listDueSpawnSettings(now);
+  const settingsSource = typeof service.getSettingsSource === "function"
+    ? service.getSettingsSource()
+    : "unknown";
   let processedCount = 0;
 
-  for (const settings of dueSettings) {
+  for (const dueSetting of dueSettings) {
+    let settings = dueSetting;
+
     try {
+      settings = typeof service.getSpawnSettings === "function"
+        ? await service.getSpawnSettings(dueSetting.guildId)
+        : dueSetting;
+
+      if (!settings.enabled || !settings.channelId) {
+        logger.log(
+          `[spawnSystem] Scheduled spawn skipped guild=${dueSetting.guildId} reason=settings-disabled-or-missing-channel source=${settingsSource}`
+        );
+        continue;
+      }
+
+      if (
+        settings.nextSpawnAt instanceof Date &&
+        settings.nextSpawnAt.getTime() > now.getTime()
+      ) {
+        logger.log(
+          `[spawnSystem] Scheduled spawn skipped guild=${settings.guildId} reason=no-longer-due nextSpawnAt=${settings.nextSpawnAt.toISOString()} source=${settingsSource}`
+        );
+        continue;
+      }
+
       logger.log(
-        `[spawnSystem] Processing scheduled spawn guild=${settings.guildId} channel=${settings.channelId}`
+        `[spawnSystem] Processing scheduled spawn guild=${settings.guildId} configuredChannel=${settings.channelId} interval=${settings.intervalMinutes} source=${settingsSource}`
       );
 
       const channel = await client.channels.fetch(settings.channelId);
@@ -170,7 +200,13 @@ function startSpawnSystem(client, {
 
   startSpawnSettingsPoller(client, service);
 
-  if (process.env.SPAWN_CHANNEL_ID) {
+  if (service?.isConfigured()) {
+    if (process.env.SPAWN_CHANNEL_ID) {
+      console.log(
+        "[spawnSystem] Ignoring SPAWN_CHANNEL_ID legacy fallback because per-guild spawn settings are configured."
+      );
+    }
+  } else if (process.env.SPAWN_CHANNEL_ID) {
     console.log(
       "[spawnSystem] Legacy single-channel auto spawn fallback started. One spawn attempt will run each hour."
     );
