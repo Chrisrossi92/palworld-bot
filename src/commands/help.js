@@ -7,24 +7,30 @@ const {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("help")
-    .setDescription("Show how to use Palworld Bot commands."),
+    .setDescription("Show how to use PalMaster commands."),
 
   async execute(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const embed = new EmbedBuilder()
-      .setTitle("🎮 Palworld Bot Help")
+      .setTitle("PalMaster Help")
       .setColor(0x2ecc71)
       .addFields(
         {
-          name: "📦 Core Gameplay",
+          name: "First 5 Minutes",
+          value:
+            "`/start` -> `/capture` -> `/daily` -> `/quests` -> " +
+            "`/profile` or `/mypals` -> `/leaderboard`",
+        },
+        {
+          name: "Core Gameplay",
           value:
             "`/capture` — Encounter a wild Pal\n" +
             "`/daily` — Claim daily rewards\n" +
             "`/quests` — View daily quests and claim quest rewards",
         },
         {
-          name: "📊 Your Progress",
+          name: "Your Progress",
           value:
             "`/profile` — View your stats\n" +
             "`/trainer` — Share your trainer card\n" +
@@ -34,24 +40,24 @@ module.exports = {
             "`/inspect` — View a specific Pal",
         },
         {
-          name: "🏪 Economy",
+          name: "Economy",
           value:
             "`/shop` — View sphere prices\n" +
             "`/buy` — Purchase spheres",
         },
         {
-          name: "💰 Earning Rewards",
+          name: "Earning Rewards",
           value:
             "`/capture` — Earn coins and XP whether you catch or miss\n" +
             "`/daily` — Claim daily coins, XP, and sphere rewards\n" +
             "Shiny Pals — Give bonus XP and coins",
         },
         {
-          name: "🏆 Competition",
+          name: "Competition",
           value: "`/leaderboard` — View rankings",
         },
         {
-          name: "💡 Tips",
+          name: "Tips",
           value:
             "• Better spheres increase capture chance\n" +
             "• Duplicates strengthen your Pal with stars\n" +

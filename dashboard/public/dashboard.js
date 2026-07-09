@@ -285,11 +285,6 @@ async function loadEngagement(guildId) {
     const payload = await fetchJson(`/api/guilds/${encodeURIComponent(guildId)}/engagement`);
     const engagement = payload.engagement || {};
 
-    setText("totalPlayers", formatNumber(engagement.totalPlayers));
-    setText("totalCaptures", formatNumber(engagement.totalCaptures));
-    setText("totalOwnedPals", formatNumber(engagement.totalOwnedPals));
-    setText("dailyQuestActivity", formatNumber(engagement.dailyQuestActivity));
-    setText("recentCapturesCount", formatNumber(engagement.recentCapturesCount));
     setStatus(
       "engagementStatus",
       payload.hasSupabaseConnection ? "Live Supabase metrics." : "No Supabase connection."
@@ -305,19 +300,6 @@ async function loadTopCollectors(guildId) {
   try {
     const payload = await fetchJson(`/api/guilds/${encodeURIComponent(guildId)}/top-collectors`);
     const topCollectors = payload.topCollectors || {};
-
-    renderRankedList(
-      "topCapturesList",
-      topCollectors.topCaptures,
-      "No capture leaderboard data yet.",
-      (row) => `${formatNumber(row.captures)} captures`
-    );
-    renderRankedList(
-      "highestLevelList",
-      topCollectors.highestLevelPlayers,
-      "No player level data yet.",
-      (row) => `Level ${formatNumber(row.level)}`
-    );
     const topCollector = Array.isArray(topCollectors.topCaptures)
       ? topCollectors.topCaptures[0]
       : null;
@@ -340,8 +322,6 @@ async function loadTopCollectors(guildId) {
     return topCollectors;
   } catch (error) {
     setStatus("collectorsStatus", error.message, true);
-    renderEmptyList("topCapturesList", "Unable to load captures leaderboard.");
-    renderEmptyList("highestLevelList", "Unable to load level leaderboard.");
     setText("topCollectorName", "Unavailable");
     setText("topCollectorDetail", "Unable to load collector data.");
     return {};
@@ -382,75 +362,6 @@ async function loadPaldeckHealth(guildId) {
     if (progressBar) {
       progressBar.style.width = "0%";
     }
-    return {};
-  }
-}
-
-async function loadRetention(guildId) {
-  try {
-    const payload = await fetchJson(`/api/guilds/${encodeURIComponent(guildId)}/retention`);
-    const retention = payload.retention || {};
-    const dailyResearch = retention.dailyResearchToday || {};
-    const weeklyGoal = retention.weeklyServerGoal || {};
-    const journal = retention.journalMomentum || {};
-    const collection = retention.recentCollectionActivity || {};
-    const warnings = Array.isArray(retention.warnings) ? retention.warnings : [];
-    const weeklyStatus = weeklyGoal.complete
-      ? weeklyGoal.completedAt
-        ? `Complete ${formatShortDateTime(weeklyGoal.completedAt)}`
-        : "Complete"
-      : "In progress this week";
-    const researchDetail = Number(dailyResearch.participants || 0) > 0
-      ? `${formatNumber(dailyResearch.completed)} completed • ` +
-        `${formatNumber(dailyResearch.claimed)} claimed`
-      : "No participants today";
-    const journalDetail = Number(journal.totalUnlocks || 0) > 0
-      ? `${formatNumber(journal.playersWithUnlocks)} ` +
-        `${pluralize(journal.playersWithUnlocks, "player")} • ` +
-        `${formatNumber(journal.recentUnlocks)} in 7 days`
-      : "No Journal unlocks yet";
-    const collectionDetail = Number(collection.recentOwnedPalUpdates || 0) > 0
-      ? [
-        `${formatNumber(collection.activeCollectors)} active ` +
-          `${pluralize(collection.activeCollectors, "collector")}`,
-        collection.latestActivityAt ? `latest ${formatRelativeTime(collection.latestActivityAt)}` : "latest unknown",
-      ].join(" • ")
-      : "No recent collection updates";
-
-    setText("researchParticipants", formatNumber(dailyResearch.participants));
-    setText("researchDetail", researchDetail);
-    setText(
-      "weeklyGoalProgress",
-      `${formatNumber(weeklyGoal.progress)}/${formatNumber(weeklyGoal.target || 100)}`
-    );
-    setText(
-      "weeklyGoalDetail",
-      `${formatPercent(weeklyGoal.percentage)} • ${weeklyStatus}`
-    );
-    setText("journalUnlocks", formatNumber(journal.totalUnlocks));
-    setText("journalDetail", journalDetail);
-    setText("collectionActivity", formatNumber(collection.recentOwnedPalUpdates));
-    setText("collectionDetail", collectionDetail);
-    setStatus(
-      "retentionStatus",
-      warnings.length > 0
-        ? "Partial retention data. Apply Journal, Daily Research, and Weekly Goal migrations for full coverage."
-        : payload.hasSupabaseConnection
-          ? "Retention data loaded."
-          : "No Supabase connection.",
-      warnings.length > 0
-    );
-    return retention;
-  } catch (error) {
-    setStatus("retentionStatus", error.message, true);
-    setText("researchParticipants", "0");
-    setText("researchDetail", "No participants today");
-    setText("weeklyGoalProgress", "0/100");
-    setText("weeklyGoalDetail", "0% toward this week's goal");
-    setText("journalUnlocks", "0");
-    setText("journalDetail", "No Journal unlocks yet");
-    setText("collectionActivity", "0");
-    setText("collectionDetail", "No recent collection updates");
     return {};
   }
 }
@@ -711,7 +622,6 @@ function renderHeroSummary({ engagement, paldeckHealth }) {
   setText("communityHealthScore", `${health}`);
   setText("heroPlayers", formatNumber(engagement.totalPlayers));
   setText("heroCaptures", formatNumber(engagement.totalCaptures));
-  setText("heroCompletion", formatPercent(paldeckHealth.completionPercentage));
   setText("heroRecentCaptures", formatNumber(engagement.recentCapturesCount));
 }
 
@@ -887,46 +797,12 @@ function renderOnboardingPanel({ engagement, recentActivity }) {
 }
 
 function renderOwnerInsights({ engagement, topCollectors, paldeckHealth, recentActivity }) {
-  const mostActive = Array.isArray(topCollectors.topCaptures)
-    ? topCollectors.topCaptures[0]
-    : null;
-  const captures = Array.isArray(recentActivity.latestCaptures)
-    ? [...recentActivity.latestCaptures]
-    : [];
-  const rarestCapture = captures.sort((first, second) => {
-    const shinyDelta = Number(Boolean(second.isShiny)) - Number(Boolean(first.isShiny));
-
-    if (shinyDelta !== 0) {
-      return shinyDelta;
-    }
-
-    return getRarityRank(second.rarity) - getRarityRank(first.rarity);
-  })[0];
   const completion = Number(paldeckHealth.completionPercentage || 0);
   const totalPlayers = Number(engagement.totalPlayers || 0);
   const recentCapturesCount = Number(engagement.recentCapturesCount || 0);
   const dailyQuestActivity = Number(engagement.dailyQuestActivity || 0);
 
   renderBestRecentCatch(recentActivity);
-
-  setText(
-    "mostActiveInsight",
-    mostActive
-      ? `Spotlight ${mostActive.displayName || mostActive.userId}; they lead the server with ${formatNumber(mostActive.captures)} captures.`
-      : "No MVP yet. Invite collectors to start building server history."
-  );
-
-  setText(
-    "rarestCaptureInsight",
-    rarestCapture
-      ? `Feature ${rarestCapture.isShiny ? "Shiny " : ""}${rarestCapture.palName || "Unknown Pal"} as a community highlight.`
-      : "No recent captures to highlight."
-  );
-
-  setText(
-    "completionInsight",
-    `${formatPercent(completion)} complete. The server owns ${formatNumber(paldeckHealth.uniqueSpeciesOwned)} of ${formatNumber(paldeckHealth.catalogSize)} catalog species.`
-  );
 
   if (totalPlayers === 0) {
     setText("opportunityInsight", "Invite the first collectors and seed the leaderboard.");
@@ -968,7 +844,6 @@ async function loadDashboard() {
     loadTopCollectors(guildId),
     loadPaldeckHealth(guildId),
     loadRecentActivity(guildId),
-    loadRetention(guildId),
     loadSpawnSettings(guildId),
   ]);
 

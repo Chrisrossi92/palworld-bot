@@ -20,7 +20,7 @@ function formatStarterStatus(result) {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("start")
-    .setDescription("Start your Palworld Bot journey and claim starter rewards."),
+    .setDescription("Start your PalMaster journey and claim starter rewards."),
 
   async execute(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -28,10 +28,10 @@ module.exports = {
     const result = await claimStarterRewards(interaction.guildId, interaction.user.id);
 
     const embed = new EmbedBuilder()
-      .setTitle("Welcome to Palworld Bot")
+      .setTitle("Welcome to PalMaster")
       .setColor(result.claimed ? 0x2ecc71 : 0x95a5a6)
       .setDescription(
-        "Capture Pals, build your collection, earn rewards, and climb the rankings."
+        "Start here. Claim your starter rewards, then catch Pals, earn rewards, and climb the rankings."
       )
       .addFields(
         {
@@ -39,13 +39,13 @@ module.exports = {
           value: formatStarterStatus(result),
         },
         {
-          name: "Gameplay Loop",
+          name: "First 5 Minutes",
           value:
-            "`/daily` - Claim daily coins, XP, and spheres\n" +
-            "`/quests` - Check daily quests and claim quest rewards\n" +
             "`/capture` - Encounter and try to catch a wild Pal\n" +
-            "`/shop` and `/buy` - Spend coins on spheres\n" +
-            "`/profile` and `/mypals` - Track your progress and collection",
+            "`/daily` - Claim daily coins, XP, and spheres\n" +
+            "`/quests` - Check goals and claim completed rewards\n" +
+            "`/profile` or `/mypals` - Track your progress and collection\n" +
+            "`/leaderboard` - See how your server ranks",
         },
         {
           name: "Current Inventory",

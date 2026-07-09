@@ -1,10 +1,11 @@
 # Early Access Launch Checklist
 
-This checklist prepares a soft launch for pilot/test Discord servers. It does not make Supabase the default runtime provider, add Stripe, or change bot gameplay.
+This checklist prepares a public soft launch for PalMaster Discord servers. It
+does not add Stripe, change gameplay, or perform deployment by itself.
 
 ## Required Configuration
 
-- `DISCORD_BOT_INVITE_URL` is configured for the public `Add to Discord` CTA.
+- `DISCORD_BOT_INVITE_URL` is configured for the public `Add to Discord` CTA, or `DISCORD_CLIENT_ID` is set so the install URL can be generated.
 - `SUPPORT_SERVER_URL` is configured for the public support CTA.
 - Dashboard OAuth environment is set:
   - `DISCORD_CLIENT_ID`
@@ -13,17 +14,17 @@ This checklist prepares a soft launch for pilot/test Discord servers. It does no
   - `DASHBOARD_SESSION_SECRET`
 - Supabase access is configured only where intended:
   - `SUPABASE_DB_URL`
-  - `STORAGE_PROVIDER=supabase-v2` only for deliberate Supabase runtime tests or launch runs.
+- `STORAGE_PROVIDER=supabase-v2` for public launch runs.
 
 ## Runtime Preflight
 
-- Confirm the target server is a pilot/test server.
+- Confirm the target server owner understands this is an early-access soft launch.
 - Confirm `STORAGE_PROVIDER` is intentionally selected.
 - Confirm JSON remains available as rollback.
 - Run Supabase preflight if using Supabase runtime:
   - `node scripts/importJsonToSupabase.js --check-db`
   - `node scripts/validateSupabaseStorageV2ReadOnly.js`
-  - `node scripts/validateSupabaseStorageV2WriteDryRun.js`
+  - `node scripts/validateSupabaseStorageV2WriteDryRun.js` only after explicitly accepting mutation-risk for the dry-run path.
 - Check for duplicate bot processes before launch.
 - Confirm no stale PM2/VPS bot process is connected to the same Discord application.
 
@@ -40,9 +41,9 @@ This checklist prepares a soft launch for pilot/test Discord servers. It does no
 ## Smoke Tests
 
 - Public landing page renders.
-- Add to Discord CTA works or shows the early-access placeholder.
+- Add to Discord CTA works.
 - View Dashboard CTA works.
-- Join Support Server CTA works or shows the support placeholder.
+- Join Support Server CTA works or shows the configured support fallback page.
 - Dashboard OAuth login works.
 - `/servers.html` lists only authorized installed guilds.
 - `/dashboard.html` renders metrics for the selected guild.
@@ -51,7 +52,7 @@ This checklist prepares a soft launch for pilot/test Discord servers. It does no
 
 ## Known Limitations
 
-- Early access is best for pilot/test servers.
+- Early access is actively improving and should start with limited public promotion.
 - Owner controls are not available yet.
 - Stripe and billing are not available yet.
 - Install flow depends on a configured Discord bot invite URL.

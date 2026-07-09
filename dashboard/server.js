@@ -458,7 +458,7 @@ function handleSupport(response) {
   sendLaunchPlaceholder(response, {
     title: "PalMaster Support Coming Soon",
     eyebrow: "Community support",
-    description: "The support server link is not configured yet. The public landing page can keep this route as a safe placeholder until the support community is ready.",
+    description: "The public support link is not configured yet. Configure SUPPORT_SERVER_URL before broad public promotion so server owners have a clear help path.",
     actions: [
       { href: "/", label: "Back to Home", className: "button-ghost" },
     ],

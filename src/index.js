@@ -3,6 +3,7 @@ require("dotenv").config();
 const { Client, GatewayIntentBits, Collection } = require("discord.js");
 const { commandModules } = require("./commands");
 const { registerGuildCommands } = require("./commandRegistration");
+const { createGuildLifecycleService } = require("./services/guildLifecycleService");
 const {
   ensureDefaultSpawnSettingsForGuild,
   startSpawnSystem,
@@ -24,6 +25,7 @@ function requireEnv(name) {
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
+const guildLifecycleService = createGuildLifecycleService();
 
 client.commands = new Collection();
 for (const command of commandModules) {
@@ -31,10 +33,10 @@ for (const command of commandModules) {
 }
 
 client.once("ready", () => {
-  console.log(`✅ Palworld Bot online as ${client.user.tag}`);
+  console.log(`✅ PalMaster online as ${client.user.tag}`);
   console.log(`Connected to ${client.guilds.cache.size} guild(s).`);
   console.log(
-    `[runtime] pid=${process.pid} storageProvider=${getStorageProviderLabel()}`
+    `[runtime] pid=${process.pid} storageProvider=${getStorageProviderLabel()} commandRegistrationScope=${getCommandRegistrationScope()}`
   );
   startSpawnSystem(client);
 });
@@ -44,24 +46,51 @@ client.on("guildCreate", async (guild) => {
     `[guildCreate] Added to guild id=${guild.id} name="${guild.name}" members=${guild.memberCount ?? "unknown"}`
   );
 
-  try {
-    await registerGuildCommands(guild.id);
-  } catch (error) {
-    console.error(
-      `[guildCreate] Failed to register slash commands for guild id=${guild.id} name="${guild.name}" code=${error?.code || "none"}`,
-      error
+  if (shouldRegisterGuildCommandsOnJoin()) {
+    try {
+      await registerGuildCommands(guild.id);
+    } catch (error) {
+      console.error(
+        `[guildCreate] Failed to register slash commands for guild id=${guild.id} name="${guild.name}" code=${error?.code || "none"}`,
+        error
+      );
+    }
+  } else {
+    console.log(
+      `[guildCreate] Skipping guild command registration because REGISTER_COMMANDS_SCOPE=${getCommandRegistrationScope()}.`
     );
   }
 
   await ensureDefaultSpawnSettingsForGuild(guild);
 });
 
-client.on("guildDelete", (guild) => {
+client.on("guildDelete", async (guild) => {
   console.log(`[guildDelete] Removed from guild id=${guild.id} name="${guild.name}"`);
+
+  try {
+    const result = await guildLifecycleService.markGuildRemoved(guild.id);
+
+    console.log(
+      `[guildDelete] Supabase removal mark result guild=${guild.id} marked=${result.marked} reason=${result.reason}`
+    );
+  } catch (error) {
+    console.error(
+      `[guildDelete] Failed to mark guild removed id=${guild.id} code=${error?.code || "none"}`,
+      error
+    );
+  }
 });
 
 function getStorageProviderLabel() {
   return process.env.STORAGE_PROVIDER || "json";
+}
+
+function getCommandRegistrationScope() {
+  return (process.env.REGISTER_COMMANDS_SCOPE || "global").trim().toLowerCase();
+}
+
+function shouldRegisterGuildCommandsOnJoin() {
+  return getCommandRegistrationScope() === "guild";
 }
 
 function getInteractionLogContext(interaction) {

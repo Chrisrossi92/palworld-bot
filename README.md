@@ -1,6 +1,12 @@
-# Palworld Discord Bot
+# PalMaster Discord Bot
 
-A Discord bot for Palworld-inspired collecting and progression. The bot is currently a JSON-backed, guild-aware bot and is being prepared for a hosted multi-server SaaS product.
+PalMaster is an early-access Discord bot for Palworld-inspired collecting,
+progression, and owner visibility. It is built for public soft-launch use with
+an intentionally focused scope: captures, daily rewards, quests, collections,
+leaderboards, public spawns, and a server-owner dashboard.
+
+PalMaster is an independent fan-made project and is not affiliated with
+Pocketpair.
 
 ## Current Features
 
@@ -48,7 +54,7 @@ require a new database table.
 
 ## Journal
 
-The Journal is PalMaster's milestone layer for Alpha 0.2. Journal entries unlock
+The Journal is PalMaster's milestone layer. Journal entries unlock
 after relevant player actions, currently focused on:
 
 - Discovery: total successful captures.
@@ -102,8 +108,8 @@ normal `/capture` attempts. Public `/spawn` captures do not advance the weekly
 goal. `/quests` shows server-wide progress, completion percentage, reset copy,
 and completed state with completion time when available. When a normal
 successful `/capture` completes the weekly goal, the capture result shows a
-short server-wide completion message once. Alpha 0.7 does not grant rewards or
-add a claim flow for weekly goals.
+short server-wide completion message once. Weekly server goals do not grant
+rewards or add a claim flow yet.
 
 ## Dashboard Retention Snapshot
 
@@ -272,8 +278,9 @@ code that reads or writes weekly guild goals with `STORAGE_PROVIDER=supabase` or
 `STORAGE_PROVIDER=supabase-v2`. JSON storage keeps weekly guild goal state in
 `data/guild-weekly-goals.json`.
 
-For the Alpha 0.3 deployment sequence, smoke tests, and rollback notes, see
-[docs/ALPHA_0_3_DEPLOYMENT_CHECKLIST.md](docs/ALPHA_0_3_DEPLOYMENT_CHECKLIST.md).
+For the current deployment sequence, smoke tests, and rollback notes, see
+[docs/EARLY_ACCESS_DEPLOYMENT_RUNBOOK.md](docs/EARLY_ACCESS_DEPLOYMENT_RUNBOOK.md)
+and [docs/VPS_DEPLOYMENT_PLAN.md](docs/VPS_DEPLOYMENT_PLAN.md).
 
 ## Future SaaS Direction
 

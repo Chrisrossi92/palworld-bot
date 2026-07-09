@@ -56,7 +56,6 @@
                 </div>
               </div>
             </div>
-            <button class="view-more-button" type="button">View Analytics</button>
           </article>
 
           <article class="command-card paldeck-command-card">
@@ -78,7 +77,6 @@
               <span id="uniqueSpeciesOwned">0</span> unique of
               <span id="catalogSize">0</span> catalog species.
             </div>
-            <button class="view-more-button" type="button">View Paldeck</button>
           </article>
 
           <article class="command-card collector-command-card">
@@ -95,7 +93,6 @@
               <span>Shiny collectors</span>
               <strong id="shinyCollectorsCount">0</strong>
             </div>
-            <button class="view-more-button" type="button">View Collectors</button>
           </article>
         </section>
 
@@ -159,11 +156,18 @@
           <article id="onboardingPanel" class="command-card recommended-card" data-always-visible="true">
             <div class="command-card-header">
               <div>
-                <div class="eyebrow">Decision</div>
-                <h2>Recommended Action</h2>
+                <div class="eyebrow">Launch setup</div>
+                <h2>Owner Setup Checklist</h2>
               </div>
               <div id="onboardingProgress" class="status">0 of 5 steps started</div>
             </div>
+            <ol class="onboarding-list compact-onboarding-list">
+              <li>Install PalMaster in this Discord server.</li>
+              <li>Ask a trusted member to run <strong>/start</strong>.</li>
+              <li>Choose and test a public spawn channel.</li>
+              <li>Try <strong>/capture</strong> to seed activity.</li>
+              <li>Invite players, then check leaderboard and dashboard activity.</li>
+            </ol>
             <div id="nextRecommendedAction" class="recommended-action">Invite the first player to run /start.</div>
             <div id="opportunityInsight" class="metric-detail compact-detail">Loading suggested action...</div>
           </article>
@@ -178,7 +182,6 @@
               </div>
               <div class="header-actions">
                 <div id="activityStatus" class="status">Loading...</div>
-                <button class="view-more-button" type="button">View Activity</button>
               </div>
             </div>
             <div class="activity-summary compact-activity-summary" aria-label="Recent activity summary">
