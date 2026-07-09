@@ -2,6 +2,7 @@ const {
   SlashCommandBuilder,
   PermissionFlagsBits,
   ComponentType,
+  MessageFlags,
 } = require("discord.js");
 const {
   createEncounterForLevel,
@@ -200,7 +201,7 @@ async function startPublicSpawn(channel, options = {}) {
         );
         await buttonInteraction.followUp({
           content: `❌ You don't have any ${sphereUse.sphere} spheres.`,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
         return;
       }
@@ -356,12 +357,12 @@ module.exports = {
     if (!hasAdminPermission) {
       await interaction.reply({
         content: "❌ You need Manage Guild or Administrator permission to use /spawn.",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     try {
       const forcedRarity = interaction.options.getString("rarity");

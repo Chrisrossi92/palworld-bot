@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const { Client, GatewayIntentBits, Collection } = require("discord.js");
+const { Client, GatewayIntentBits, Collection, MessageFlags } = require("discord.js");
 const { commandModules } = require("./commands");
 const { registerGuildCommands } = require("./commandRegistration");
 const { createGuildLifecycleService } = require("./services/guildLifecycleService");
@@ -142,14 +142,14 @@ async function sendInteractionError(interaction) {
     if (interaction.replied) {
       await interaction.followUp({
         ...payload,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
 
     await interaction.reply({
       ...payload,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   } catch (error) {
     if (isUnknownInteractionError(error)) {

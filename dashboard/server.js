@@ -474,6 +474,14 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    if (url.pathname === "/health") {
+      sendJson(response, 200, {
+        ok: true,
+        service: "palmaster-dashboard",
+      });
+      return;
+    }
+
     if (url.pathname === "/auth/discord") {
       await handleDiscordAuth(response);
       return;

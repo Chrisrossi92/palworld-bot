@@ -6,6 +6,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
   ComponentType,
+  MessageFlags,
 } = require("discord.js");
 const {
   renderCaptureShakeCard,
@@ -739,7 +740,7 @@ module.exports = {
 
       await interaction.reply({
         content: `⏳ You must wait ${secondsLeft} ${secondLabel} before capturing again.`,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }
